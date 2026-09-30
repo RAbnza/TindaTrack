@@ -19,6 +19,14 @@ enum UserRole {
   @@map("user_role")
 }
 
+enum PaymentMethod {
+  CASH
+  GCASH
+  MAYA
+
+  @@map("payment_method")
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -30,6 +38,7 @@ model User {
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   receivedStockReceipts StockReceipt[]
+  sales                 Sale[]
 
   @@map("users")
 }
@@ -90,4 +99,16 @@ model StockReceiptItem {
 
   @@unique([receiptId, productId])
   @@map("stock_receipt_items")
+}
+
+model Sale {
+  id            Int           @id @default(autoincrement())
+  recordedBy    Int           @map("recorded_by")
+  totalAmount   Decimal       @map("total_amount") @db.Decimal(12, 2)
+  paymentMethod PaymentMethod @map("payment_method")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+
+  recordedByUser User @relation(fields: [recordedBy], references: [id], onDelete: Restrict)
+
+  @@map("sales")
 }
