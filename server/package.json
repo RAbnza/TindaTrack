@@ -12,7 +12,7 @@
     "service:stock-receipt-check": "tsx src/services/check-stock-receipt.ts",
     "service:stock-adjustment-check": "tsx src/services/check-stock-adjustment.ts",
     "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts"
-  },  
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -32,6 +32,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
   }
 }
