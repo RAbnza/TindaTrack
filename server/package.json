@@ -7,6 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:check": "tsx src/db/check-connection.ts",
     "repo:product-check": "tsx src/repositories/check-product-repository.ts",
     "service:stock-receipt-check": "tsx src/services/check-stock-receipt.ts",
@@ -22,9 +24,12 @@
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.0",
     "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.1",
     "prisma": "^7.10.0",
+    "supertest": "^7.3.0",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
