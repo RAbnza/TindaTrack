@@ -50,6 +50,7 @@ model User {
   sales                 Sale[]
   stockAdjustments      StockAdjustment[]
   stockMovements        StockMovement[]
+  auditLogs             AuditLog[]
 
   @@map("users")
 }
@@ -179,4 +180,19 @@ model StockMovement {
 
   @@index([productId, createdAt])
   @@map("stock_movements")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int      @map("actor_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   Int?     @map("entity_id")
+  metadata   Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt])
+  @@map("audit_logs")
 }
