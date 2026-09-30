@@ -45,6 +45,8 @@ model Product {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
+  stockReceiptItems StockReceiptItem[]
+
   @@map("products")
 }
 
@@ -71,5 +73,21 @@ model StockReceipt {
   supplier       Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   receivedByUser User     @relation(fields: [receivedBy], references: [id], onDelete: Restrict)
 
+  stockReceiptItems StockReceiptItem[]
+
   @@map("stock_receipts")
+}
+
+model StockReceiptItem {
+  id        Int     @id @default(autoincrement())
+  receiptId Int     @map("receipt_id")
+  productId Int     @map("product_id")
+  quantity  Int
+  unitCost  Decimal @map("unit_cost") @db.Decimal(12, 2)
+
+  receipt StockReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@unique([receiptId, productId])
+  @@map("stock_receipt_items")
 }
