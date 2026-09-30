@@ -611,6 +611,90 @@ PostgreSQL permits multiple `NULL` values in ordinary unique constraints, so mov
 
 ---
 
+## Important Note on 1:1 Source Relationships
+
+The ERD intentionally models these relationships as:
+
+```text
+SaleItem          1 ───── 1 StockMovement
+StockReceiptItem  1 ───── 1 StockMovement
+StockAdjustment   1 ───── 1 StockMovement
+```
+
+This describes the **completed domain state**:
+
+- every successfully created SaleItem must have exactly one StockMovement;
+- every successfully created StockReceiptItem must have exactly one StockMovement;
+- every successfully created StockAdjustment must have exactly one StockMovement.
+
+However, the reverse Prisma relation fields are intentionally optional:
+
+```prisma
+stockMovement StockMovement?
+```
+
+This is correct and should not be changed merely to make the Prisma schema visually match the ERD.
+
+The database foreign keys are stored on `StockMovement`:
+
+```text
+StockMovement.sale_item_id
+StockMovement.stock_receipt_item_id
+StockMovement.stock_adjustment_id
+```
+
+and each source foreign key is unique when non-null.
+
+Those unique constraints enforce:
+
+```text
+one source record → at most one StockMovement
+```
+
+For example:
+
+```text
+SaleItem 1 ───── 0..1 StockMovement
+```
+
+is what the relational schema can enforce from the reverse side before application transaction guarantees are considered.
+
+The service layer then completes the stronger domain invariant.
+
+When a Sale is successfully committed:
+
+```text
+SaleItem 1 ───── 1 StockMovement
+```
+
+When a StockReceipt is successfully committed:
+
+```text
+StockReceiptItem 1 ───── 1 StockMovement
+```
+
+When a StockAdjustment is successfully committed:
+
+```text
+StockAdjustment 1 ───── 1 StockMovement
+```
+
+This is enforced by creating the business record and its corresponding StockMovement inside the same database transaction.
+
+Therefore:
+
+```text
+Database uniqueness
+        +
+Service transaction guarantee
+        =
+Domain-level 1:1 relationship
+```
+
+The optional Prisma reverse field reflects relational nullability during creation and querying, while the ERD reflects the required successful business state.
+
+---
+
 # Derived Parent Transaction Relationships
 
 Sale and StockReceipt still indirectly produce multiple StockMovements.
