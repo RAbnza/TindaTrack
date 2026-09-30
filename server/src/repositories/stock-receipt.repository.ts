@@ -25,7 +25,10 @@ type CreateReceiptMovementInput = {
   actorId: number;
 };
 
-export function findSupplierById(db: DbClient, supplierId: number) {
+export function findSupplierById(
+  db: DbClient,
+  supplierId: number,
+) {
   return db.supplier.findUnique({
     where: {
       id: supplierId,
@@ -37,7 +40,10 @@ export function findSupplierById(db: DbClient, supplierId: number) {
   });
 }
 
-export function findReceivingUserById(db: DbClient, userId: number) {
+export function findReceivingUserById(
+  db: DbClient,
+  userId: number,
+) {
   return db.user.findUnique({
     where: {
       id: userId,

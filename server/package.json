@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:check": "tsx src/db/check-connection.ts",
-    "repo:product-check": "tsx src/repositories/check-product-repository.ts"
+    "repo:product-check": "tsx src/repositories/check-product-repository.ts",
+    "service:stock-receipt-check": "tsx src/services/check-stock-receipt.ts"
   },  
   "keywords": [],
   "author": "",

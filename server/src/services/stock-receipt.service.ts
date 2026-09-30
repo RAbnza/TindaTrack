@@ -48,7 +48,9 @@ function parseUnitCost(value: string): Prisma.Decimal {
   return unitCost;
 }
 
-function validateItems(input: RecordStockReceiptInput): void {
+function validateItems(
+  input: RecordStockReceiptInput,
+): void {
   if (input.items.length === 0) {
     throw new StockReceiptValidationError(
       "A stock receipt must contain at least one item.",
@@ -66,7 +68,10 @@ function validateItems(input: RecordStockReceiptInput): void {
 
     seenProductIds.add(item.productId);
 
-    if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+    if (
+      !Number.isInteger(item.quantity) ||
+      item.quantity <= 0
+    ) {
       throw new StockReceiptValidationError(
         `Quantity for product ${item.productId} must be a positive integer.`,
       );

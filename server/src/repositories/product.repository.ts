@@ -8,7 +8,9 @@ export async function findProductById(productId: number) {
   });
 }
 
-export async function getCurrentStock(productId: number): Promise<number> {
+export async function getCurrentStock(
+  productId: number,
+): Promise<number> {
   const result = await prisma.stockMovement.aggregate({
     where: {
       productId,

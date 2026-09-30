@@ -79,22 +79,46 @@ async function verifyRollback(): Promise<void> {
     },
   });
 
-  const product = await prisma.product.findFirst({
+  const products = await prisma.product.findMany({
     where: {
       active: true,
     },
+    orderBy: {
+      id: "asc",
+    },
+    take: 2,
   });
 
-  if (!supplier || !user || !product) {
+  if (!supplier || !user || products.length < 2) {
     throw new Error(
-      "Rollback verification requires an active supplier, user, and product.",
+      "Rollback verification requires an active supplier, user, and at least two active products.",
     );
   }
 
-  const receiptCountBefore = await prisma.stockReceipt.count();
-  const itemCountBefore = await prisma.stockReceiptItem.count();
-  const movementCountBefore = await prisma.stockMovement.count();
-  const stockBefore = await getCurrentStock(product.id);
+  const [firstProduct, secondProduct] = products;
+
+  if (!firstProduct || !secondProduct) {
+    throw new Error(
+      "Rollback verification could not select two products.",
+    );
+  }
+
+  const receiptCountBefore =
+    await prisma.stockReceipt.count();
+
+  const itemCountBefore =
+    await prisma.stockReceiptItem.count();
+
+  const movementCountBefore =
+    await prisma.stockMovement.count();
+
+  const firstStockBefore = await getCurrentStock(
+    firstProduct.id,
+  );
+
+  const secondStockBefore = await getCurrentStock(
+    secondProduct.id,
+  );
 
   let transactionFailed = false;
 
@@ -105,10 +129,15 @@ async function verifyRollback(): Promise<void> {
       referenceNo: "INTENTIONAL-ROLLBACK-TEST",
       items: [
         {
-          productId: product.id,
+          productId: firstProduct.id,
           quantity: 5,
+          unitCost: "15.50",
+        },
+        {
+          productId: secondProduct.id,
+          quantity: 2,
 
-          // Intentionally exceeds NUMERIC(12,2)
+          // Intentionally exceeds NUMERIC(12,2).
           unitCost: "10000000000.00",
         },
       ],
@@ -129,10 +158,22 @@ async function verifyRollback(): Promise<void> {
     );
   }
 
-  const receiptCountAfter = await prisma.stockReceipt.count();
-  const itemCountAfter = await prisma.stockReceiptItem.count();
-  const movementCountAfter = await prisma.stockMovement.count();
-  const stockAfter = await getCurrentStock(product.id);
+  const receiptCountAfter =
+    await prisma.stockReceipt.count();
+
+  const itemCountAfter =
+    await prisma.stockReceiptItem.count();
+
+  const movementCountAfter =
+    await prisma.stockMovement.count();
+
+  const firstStockAfter = await getCurrentStock(
+    firstProduct.id,
+  );
+
+  const secondStockAfter = await getCurrentStock(
+    secondProduct.id,
+  );
 
   console.log("Rollback verification:");
   console.log({
@@ -142,15 +183,24 @@ async function verifyRollback(): Promise<void> {
     itemCountAfter,
     movementCountBefore,
     movementCountAfter,
-    stockBefore,
-    stockAfter,
+    firstProduct: {
+      productId: firstProduct.id,
+      stockBefore: firstStockBefore,
+      stockAfter: firstStockAfter,
+    },
+    secondProduct: {
+      productId: secondProduct.id,
+      stockBefore: secondStockBefore,
+      stockAfter: secondStockAfter,
+    },
   });
 
   if (
     receiptCountAfter !== receiptCountBefore ||
     itemCountAfter !== itemCountBefore ||
     movementCountAfter !== movementCountBefore ||
-    stockAfter !== stockBefore
+    firstStockAfter !== firstStockBefore ||
+    secondStockAfter !== secondStockBefore
   ) {
     throw new Error(
       "Rollback verification failed: database state changed.",
@@ -167,7 +217,11 @@ async function main(): Promise<void> {
 
 main()
   .catch((error: unknown) => {
-    console.error("Stock receipt verification failed:", error);
+    console.error(
+      "Stock receipt verification failed:",
+      error,
+    );
+
     process.exitCode = 1;
   })
   .finally(async () => {
