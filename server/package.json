@@ -13,6 +13,7 @@
     "repo:product-check": "tsx src/repositories/check-product-repository.ts",
     "service:stock-receipt-check": "tsx src/services/check-stock-receipt.ts",
     "service:stock-adjustment-check": "tsx src/services/check-stock-adjustment.ts",
+    "service:sale-check": "tsx src/services/check-sale.ts",
     "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts"
   },
   "keywords": [],
