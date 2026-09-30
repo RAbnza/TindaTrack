@@ -7,14 +7,29 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
+
     "test": "vitest run",
     "test:watch": "vitest",
+
+    "tools": "tsx src/tools/dev-console.ts",
+
     "db:check": "tsx src/db/check-connection.ts",
     "repo:product-check": "tsx src/repositories/check-product-repository.ts",
+
     "service:stock-receipt-check": "tsx src/services/check-stock-receipt.ts",
+    "service:stock-receipt-check:test": "tsx src/db/run-with-test-env.ts ../services/check-stock-receipt.ts",
+
     "service:stock-adjustment-check": "tsx src/services/check-stock-adjustment.ts",
+    "service:stock-adjustment-check:test": "tsx src/db/run-with-test-env.ts ../services/check-stock-adjustment.ts",
+
     "service:sale-check": "tsx src/services/check-sale.ts",
-    "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts"
+    "service:sale-check:test": "tsx src/db/run-with-test-env.ts ../services/check-sale.ts",
+
+    "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts",
+
+    "db:test:reset": "tsx src/db/reset-test.ts",
+    "db:test:seed": "tsx src/db/seed-test.ts",
+    "db:test:reseed": "npm run db:test:reset && npm run db:test:seed"
   },
   "keywords": [],
   "author": "",
