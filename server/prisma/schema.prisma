@@ -39,6 +39,7 @@ model User {
 
   receivedStockReceipts StockReceipt[]
   sales                 Sale[]
+  stockAdjustments      StockAdjustment[]
 
   @@map("users")
 }
@@ -56,6 +57,7 @@ model Product {
 
   stockReceiptItems StockReceiptItem[]
   saleItems         SaleItem[]
+  stockAdjustments  StockAdjustment[]
 
   @@map("products")
 }
@@ -128,4 +130,18 @@ model SaleItem {
 
   @@unique([saleId, productId])
   @@map("sale_items")
+}
+
+model StockAdjustment {
+  id            Int      @id @default(autoincrement())
+  productId     Int      @map("product_id")
+  quantityDelta Int      @map("quantity_delta")
+  reason        String
+  adjustedBy    Int      @map("adjusted_by")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  adjustedByUser User    @relation(fields: [adjustedBy], references: [id], onDelete: Restrict)
+
+  @@map("stock_adjustments")
 }
