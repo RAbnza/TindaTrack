@@ -29,6 +29,8 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
+  receivedStockReceipts StockReceipt[]
+
   @@map("users")
 }
 
@@ -44,4 +46,30 @@ model Product {
   updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   @@map("products")
+}
+
+model Supplier {
+  id             Int      @id @default(autoincrement())
+  name           String
+  contactDetails String?  @map("contact_details")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  stockReceipts StockReceipt[]
+
+  @@map("suppliers")
+}
+
+model StockReceipt {
+  id          Int      @id @default(autoincrement())
+  supplierId  Int      @map("supplier_id")
+  referenceNo String?  @map("reference_no")
+  receivedBy  Int      @map("received_by")
+  receivedAt  DateTime @default(now()) @map("received_at") @db.Timestamptz()
+
+  supplier       Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  receivedByUser User     @relation(fields: [receivedBy], references: [id], onDelete: Restrict)
+
+  @@map("stock_receipts")
 }
