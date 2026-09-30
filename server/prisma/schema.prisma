@@ -27,6 +27,15 @@ enum PaymentMethod {
   @@map("payment_method")
 }
 
+enum StockMovementType {
+  RECEIPT
+  SALE
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+
+  @@map("stock_movement_type")
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String
@@ -40,6 +49,7 @@ model User {
   receivedStockReceipts StockReceipt[]
   sales                 Sale[]
   stockAdjustments      StockAdjustment[]
+  stockMovements        StockMovement[]
 
   @@map("users")
 }
@@ -58,6 +68,7 @@ model Product {
   stockReceiptItems StockReceiptItem[]
   saleItems         SaleItem[]
   stockAdjustments  StockAdjustment[]
+  stockMovements    StockMovement[]
 
   @@map("products")
 }
@@ -97,8 +108,9 @@ model StockReceiptItem {
   quantity  Int
   unitCost  Decimal @map("unit_cost") @db.Decimal(12, 2)
 
-  receipt StockReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
-  product Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  receipt       StockReceipt   @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockMovement StockMovement?
 
   @@unique([receiptId, productId])
   @@map("stock_receipt_items")
@@ -125,8 +137,9 @@ model SaleItem {
   unitPrice Decimal @map("unit_price") @db.Decimal(12, 2)
   lineTotal Decimal @map("line_total") @db.Decimal(12, 2)
 
-  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Restrict)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sale          Sale           @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  product       Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  stockMovement StockMovement?
 
   @@unique([saleId, productId])
   @@map("sale_items")
@@ -140,8 +153,30 @@ model StockAdjustment {
   adjustedBy    Int      @map("adjusted_by")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
 
-  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-  adjustedByUser User    @relation(fields: [adjustedBy], references: [id], onDelete: Restrict)
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Restrict)
+  adjustedByUser User           @relation(fields: [adjustedBy], references: [id], onDelete: Restrict)
+  stockMovement  StockMovement?
 
   @@map("stock_adjustments")
+}
+
+model StockMovement {
+  id                 Int               @id @default(autoincrement())
+  productId          Int               @map("product_id")
+  type               StockMovementType
+  quantityDelta      Int               @map("quantity_delta")
+  saleItemId         Int?              @unique @map("sale_item_id")
+  stockReceiptItemId Int?              @unique @map("stock_receipt_item_id")
+  stockAdjustmentId  Int?              @unique @map("stock_adjustment_id")
+  actorId            Int               @map("actor_id")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  actor            User              @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  saleItem         SaleItem?         @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
+  stockReceiptItem StockReceiptItem? @relation(fields: [stockReceiptItemId], references: [id], onDelete: Restrict)
+  stockAdjustment  StockAdjustment?  @relation(fields: [stockAdjustmentId], references: [id], onDelete: Restrict)
+
+  @@index([productId, createdAt])
+  @@map("stock_movements")
 }
