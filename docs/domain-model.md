@@ -21,7 +21,7 @@
 
 Represents a person who can access TindaTrack.
 
-A user is either an **Owner** or **Staff** member and may perform business operations such as recording sales, receiving stock, or making authorized stock adjustments.
+A User is either an **Owner** or **Staff** member and may perform business operations such as recording sales, receiving stock, or making authorized stock adjustments.
 
 ## Attributes
 
@@ -46,10 +46,10 @@ A user is either an **Owner** or **Staff** member and may perform business opera
 - Email must be unique.
 - Passwords must never be stored as plain text.
 - Only active users may authenticate.
-- Roles determine what actions a user may perform.
+- Roles determine what actions a User may perform.
 - Staff cannot manage user roles.
 - Authorization must be enforced by the API, not only by the frontend.
-- Important actions must remain attributable to the user who performed them.
+- Important actions must remain attributable to the User who performed them.
 
 ---
 
@@ -69,8 +69,8 @@ Products participate in sales, stock receipts, stock adjustments, and inventory 
 - `category` — product category
 - `selling_price` — current selling price
 - `reorder_level` — quantity threshold used for low-stock detection
-- `active` — determines whether the product can currently be used in transactions
-- `created_at` — date and time the product was created
+- `active` — determines whether the Product can currently be used in transactions
+- `created_at` — date and time the Product was created
 
 ## Relationships
 
@@ -83,11 +83,17 @@ Products participate in sales, stock receipts, stock adjustments, and inventory 
 
 - SKU must be unique.
 - Selling price must be positive.
+- `reorder_level` must be greater than or equal to zero.
 - Products with transaction history must not be permanently deleted.
 - Products that are no longer sold should be deactivated.
 - Inventory must not be changed by directly editing the Product.
 - Current stock must be reconstructable from StockMovement records.
-- A product is considered low stock when its available quantity reaches its configured reorder level.
+- `current_stock` is the sum of all StockMovement `quantity_delta` values for the Product.
+- A Product is considered **low stock** when:
+
+```text
+current_stock <= reorder_level
+```
 
 ---
 
@@ -102,7 +108,7 @@ Represents a person or organization that supplies products to the store.
 - `id` — unique identifier
 - `name` — supplier name
 - `contact_details` — supplier contact information
-- `active` — determines whether the supplier can be selected for new receipts
+- `active` — determines whether the Supplier can be selected for new receipts
 
 ## Relationships
 
@@ -111,9 +117,9 @@ Represents a person or organization that supplies products to the store.
 
 ## Business Rules
 
-- Historical suppliers must remain available when referenced by existing receipts.
+- Historical Suppliers must remain available when referenced by existing receipts.
 - Suppliers that are no longer used should normally be deactivated instead of deleted.
-- Only active suppliers should normally be selectable when recording new stock receipts.
+- Only active Suppliers should normally be selectable when recording new StockReceipts.
 
 ---
 
@@ -121,7 +127,7 @@ Represents a person or organization that supplies products to the store.
 
 ## Purpose
 
-Represents a stock delivery received from a supplier.
+Represents a stock delivery received from a Supplier.
 
 The StockReceipt explains **why inventory increased**.
 
@@ -130,9 +136,9 @@ The resulting StockMovement records provide the inventory ledger evidence that t
 ## Attributes
 
 - `id` — unique identifier
-- `supplier_id` — supplier that provided the stock
+- `supplier_id` — Supplier that provided the stock
 - `reference_no` — supplier invoice, delivery, or receiving reference
-- `received_by` — user who recorded the receipt
+- `received_by` — User who recorded the receipt
 - `received_at` — date and time the stock was received
 
 ## Relationships
@@ -148,8 +154,10 @@ The resulting StockMovement records provide the inventory ledger evidence that t
 - The Supplier must exist.
 - The receiving User must be recorded.
 - Receiving stock must increase inventory through StockMovement records.
-- The receipt, its items, and corresponding inventory movements should be created consistently.
+- The StockReceipt, StockReceiptItems, and StockMovements must be created consistently.
 - A partially completed receipt must not leave inventory in an inconsistent state.
+- The same Product must not appear more than once within a single StockReceipt.
+- Duplicate Product entries in a StockReceipt request must be rejected rather than automatically combined.
 
 ---
 
@@ -157,9 +165,9 @@ The resulting StockMovement records provide the inventory ledger evidence that t
 
 ## Purpose
 
-Represents one product line within a StockReceipt.
+Represents one Product line within a StockReceipt.
 
-It records what product was received, how many units were received, and the cost at the time of receipt.
+It records what Product was received, how many units were received, and the cost at the time of receipt.
 
 ## Attributes
 
@@ -180,7 +188,14 @@ It records what product was received, how many units were received, and the cost
 - Unit cost must not be negative.
 - Money values must use an appropriate decimal representation.
 - The referenced Product must exist.
-- Each receipt item should ultimately produce a positive StockMovement.
+- A Product may appear only once within a particular StockReceipt.
+- The database should enforce uniqueness of the pair:
+
+```text
+(receipt_id, product_id)
+```
+
+- Each StockReceiptItem should produce one corresponding positive StockMovement.
 
 ---
 
@@ -197,10 +212,10 @@ The corresponding StockMovement records provide the inventory ledger evidence of
 ## Attributes
 
 - `id` — unique identifier
-- `recorded_by` — user who processed the sale
-- `total_amount` — server-calculated sale total
+- `recorded_by` — User who processed the Sale
+- `total_amount` — server-calculated Sale total
 - `payment_method` — payment type such as `CASH`, `GCASH`, or `MAYA`
-- `created_at` — date and time the sale occurred
+- `created_at` — date and time the Sale occurred
 
 ## Relationships
 
@@ -216,7 +231,9 @@ The corresponding StockMovement records provide the inventory ledger evidence of
 - Stock must be verified before completing the transaction.
 - A Sale cannot reduce stock below zero.
 - The Sale, SaleItems, and StockMovements must be created inside one database transaction.
-- If any product has insufficient stock, the entire transaction must roll back.
+- If any Product has insufficient stock, the entire transaction must roll back.
+- The same Product must not appear more than once within one Sale.
+- Duplicate Product entries in a Sale request must be rejected rather than automatically combined.
 - Payment methods are recorded only; TindaTrack does not process electronic payments during the MVP.
 
 ---
@@ -225,9 +242,9 @@ The corresponding StockMovement records provide the inventory ledger evidence of
 
 ## Purpose
 
-Represents one product line within a Sale.
+Represents one Product line within a Sale.
 
-It preserves the product, quantity, and selling price used at the time of the transaction.
+It preserves the Product, quantity, and selling price used at the time of the transaction.
 
 ## Attributes
 
@@ -249,8 +266,15 @@ It preserves the product, quantity, and selling price used at the time of the tr
 - Unit price must be positive.
 - `line_total` must be calculated by the server.
 - The server must verify available stock.
-- The sale-time price must be stored so historical transactions do not change when Product prices change later.
-- Each SaleItem should result in a corresponding negative StockMovement.
+- The Sale-time price must be stored so historical transactions do not change when Product prices change later.
+- A Product may appear only once within a particular Sale.
+- The database should enforce uniqueness of the pair:
+
+```text
+(sale_id, product_id)
+```
+
+- Each SaleItem should result in one corresponding negative StockMovement.
 - SaleItems must not survive if the parent Sale transaction fails.
 
 ---
@@ -263,16 +287,7 @@ Represents an intentional manual correction to inventory.
 
 A StockAdjustment explains **why inventory was manually increased or decreased**.
 
-Examples include:
-
-- damaged goods;
-- expired products;
-- inventory counting corrections;
-- missing products;
-- accidentally unrecorded stock;
-- other authorized corrections.
-
-StockAdjustment is the business record explaining the correction, while StockMovement is the inventory ledger entry proving that the quantity changed.
+Examples include damaged goods, expired products, inventory counting corrections, missing products, or other authorized corrections.
 
 ## Attributes
 
@@ -287,28 +302,21 @@ StockAdjustment is the business record explaining the correction, while StockMov
 
 - A StockAdjustment belongs to one Product.
 - A StockAdjustment is performed by one User.
-- A StockAdjustment causes one StockMovement.
+- A StockAdjustment causes exactly one StockMovement.
 
 ## Business Rules
 
-- Every StockAdjustment must identify a Product.
+- Every StockAdjustment must identify one Product.
 - `quantity_delta` must not be zero.
 - Positive quantities increase inventory.
 - Negative quantities decrease inventory.
-- Every adjustment must contain a reason.
-- Every adjustment must identify the User responsible for it.
+- Every StockAdjustment must include a reason.
+- Every StockAdjustment must identify the User responsible for it.
 - An adjustment that decreases inventory must not result in negative stock.
-- Users must never correct inventory by directly editing a Product's stock quantity.
-- Creating the StockAdjustment and its StockMovement must occur in the same database transaction.
+- Users must never correct inventory by directly editing Product stock.
+- The StockAdjustment and its StockMovement must be created in the same database transaction.
+- Every StockAdjustment must have exactly one corresponding StockMovement.
 - Completed StockAdjustments should remain available as historical evidence rather than being silently edited or deleted.
-
-For the MVP, one StockAdjustment applies to **one Product**.
-
-If multi-product inventory counts are introduced later, the model could evolve into:
-
-`StockAdjustment` → `StockAdjustmentItem`
-
-but that additional entity is not necessary yet.
 
 ---
 
@@ -320,41 +328,15 @@ Represents the authoritative inventory ledger.
 
 StockMovement records **what happened to inventory**, while Sale, StockReceipt, and StockAdjustment explain **why it happened**.
 
-Conceptually:
-
-```text
-                  StockReceipt
-                       │
-                       │ causes
-                       ▼
-Product ─────── StockMovement
-                       ▲
-                       │ causes
-                StockAdjustment
-                       ▲
-                       │
-                       │
-                      Sale
-```
-
-A more accurate view of the three transaction sources is:
-
-```text
-StockReceipt ──────────┐
-                      │
-StockAdjustment ───────┼──► StockMovement ───► Product
-                      │
-Sale ──────────────────┘
-```
-
 ## Attributes
 
 - `id` — unique identifier
 - `product_id` — Product whose inventory changed
 - `type` — type of inventory movement
 - `quantity_delta` — positive or negative inventory change
-- `reference_type` — type of business transaction that caused the movement
-- `reference_id` — identifier of the source transaction
+- `sale_id` — nullable foreign key to the Sale that caused the movement
+- `stock_receipt_id` — nullable foreign key to the StockReceipt that caused the movement
+- `stock_adjustment_id` — nullable foreign key to the StockAdjustment that caused the movement
 - `actor_id` — User responsible for the operation
 - `created_at` — date and time the movement occurred
 
@@ -369,22 +351,58 @@ Possible movement types include:
 
 - A StockMovement belongs to one Product.
 - A StockMovement is associated with one User.
-- A StockMovement is caused by a Sale, StockReceipt, or StockAdjustment.
+- A StockMovement belongs to exactly one source transaction:
+  - Sale, or
+  - StockReceipt, or
+  - StockAdjustment.
 
 ## Business Rules
 
 - Every inventory change must create a StockMovement.
 - Inventory must never change silently.
-- Receipt movements must have positive quantity deltas.
-- Sale movements must have negative quantity deltas.
+- Receipt movements must have positive `quantity_delta`.
+- Sale movements must have negative `quantity_delta`.
 - Adjustment movements may be positive or negative.
-- Every movement must identify the affected Product.
-- Every movement must identify why the inventory changed.
-- Every movement must identify the actor responsible for the operation.
+- Every StockMovement must identify the affected Product.
+- Every StockMovement must identify the User responsible for the operation.
+- Every StockMovement must reference **exactly one** source transaction.
+- Of the following fields:
+
+```text
+sale_id
+stock_receipt_id
+stock_adjustment_id
+```
+
+exactly one must be non-null for every StockMovement.
+
+Valid example:
+
+```text
+sale_id             = 42
+stock_receipt_id    = null
+stock_adjustment_id = null
+```
+
+Invalid example:
+
+```text
+sale_id             = null
+stock_receipt_id    = null
+stock_adjustment_id = null
+```
+
+Also invalid:
+
+```text
+sale_id             = 42
+stock_receipt_id    = 15
+stock_adjustment_id = null
+```
+
+- `stock_adjustment_id` must be unique so that one StockAdjustment cannot be referenced by multiple StockMovement rows.
 - StockMovement history should be treated as immutable ledger evidence.
 - Current inventory can be reconstructed by summing the Product's movement quantities.
-
-Conceptually:
 
 ```text
 current_stock =
@@ -407,8 +425,6 @@ AuditLog answers:
 
 > Who performed an important system action, and what did they do?
 
-The two entities therefore serve different purposes.
-
 ## Attributes
 
 - `id` — unique identifier
@@ -422,78 +438,59 @@ The two entities therefore serve different purposes.
 ## Relationships
 
 - An AuditLog belongs to one User as its actor.
-- An AuditLog may logically reference another domain entity through `entity_type` and `entity_id`.
+- An AuditLog may logically reference another domain entity using `entity_type` and `entity_id`.
 
 ## Business Rules
 
-- Important administrative and inventory actions should create audit records.
-- Audit records must identify the responsible User.
-- Audit records should identify the affected entity when applicable.
-- Audit logs should not normally be editable or deletable by application users.
-- Sensitive values such as passwords, access tokens, or authentication secrets must never be stored in audit metadata.
+- Important administrative and inventory actions should create AuditLog records.
+- AuditLogs must identify the responsible User.
+- AuditLogs should identify the affected entity when applicable.
+- AuditLogs should not normally be editable or deletable by application users.
+- Sensitive values such as passwords, access tokens, or authentication secrets must never be stored in metadata.
 
 ---
 
-# Open Questions
+# Confirmed Modeling Decisions
 
-## 1. How should current stock be retrieved?
+The following questions are now resolved:
 
-Should TindaTrack always calculate:
-
-```text
-SUM(StockMovement.quantity_delta)
-```
-
-or eventually maintain a cached `on_hand` value for faster reads?
-
-If caching is introduced, StockMovement must remain the reconstructable source of inventory history.
-
-## 2. Should completed transactions be editable?
-
-Should completed Sales, StockReceipts, and StockAdjustments be immutable?
-
-A safer accounting-style approach is to create correcting or reversal transactions rather than modifying historical transactions directly.
-
-## 3. Should one StockAdjustment support multiple products?
-
-The MVP currently defines:
+1. A Product is considered low stock when:
 
 ```text
-StockAdjustment → one Product
+current_stock <= reorder_level
 ```
 
-This keeps the model simple.
-
-If physical inventory counts later require multiple products in one adjustment session, should a `StockAdjustmentItem` entity be introduced?
-
-## 4. How should duplicate products inside one transaction be handled?
-
-For example, if the client sends the same Product twice in one Sale:
+and:
 
 ```text
-Coke × 2
-Coke × 3
+reorder_level >= 0
 ```
 
-should the server reject the request or combine it into:
+2. Duplicate Products within the same Sale are rejected.
 
-```text
-Coke × 5
-```
+3. Duplicate Products within the same StockReceipt are rejected.
 
-before checking inventory?
-
-The same question applies to StockReceiptItems.
-
-## 5. How should StockMovement reference its source transaction?
-
-The current model uses:
+4. StockMovement no longer uses polymorphic:
 
 ```text
 reference_type
 reference_id
 ```
 
-This provides a flexible logical reference but cannot easily be enforced as a traditional SQL foreign key.
+Instead it uses explicit nullable foreign keys:
 
-Before implementing the Prisma schema, the project should decide whether to retain this polymorphic reference or introduce explicit nullable relationships for Sale, StockReceipt, and StockAdjustment.
+```text
+sale_id
+stock_receipt_id
+stock_adjustment_id
+```
+
+5. Every StockMovement must have exactly one source relationship.
+
+6. `StockMovement.stock_adjustment_id` must be unique to enforce the true:
+
+```text
+StockAdjustment 1 ───── 1 StockMovement
+```
+
+relationship at the database level.

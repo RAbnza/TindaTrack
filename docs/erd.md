@@ -3,33 +3,31 @@
 ## Relationship Summary
 
 ```text
-User          1 ───── N Sale
-User          1 ───── N StockReceipt
-User          1 ───── N StockAdjustment
-User          1 ───── N StockMovement
-User          1 ───── N AuditLog
+User             1 ───── N Sale
+User             1 ───── N StockReceipt
+User             1 ───── N StockAdjustment
+User             1 ───── N StockMovement
+User             1 ───── N AuditLog
 
-Supplier      1 ───── N StockReceipt
+Supplier         1 ───── N StockReceipt
 
-StockReceipt  1 ───── N StockReceiptItem
-Product       1 ───── N StockReceiptItem
+StockReceipt     1 ───── N StockReceiptItem
+Product          1 ───── N StockReceiptItem
 
-Sale          1 ───── N SaleItem
-Product       1 ───── N SaleItem
+Sale             1 ───── N SaleItem
+Product          1 ───── N SaleItem
 
-Product       1 ───── N StockAdjustment
-Product       1 ───── N StockMovement
+Product          1 ───── N StockAdjustment
+Product          1 ───── N StockMovement
 
-StockReceipt  1 ───── N StockMovement
-Sale          1 ───── N StockMovement
-StockAdjustment 1 ─── 1 StockMovement
+Sale             1 ───── N StockMovement
+StockReceipt     1 ───── N StockMovement
+StockAdjustment  1 ───── 1 StockMovement
 ```
-
-The last three represent the transaction that **caused** an inventory movement and require special consideration because the current model uses `reference_type` and `reference_id`.
 
 ---
 
-# Relationships
+# User Relationships
 
 ## User → Sale
 
@@ -77,9 +75,9 @@ StockReceipt.received_by → User.id
 
 ### Explanation
 
-One User can record many stock receipts.
+One User can record many StockReceipts.
 
-Each StockReceipt records which User received or entered the stock.
+Each StockReceipt is recorded by exactly one User.
 
 ---
 
@@ -103,9 +101,9 @@ StockAdjustment.adjusted_by → User.id
 
 ### Explanation
 
-One User may perform many inventory adjustments.
+One User may perform many StockAdjustments.
 
-Each adjustment must identify exactly one User responsible for the correction.
+Each StockAdjustment identifies exactly one User responsible for the correction.
 
 ---
 
@@ -131,7 +129,7 @@ StockMovement.actor_id → User.id
 
 One User may be responsible for many inventory movements.
 
-Each StockMovement identifies the actor responsible for the transaction that produced the movement.
+Each StockMovement records exactly one responsible actor.
 
 ---
 
@@ -155,9 +153,9 @@ AuditLog.actor_id → User.id
 
 ### Explanation
 
-One User can generate many AuditLog records.
+One User may generate many AuditLog records.
 
-Each AuditLog identifies the User responsible for the recorded action.
+Each AuditLog belongs to exactly one actor.
 
 ---
 
@@ -183,7 +181,7 @@ StockReceipt.supplier_id → Supplier.id
 
 ### Explanation
 
-One Supplier can have many historical receipts.
+One Supplier can have many historical StockReceipts.
 
 Each StockReceipt belongs to exactly one Supplier.
 
@@ -211,7 +209,7 @@ StockReceiptItem.receipt_id → StockReceipt.id
 
 ### Explanation
 
-One StockReceipt contains one or more line items.
+One StockReceipt contains one or more StockReceiptItems.
 
 Each StockReceiptItem belongs to exactly one StockReceipt.
 
@@ -237,9 +235,17 @@ StockReceiptItem.product_id → Product.id
 
 ### Explanation
 
-One Product can appear on many stock receipts over time.
+One Product can appear in many StockReceiptItems over time.
 
-Each StockReceiptItem represents exactly one Product.
+Each StockReceiptItem refers to exactly one Product.
+
+The combination:
+
+```text
+(receipt_id, product_id)
+```
+
+must be unique so the same Product cannot appear twice in one StockReceipt.
 
 ---
 
@@ -265,7 +271,7 @@ SaleItem.sale_id → Sale.id
 
 ### Explanation
 
-One Sale contains one or more line items.
+One Sale contains one or more SaleItems.
 
 Each SaleItem belongs to exactly one Sale.
 
@@ -291,9 +297,17 @@ SaleItem.product_id → Product.id
 
 ### Explanation
 
-One Product can appear in many SaleItems across many transactions.
+One Product can appear in many SaleItems across historical Sales.
 
 Each SaleItem references exactly one Product.
+
+The combination:
+
+```text
+(sale_id, product_id)
+```
+
+must be unique so the same Product cannot appear twice in one Sale.
 
 ---
 
@@ -319,9 +333,9 @@ StockAdjustment.product_id → Product.id
 
 ### Explanation
 
-One Product may have many corrections throughout its lifetime.
+One Product may have many StockAdjustments over time.
 
-Each StockAdjustment applies to exactly one Product in the current MVP model.
+Each StockAdjustment affects exactly one Product.
 
 ---
 
@@ -329,46 +343,57 @@ Each StockAdjustment applies to exactly one Product in the current MVP model.
 
 ### Cardinality
 
-Conceptually:
-
 ```text
 StockAdjustment 1 ───── 1 StockMovement
 ```
 
-### Logical Reference
-
-With the current polymorphic movement design:
+### Foreign Key
 
 ```text
-StockMovement.reference_type = "STOCK_ADJUSTMENT"
-StockMovement.reference_id   = StockAdjustment.id
+StockMovement.stock_adjustment_id → StockAdjustment.id
 ```
 
-### Reference Owner
+### Foreign Key Owner
 
 `StockMovement`
 
+### Constraint
+
+```text
+StockMovement.stock_adjustment_id UNIQUE
+```
+
 ### Explanation
 
-One StockAdjustment represents one correction to one Product.
+Each StockAdjustment produces exactly one StockMovement.
 
-That correction causes exactly one StockMovement containing the corresponding positive or negative inventory delta.
+Each adjustment-related StockMovement belongs to exactly one StockAdjustment.
 
-Because the current design uses `reference_type` and `reference_id`, `reference_id` is **not a normal SQL foreign key**.
+The foreign key alone establishes that each StockMovement points to at most one StockAdjustment.
 
-The application is responsible for ensuring that when:
-
-```text
-reference_type = "STOCK_ADJUSTMENT"
-```
-
-the corresponding:
+However, to make the relationship truly **1 : 1**, the database must also enforce:
 
 ```text
-reference_id
+UNIQUE(stock_adjustment_id)
 ```
 
-identifies an actual StockAdjustment.
+Without this uniqueness constraint, the database could allow:
+
+```text
+StockAdjustment #12
+        │
+        ├── StockMovement #40
+        ├── StockMovement #41
+        └── StockMovement #42
+```
+
+which would actually make the relationship:
+
+```text
+StockAdjustment 1 ───── N StockMovement
+```
+
+The unique constraint prevents that.
 
 ---
 
@@ -398,7 +423,51 @@ One Product can accumulate many inventory movements.
 
 Each StockMovement affects exactly one Product.
 
-The history of these movements forms the inventory ledger for that Product.
+---
+
+## Sale → StockMovement
+
+### Cardinality
+
+```text
+Sale 1 ───── N StockMovement
+```
+
+### Foreign Key
+
+```text
+StockMovement.sale_id → Sale.id
+```
+
+### Foreign Key Owner
+
+`StockMovement`
+
+### Explanation
+
+One Sale may contain multiple Products.
+
+Each sold Product creates one corresponding negative StockMovement.
+
+For example:
+
+```text
+Sale #5001
+│
+├── Coke × 2
+└── Piattos × 1
+```
+
+produces:
+
+```text
+Sale #5001
+│
+├── StockMovement: Coke -2
+└── StockMovement: Piattos -1
+```
+
+Therefore one Sale may own many StockMovements.
 
 ---
 
@@ -410,148 +479,116 @@ The history of these movements forms the inventory ledger for that Product.
 StockReceipt 1 ───── N StockMovement
 ```
 
-### Logical Reference
+### Foreign Key
 
 ```text
-StockMovement.reference_type = "STOCK_RECEIPT"
-StockMovement.reference_id   = StockReceipt.id
+StockMovement.stock_receipt_id → StockReceipt.id
 ```
 
-### Reference Owner
+### Foreign Key Owner
 
 `StockMovement`
 
 ### Explanation
 
-One StockReceipt may contain several products.
+One StockReceipt may contain multiple Products.
 
-Each received product creates its own positive StockMovement.
+Each received Product produces one positive StockMovement.
 
 For example:
 
 ```text
 StockReceipt #1001
-
-Coke       +10
-Sprite     +15
-Piattos     +8
+│
+├── Coke +10
+├── Sprite +15
+└── Piattos +8
 ```
 
-would create:
-
-```text
-StockReceipt #1001
-        │
-        ├──── StockMovement: Coke    +10
-        ├──── StockMovement: Sprite  +15
-        └──── StockMovement: Piattos  +8
-```
-
-Therefore the relationship is:
-
-```text
-StockReceipt 1 ───── N StockMovement
-```
+produces three StockMovement records referencing the same StockReceipt.
 
 ---
 
-## Sale → StockMovement
+# StockMovement Source Constraint
 
-### Cardinality
-
-```text
-Sale 1 ───── N StockMovement
-```
-
-### Logical Reference
+A StockMovement has three nullable source foreign keys:
 
 ```text
-StockMovement.reference_type = "SALE"
-StockMovement.reference_id   = Sale.id
+sale_id
+stock_receipt_id
+stock_adjustment_id
 ```
 
-### Reference Owner
+Each StockMovement must have **exactly one** of these relationships populated.
 
-`StockMovement`
-
-### Explanation
-
-One Sale may contain multiple products.
-
-Each product sold produces an inventory decrease.
-
-For example:
+Conceptually:
 
 ```text
-Sale #5001
+                    Sale
+                     │
+                     │ 1:N
+                     ▼
+               StockMovement
+                     ▲
+                     │ 1:N
+                     │
+               StockReceipt
 
-Coke      × 2
-Piattos   × 1
+                     ▲
+                     │ 1:1
+                     │
+              StockAdjustment
 ```
 
-produces:
+A valid Sale movement might contain:
 
 ```text
-Sale #5001
-    │
-    ├──── StockMovement: Coke     -2
-    └──── StockMovement: Piattos  -1
+sale_id             = 10
+stock_receipt_id    = null
+stock_adjustment_id = null
 ```
 
-Therefore:
+A valid receipt movement might contain:
 
 ```text
-Sale 1 ───── N StockMovement
+sale_id             = null
+stock_receipt_id    = 25
+stock_adjustment_id = null
 ```
 
----
-
-# AuditLog Relationships
-
-## AuditLog → Domain Entities
-
-AuditLog contains:
+A valid adjustment movement might contain:
 
 ```text
-entity_type
-entity_id
+sale_id             = null
+stock_receipt_id    = null
+stock_adjustment_id = 7
 ```
 
-For example:
+This must never be allowed:
 
 ```text
-entity_type = "PRODUCT"
-entity_id   = 42
+sale_id             = null
+stock_receipt_id    = null
+stock_adjustment_id = null
 ```
 
-Conceptually, AuditLog may refer to entities such as:
+Nor should this be allowed:
 
 ```text
-Product
-Sale
-StockReceipt
-StockAdjustment
-Supplier
-User
+sale_id             = 10
+stock_receipt_id    = 25
+stock_adjustment_id = null
 ```
 
-However:
+Therefore the database and application must enforce:
 
 ```text
-AuditLog.entity_id
+exactly one source foreign key is non-null
 ```
-
-cannot be a traditional SQL foreign key to several different tables simultaneously.
-
-Therefore this is a **polymorphic logical relationship**, rather than a normal relational foreign key.
-
-The application must validate that the referenced entity exists when necessary.
 
 ---
 
 # Derived Many-to-Many Relationships
-
-Some relationships in the domain are logically **N : N**, even though the database implements them using junction entities.
 
 ## Sale ↔ Product
 
@@ -561,34 +598,32 @@ Some relationships in the domain are logically **N : N**, even though the databa
 Sale N ───── N Product
 ```
 
-A Sale can contain many Products.
-
-A Product can appear in many Sales.
-
-This N:N relationship is resolved by:
+The relationship is resolved through SaleItem:
 
 ```text
 Sale
-  │
-  1
-  │
-  N
+ │
+ 1
+ │
+ N
 SaleItem
-  N
-  │
-  1
-  │
+ N
+ │
+ 1
+ │
 Product
 ```
 
-The foreign keys are:
+### Foreign Keys
 
 ```text
 SaleItem.sale_id    → Sale.id
 SaleItem.product_id → Product.id
 ```
 
-Therefore **SaleItem owns both foreign keys**.
+### Foreign Key Owner
+
+`SaleItem`
 
 ---
 
@@ -600,11 +635,7 @@ Therefore **SaleItem owns both foreign keys**.
 StockReceipt N ───── N Product
 ```
 
-A StockReceipt can contain many Products.
-
-A Product can appear in many StockReceipts.
-
-The N:N relationship is resolved by:
+The relationship is resolved through StockReceiptItem:
 
 ```text
 StockReceipt
@@ -620,14 +651,16 @@ StockReceiptItem
    Product
 ```
 
-The foreign keys are:
+### Foreign Keys
 
 ```text
 StockReceiptItem.receipt_id → StockReceipt.id
 StockReceiptItem.product_id → Product.id
 ```
 
-Therefore **StockReceiptItem owns both foreign keys**.
+### Foreign Key Owner
+
+`StockReceiptItem`
 
 ---
 
@@ -647,39 +680,39 @@ Therefore **StockReceiptItem owns both foreign keys**.
 | Product → SaleItem | 1:N | SaleItem | `product_id → Product.id` |
 | Product → StockAdjustment | 1:N | StockAdjustment | `product_id → Product.id` |
 | Product → StockMovement | 1:N | StockMovement | `product_id → Product.id` |
-| StockReceipt → StockMovement | 1:N | StockMovement | logical `reference_id` |
-| Sale → StockMovement | 1:N | StockMovement | logical `reference_id` |
-| StockAdjustment → StockMovement | 1:1 | StockMovement | logical `reference_id` |
+| Sale → StockMovement | 1:N | StockMovement | `sale_id → Sale.id` |
+| StockReceipt → StockMovement | 1:N | StockMovement | `stock_receipt_id → StockReceipt.id` |
+| StockAdjustment → StockMovement | 1:1 | StockMovement | `stock_adjustment_id → StockAdjustment.id` |
 
-# Final Conceptual ER Structure
+For the final relationship, `stock_adjustment_id` must additionally be unique.
+
+---
+
+# Final Conceptual Structure
 
 ```text
-                        User
-          ┌──────────────┼───────────────┐
-          │              │               │
-          ▼              ▼               ▼
-        Sale       StockReceipt    StockAdjustment
-          │              │               │
-          ▼              ▼               │
-      SaleItem    StockReceiptItem       │
-          │              │               │
-          └──────┐   ┌───┘               │
-                 ▼   ▼                    │
-                Product ◄────────────────┘
-                   │
-                   │
-                   ▼
-             StockMovement
-                   ▲
-          ┌────────┼─────────┐
-          │        │         │
-        Sale   Receipt   Adjustment
-          │        │         │
-          └────────┴─────────┘
-              causes movement
+                            User
+             ┌───────────────┼────────────────┐
+             │               │                │
+             ▼               ▼                ▼
+           Sale        StockReceipt     StockAdjustment
+             │               │                │
+             ▼               ▼                │
+         SaleItem     StockReceiptItem        │
+             │               │                │
+             └───────┐   ┌───┘                │
+                     ▼   ▼                     │
+                    Product                    │
+                       ▲                       │
+                       │                       │
+                       │                       │
+                 StockMovement ◄───────────────┘
+                    ▲       ▲
+                    │       │
+                   Sale   StockReceipt
 ```
 
-The key distinction is:
+The key distinction remains:
 
 ```text
 Sale
@@ -687,7 +720,7 @@ StockReceipt
 StockAdjustment
 ```
 
-describe **why** inventory changed.
+describe **why inventory changed**.
 
 ```text
 StockMovement
@@ -695,11 +728,4 @@ StockMovement
 
 records **the actual inventory change**.
 
-And:
-
-```text
-SaleItem
-StockReceiptItem
-```
-
-describe the individual products contained inside their parent transactions.
+Unlike the earlier design, the source relationships are now ordinary relational foreign keys that PostgreSQL and Prisma can enforce directly.
