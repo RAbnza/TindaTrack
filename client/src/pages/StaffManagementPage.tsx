@@ -13,6 +13,22 @@ import {
 } from '../api/staff.api'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmationDialog,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  useToast,
+} from '../components/ui'
+
+import {
   useStaff,
 } from '../features/staff/useStaff'
 
@@ -48,6 +64,10 @@ export function StaffManagementPage() {
     reload,
   } = useStaff()
 
+  const {
+    showToast,
+  } = useToast()
+
   const [
     formMode,
     setFormMode,
@@ -79,13 +99,6 @@ export function StaffManagementPage() {
   )
 
   const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState<string | null>(
-    null,
-  )
-
-  const [
     isSubmitting,
     setIsSubmitting,
   ] = useState(false)
@@ -95,15 +108,23 @@ export function StaffManagementPage() {
     setIsChangingStatus,
   ] = useState(false)
 
+  const [
+    deactivateDialogOpen,
+    setDeactivateDialogOpen,
+  ] = useState(false)
+
   function resetForm() {
     setFormMode(null)
     setEditingStaff(null)
     setForm(emptyForm)
     setFormError(null)
+
+    setDeactivateDialogOpen(
+      false,
+    )
   }
 
   function handleCreate() {
-    setSuccessMessage(null)
     setEditingStaff(null)
     setForm(emptyForm)
     setFormError(null)
@@ -113,7 +134,6 @@ export function StaffManagementPage() {
   function handleEdit(
     member: StaffMember,
   ) {
-    setSuccessMessage(null)
     setFormError(null)
 
     setEditingStaff(
@@ -131,7 +151,8 @@ export function StaffManagementPage() {
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
+    event:
+      FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
@@ -153,7 +174,6 @@ export function StaffManagementPage() {
     }
 
     setFormError(null)
-    setSuccessMessage(null)
     setIsSubmitting(true)
 
     try {
@@ -164,6 +184,7 @@ export function StaffManagementPage() {
         await createStaff({
           name: form.name,
           email: form.email,
+
           password:
             form.password,
         })
@@ -171,9 +192,13 @@ export function StaffManagementPage() {
         await reload()
         resetForm()
 
-        setSuccessMessage(
-          'Staff account created. Give the employee their login credentials directly.',
-        )
+        showToast({
+          variant:
+            'success',
+
+          message:
+            'Staff account created. Share the login credentials with the employee.',
+        })
 
         return
       }
@@ -194,13 +219,18 @@ export function StaffManagementPage() {
         await reload()
         resetForm()
 
-        setSuccessMessage(
-          'Staff account updated.',
-        )
+        showToast({
+          variant:
+            'success',
+
+          message:
+            'Staff account updated.',
+        })
       }
     } catch (error) {
       if (
-        error instanceof ApiError
+        error instanceof
+        ApiError
       ) {
         setFormError(
           error.status === 403
@@ -219,7 +249,9 @@ export function StaffManagementPage() {
     }
   }
 
-  async function handleStatusChange() {
+  async function changeStaffStatus(
+    nextActive: boolean,
+  ) {
     if (
       !editingStaff ||
       isChangingStatus
@@ -227,11 +259,7 @@ export function StaffManagementPage() {
       return
     }
 
-    const nextActive =
-      !editingStaff.active
-
     setFormError(null)
-    setSuccessMessage(null)
     setIsChangingStatus(true)
 
     try {
@@ -256,14 +284,23 @@ export function StaffManagementPage() {
             : null,
       )
 
-      setSuccessMessage(
-        nextActive
-          ? 'Staff account reactivated.'
-          : 'Staff account deactivated.',
+      setDeactivateDialogOpen(
+        false,
       )
+
+      showToast({
+        variant:
+          'success',
+
+        message:
+          nextActive
+            ? 'Staff account reactivated.'
+            : 'Staff account deactivated.',
+      })
     } catch (error) {
       if (
-        error instanceof ApiError
+        error instanceof
+        ApiError
       ) {
         setFormError(
           error.status === 403
@@ -285,389 +322,432 @@ export function StaffManagementPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Staff
-          </h1>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            Manage employee login
-            accounts.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={
-            handleCreate
-          }
-          className="min-h-11 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
-        >
-          Add Staff
-        </button>
-      </div>
-
-      {successMessage && (
-        <div
-          role="status"
-          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4 text-sm text-secondary-foreground"
-        >
-          {successMessage}
-        </div>
-      )}
+    <PageContainer>
+      <PageHeader
+        title="Staff"
+        description="Manage employee accounts and access to TindaTrack."
+        actions={
+          <Button
+            onClick={
+              handleCreate
+            }
+          >
+            Add Staff
+          </Button>
+        }
+      />
 
       {formMode && (
-        <section className="mt-6 rounded-lg border border-border bg-card p-4">
+        <Card className="mt-6 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              {formMode ===
-              'CREATE'
-                ? 'Add Staff'
-                : 'Edit Staff'}
-            </h2>
+            <div>
+              <h2 className="text-section font-semibold text-foreground">
+                {formMode ===
+                'CREATE'
+                  ? 'Add Staff'
+                  : 'Edit Staff'}
+              </h2>
 
-            <button
-              type="button"
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {formMode ===
+                'CREATE'
+                  ? 'Create credentials for a staff member who needs access to store operations.'
+                  : 'Update this staff member’s account details.'}
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
               onClick={
                 resetForm
               }
-              className="min-h-10 rounded-lg px-3 text-sm font-medium text-secondary-foreground hover:bg-secondary"
             >
               Cancel
-            </button>
+            </Button>
           </div>
 
           <form
-            className="mt-5 space-y-5"
+            className="mt-5"
             onSubmit={
               handleSubmit
             }
           >
-            <div>
-              <label
-                htmlFor="staff-name"
-                className="mb-2 block text-sm font-medium text-secondary-foreground"
-              >
-                Name
-              </label>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="staff-name"
+                  className="mb-2 block text-sm font-medium text-secondary-foreground"
+                >
+                  Name
+                </label>
 
-              <input
-                id="staff-name"
-                type="text"
-                required
-                value={form.name}
-                onChange={(
-                  event,
-                ) =>
-                  setForm(
-                    (current) => ({
-                      ...current,
-                      name:
-                        event.target
-                          .value,
-                    }),
-                  )
-                }
-                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-              />
+                <input
+                  id="staff-name"
+                  type="text"
+                  required
+                  value={
+                    form.name
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setForm(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+
+                        name:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                  className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="staff-email"
+                  className="mb-2 block text-sm font-medium text-secondary-foreground"
+                >
+                  Email
+                </label>
+
+                <input
+                  id="staff-email"
+                  type="email"
+                  required
+                  value={
+                    form.email
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setForm(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+
+                        email:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                  className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                />
+              </div>
+
+              {formMode ===
+                'CREATE' && (
+                <>
+                  <div>
+                    <label
+                      htmlFor="staff-password"
+                      className="mb-2 block text-sm font-medium text-secondary-foreground"
+                    >
+                      Temporary
+                      password
+                    </label>
+
+                    <input
+                      id="staff-password"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                      value={
+                        form.password
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setForm(
+                          (
+                            current,
+                          ) => ({
+                            ...current,
+
+                            password:
+                              event
+                                .target
+                                .value,
+                          }),
+                        )
+                      }
+                      className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                    />
+
+                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                      Use at least 8
+                      characters and
+                      share the
+                      credentials with
+                      the employee
+                      directly.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="staff-confirm-password"
+                      className="mb-2 block text-sm font-medium text-secondary-foreground"
+                    >
+                      Confirm password
+                    </label>
+
+                    <input
+                      id="staff-confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                      value={
+                        form.confirmPassword
+                      }
+                      onChange={(
+                        event,
+                      ) =>
+                        setForm(
+                          (
+                            current,
+                          ) => ({
+                            ...current,
+
+                            confirmPassword:
+                              event
+                                .target
+                                .value,
+                          }),
+                        )
+                      }
+                      className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                    />
+                  </div>
+                </>
+              )}
             </div>
-
-            <div>
-              <label
-                htmlFor="staff-email"
-                className="mb-2 block text-sm font-medium text-secondary-foreground"
-              >
-                Email
-              </label>
-
-              <input
-                id="staff-email"
-                type="email"
-                required
-                value={form.email}
-                onChange={(
-                  event,
-                ) =>
-                  setForm(
-                    (current) => ({
-                      ...current,
-                      email:
-                        event.target
-                          .value,
-                    }),
-                  )
-                }
-                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-              />
-            </div>
-
-            {formMode ===
-              'CREATE' && (
-              <>
-                <div>
-                  <label
-                    htmlFor="staff-password"
-                    className="mb-2 block text-sm font-medium text-secondary-foreground"
-                  >
-                    Temporary
-                    password
-                  </label>
-
-                  <input
-                    id="staff-password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={8}
-                    required
-                    value={
-                      form.password
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setForm(
-                        (
-                          current,
-                        ) => ({
-                          ...current,
-
-                          password:
-                            event
-                              .target
-                              .value,
-                        }),
-                      )
-                    }
-                    className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-                  />
-
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    At least 8
-                    characters. Give
-                    this password to
-                    the employee
-                    directly.
-                  </p>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="staff-confirm-password"
-                    className="mb-2 block text-sm font-medium text-secondary-foreground"
-                  >
-                    Confirm password
-                  </label>
-
-                  <input
-                    id="staff-confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    minLength={8}
-                    required
-                    value={
-                      form.confirmPassword
-                    }
-                    onChange={(
-                      event,
-                    ) =>
-                      setForm(
-                        (
-                          current,
-                        ) => ({
-                          ...current,
-
-                          confirmPassword:
-                            event
-                              .target
-                              .value,
-                        }),
-                      )
-                    }
-                    className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-                  />
-                </div>
-              </>
-            )}
 
             {formError && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
+                className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
               >
                 {formError}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={
-                isSubmitting
-              }
-              className="min-h-12 w-full rounded-lg bg-primary px-4 text-base font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting
-                ? 'Saving staff...'
-                : formMode ===
-                    'CREATE'
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="submit"
+                loading={
+                  isSubmitting
+                }
+              >
+                {formMode ===
+                'CREATE'
                   ? 'Create Staff Account'
                   : 'Save Changes'}
-            </button>
+              </Button>
+            </div>
           </form>
 
           {formMode ===
             'EDIT' &&
             editingStaff && (
               <div className="mt-6 border-t border-border pt-5">
-                <p className="font-semibold text-foreground">
-                  Staff status
-                </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-foreground">
+                        Staff status
+                      </h3>
 
-                <p className="mt-1 text-sm text-secondary-foreground">
-                  {editingStaff.active
-                    ? 'This staff account is currently active.'
-                    : 'This staff account is currently inactive.'}
-                </p>
-
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Deactivated staff
-                  can no longer access
-                  TindaTrack.
-                  Historical sales and
-                  stock actions remain
-                  recorded.
-                </p>
-
-                <button
-                  type="button"
-                  disabled={
-                    isChangingStatus
-                  }
-                  onClick={() =>
-                    void handleStatusChange()
-                  }
-                  className={[
-                    'mt-4 min-h-11 rounded-lg border px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
-
-                    editingStaff.active
-                      ? 'border-destructive/20 text-secondary-foreground hover:bg-destructive-soft'
-                      : 'border-success/20 text-secondary-foreground hover:bg-accent',
-                  ].join(' ')}
-                >
-                  {isChangingStatus
-                    ? 'Updating status...'
-                    : editingStaff.active
-                      ? 'Deactivate staff account'
-                      : 'Reactivate staff account'}
-                </button>
-              </div>
-            )}
-        </section>
-      )}
-
-      {isLoading && (
-        <div className="py-12 text-center text-sm text-secondary-foreground">
-          Loading staff...
-        </div>
-      )}
-
-      {!isLoading &&
-        error && (
-          <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                void reload()
-              }
-              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-      {!isLoading &&
-        !error &&
-        staff.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No staff accounts yet
-            </p>
-          </div>
-        )}
-
-      {!isLoading &&
-        !error &&
-        staff.length > 0 && (
-          <div className="mt-6 space-y-3">
-            {staff.map(
-              (member) => (
-                <article
-                  key={
-                    member.id
-                  }
-                  className={[
-                    'rounded-lg border bg-card p-4',
-
-                    member.active
-                      ? 'border-border'
-                      : 'border-border opacity-70',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h2 className="font-semibold text-foreground">
-                        {
-                          member.name
+                      <Badge
+                        variant={
+                          editingStaff.active
+                            ? 'success'
+                            : 'neutral'
                         }
-                      </h2>
-
-                      <p className="mt-1 break-all text-sm text-secondary-foreground">
-                        {
-                          member.email
-                        }
-                      </p>
+                      >
+                        {editingStaff.active
+                          ? 'Active'
+                          : 'Inactive'}
+                      </Badge>
                     </div>
 
-                    <span
-                      className={[
-                        'shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold',
-
-                        member.active
-                          ? 'bg-success-soft text-secondary-foreground'
-                          : 'bg-muted text-secondary-foreground',
-                      ].join(' ')}
-                    >
-                      {member.active
-                        ? 'Active'
-                        : 'Inactive'}
-                    </span>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
+                      {editingStaff.active
+                        ? 'This staff member can currently access TindaTrack.'
+                        : 'This staff account is inactive and cannot access TindaTrack.'}
+                    </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleEdit(
-                        member,
-                      )
-                    }
-                    className="mt-4 min-h-11 rounded-lg border border-input px-4 text-sm font-medium text-secondary-foreground hover:bg-background"
-                  >
-                    Edit
-                  </button>
-                </article>
-              ),
+                  {editingStaff.active ? (
+                    <Button
+                      variant="danger"
+                      disabled={
+                        isChangingStatus
+                      }
+                      onClick={() =>
+                        setDeactivateDialogOpen(
+                          true,
+                        )
+                      }
+                    >
+                      Deactivate
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      loading={
+                        isChangingStatus
+                      }
+                      onClick={() =>
+                        void changeStaffStatus(
+                          true,
+                        )
+                      }
+                    >
+                      Reactivate
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
-          </div>
+        </Card>
+      )}
+
+      <div className="mt-6">
+        {isLoading && (
+          <LoadingState label="Loading staff..." />
         )}
-    </main>
+
+        {!isLoading &&
+          error && (
+            <ErrorState
+              title="Unable to load staff"
+              message={error}
+              onRetry={() =>
+                void reload()
+              }
+            />
+          )}
+
+        {!isLoading &&
+          !error &&
+          staff.length ===
+            0 && (
+            <EmptyState
+              title="No staff accounts yet"
+              description="Create an account when another employee needs access to TindaTrack."
+              action={
+                <Button
+                  onClick={
+                    handleCreate
+                  }
+                >
+                  Add Staff
+                </Button>
+              }
+            />
+          )}
+
+        {!isLoading &&
+          !error &&
+          staff.length >
+            0 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {staff.map(
+                (member) => (
+                  <Card
+                    key={
+                      member.id
+                    }
+                    className={[
+                      'p-4',
+                      member.active
+                        ? ''
+                        : 'opacity-75',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h2 className="truncate text-sm font-semibold text-foreground">
+                          {
+                            member.name
+                          }
+                        </h2>
+
+                        <p className="mt-1 break-all text-sm text-secondary-foreground">
+                          {
+                            member.email
+                          }
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant={
+                          member.active
+                            ? 'success'
+                            : 'neutral'
+                        }
+                      >
+                        {member.active
+                          ? 'Active'
+                          : 'Inactive'}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex justify-end border-t border-border pt-4">
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          handleEdit(
+                            member,
+                          )
+                        }
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </Card>
+                ),
+              )}
+            </div>
+          )}
+      </div>
+
+      <ConfirmationDialog
+        open={
+          deactivateDialogOpen
+        }
+        title="Deactivate staff account?"
+        description="This staff member will immediately lose access to TindaTrack. Historical actions will remain recorded."
+        confirmLabel="Deactivate"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={
+          isChangingStatus
+        }
+        onConfirm={() =>
+          void changeStaffStatus(
+            false,
+          )
+        }
+        onCancel={() =>
+          setDeactivateDialogOpen(
+            false,
+          )
+        }
+      />
+    </PageContainer>
   )
 }

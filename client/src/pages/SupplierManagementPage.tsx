@@ -13,6 +13,22 @@ import {
 } from '../api/suppliers.api'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmationDialog,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  useToast,
+} from '../components/ui'
+
+import {
   useManagedSuppliers,
 } from '../features/suppliers/useManagedSuppliers'
 
@@ -43,6 +59,10 @@ export function SupplierManagementPage() {
     error,
     reload,
   } = useManagedSuppliers()
+
+  const {
+    showToast,
+  } = useToast()
 
   const [
     formMode,
@@ -75,13 +95,6 @@ export function SupplierManagementPage() {
   )
 
   const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState<string | null>(
-    null,
-  )
-
-  const [
     isSubmitting,
     setIsSubmitting,
   ] = useState(false)
@@ -91,21 +104,25 @@ export function SupplierManagementPage() {
     setIsChangingStatus,
   ] = useState(false)
 
+  const [
+    deactivateDialogOpen,
+    setDeactivateDialogOpen,
+  ] = useState(false)
+
   function resetForm() {
     setFormMode(null)
-    setEditingSupplier(
-      null,
-    )
+    setEditingSupplier(null)
     setForm(emptyForm)
     setFormError(null)
+
+    setDeactivateDialogOpen(
+      false,
+    )
   }
 
   function handleCreate() {
-    setSuccessMessage(null)
     setFormError(null)
-    setEditingSupplier(
-      null,
-    )
+    setEditingSupplier(null)
     setForm(emptyForm)
     setFormMode('CREATE')
   }
@@ -113,7 +130,6 @@ export function SupplierManagementPage() {
   function handleEdit(
     supplier: ManagedSupplier,
   ) {
-    setSuccessMessage(null)
     setFormError(null)
 
     setEditingSupplier(
@@ -122,6 +138,7 @@ export function SupplierManagementPage() {
 
     setForm({
       name: supplier.name,
+
       contactDetails:
         supplier.contactDetails ??
         '',
@@ -131,7 +148,8 @@ export function SupplierManagementPage() {
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>,
+    event:
+      FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault()
 
@@ -140,7 +158,6 @@ export function SupplierManagementPage() {
     }
 
     setFormError(null)
-    setSuccessMessage(null)
     setIsSubmitting(true)
 
     const contactDetails =
@@ -162,9 +179,13 @@ export function SupplierManagementPage() {
 
         resetForm()
 
-        setSuccessMessage(
-          'Supplier created.',
-        )
+        showToast({
+          variant:
+            'success',
+
+          message:
+            'Supplier created.',
+        })
 
         return
       }
@@ -186,13 +207,18 @@ export function SupplierManagementPage() {
 
         resetForm()
 
-        setSuccessMessage(
-          'Supplier updated.',
-        )
+        showToast({
+          variant:
+            'success',
+
+          message:
+            'Supplier updated.',
+        })
       }
     } catch (error) {
       if (
-        error instanceof ApiError
+        error instanceof
+        ApiError
       ) {
         setFormError(
           error.status === 403
@@ -211,7 +237,9 @@ export function SupplierManagementPage() {
     }
   }
 
-  async function handleStatusChange() {
+  async function changeSupplierStatus(
+    nextActive: boolean,
+  ) {
     if (
       !editingSupplier ||
       isChangingStatus
@@ -219,11 +247,7 @@ export function SupplierManagementPage() {
       return
     }
 
-    const nextActive =
-      !editingSupplier.active
-
     setFormError(null)
-    setSuccessMessage(null)
     setIsChangingStatus(true)
 
     try {
@@ -248,14 +272,23 @@ export function SupplierManagementPage() {
             : current,
       )
 
-      setSuccessMessage(
-        nextActive
-          ? 'Supplier reactivated.'
-          : 'Supplier deactivated.',
+      setDeactivateDialogOpen(
+        false,
       )
+
+      showToast({
+        variant:
+          'success',
+
+        message:
+          nextActive
+            ? 'Supplier reactivated.'
+            : 'Supplier deactivated.',
+      })
     } catch (error) {
       if (
-        error instanceof ApiError
+        error instanceof
+        ApiError
       ) {
         setFormError(
           error.status === 403
@@ -277,292 +310,344 @@ export function SupplierManagementPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Suppliers
-          </h1>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            Manage suppliers used
-            for stock receiving.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={
-            handleCreate
-          }
-          className="min-h-11 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
-        >
-          Add Supplier
-        </button>
-      </div>
-
-      {successMessage && (
-        <div
-          role="status"
-          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4 text-sm text-secondary-foreground"
-        >
-          {successMessage}
-        </div>
-      )}
+    <PageContainer>
+      <PageHeader
+        title="Suppliers"
+        description="Manage the suppliers available for stock receiving."
+        actions={
+          <Button
+            onClick={
+              handleCreate
+            }
+          >
+            Add Supplier
+          </Button>
+        }
+      />
 
       {formMode && (
-        <section className="mt-6 rounded-lg border border-border bg-card p-4">
+        <Card className="mt-6 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              {formMode ===
-              'CREATE'
-                ? 'Add Supplier'
-                : 'Edit Supplier'}
-            </h2>
+            <div>
+              <h2 className="text-section font-semibold text-foreground">
+                {formMode ===
+                'CREATE'
+                  ? 'Add Supplier'
+                  : 'Edit Supplier'}
+              </h2>
 
-            <button
-              type="button"
+              <p className="mt-1 text-sm text-muted-foreground">
+                Store supplier
+                details used during
+                stock receiving.
+              </p>
+            </div>
+
+            <Button
+              variant="ghost"
               onClick={
                 resetForm
               }
-              className="min-h-10 rounded-lg px-3 text-sm font-medium text-secondary-foreground hover:bg-secondary"
             >
               Cancel
-            </button>
+            </Button>
           </div>
 
           <form
-            className="mt-5 space-y-5"
+            className="mt-5"
             onSubmit={
               handleSubmit
             }
           >
-            <div>
-              <label
-                htmlFor="supplier-name"
-                className="mb-2 block text-sm font-medium text-secondary-foreground"
-              >
-                Name
-              </label>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="supplier-name"
+                  className="mb-2 block text-sm font-medium text-secondary-foreground"
+                >
+                  Name
+                </label>
 
-              <input
-                id="supplier-name"
-                type="text"
-                required
-                value={form.name}
-                onChange={(
-                  event,
-                ) =>
-                  setForm(
-                    (current) => ({
-                      ...current,
-                      name:
-                        event.target
-                          .value,
-                    }),
-                  )
-                }
-                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-              />
-            </div>
+                <input
+                  id="supplier-name"
+                  type="text"
+                  required
+                  value={
+                    form.name
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setForm(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
 
-            <div>
-              <label
-                htmlFor="supplier-contact"
-                className="mb-2 block text-sm font-medium text-secondary-foreground"
-              >
-                Contact details
-              </label>
+                        name:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                  className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                />
+              </div>
 
-              <textarea
-                id="supplier-contact"
-                rows={3}
-                value={
-                  form.contactDetails
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setForm(
-                    (current) => ({
-                      ...current,
-                      contactDetails:
-                        event.target
-                          .value,
-                    }),
-                  )
-                }
-                placeholder="Optional"
-                className="w-full rounded-lg border border-input bg-card px-4 py-3 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-              />
+              <div>
+                <label
+                  htmlFor="supplier-contact"
+                  className="mb-2 block text-sm font-medium text-secondary-foreground"
+                >
+                  Contact details
+                </label>
+
+                <textarea
+                  id="supplier-contact"
+                  rows={3}
+                  value={
+                    form.contactDetails
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setForm(
+                      (
+                        current,
+                      ) => ({
+                        ...current,
+
+                        contactDetails:
+                          event
+                            .target
+                            .value,
+                      }),
+                    )
+                  }
+                  placeholder="Optional"
+                  className="w-full rounded-lg border border-input bg-card px-4 py-3 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+                />
+              </div>
             </div>
 
             {formError && (
               <div
                 role="alert"
-                className="rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
+                className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
               >
                 {formError}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={
-                isSubmitting
-              }
-              className="min-h-12 w-full rounded-lg bg-primary px-4 text-base font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting
-                ? 'Saving supplier...'
-                : formMode ===
-                    'CREATE'
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="submit"
+                loading={
+                  isSubmitting
+                }
+              >
+                {formMode ===
+                'CREATE'
                   ? 'Create Supplier'
                   : 'Save Changes'}
-            </button>
+              </Button>
+            </div>
           </form>
 
           {formMode ===
             'EDIT' &&
             editingSupplier && (
               <div className="mt-6 border-t border-border pt-5">
-                <p className="font-semibold text-foreground">
-                  Supplier status
-                </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-medium text-foreground">
+                        Supplier
+                        status
+                      </h3>
 
-                <p className="mt-1 text-sm text-secondary-foreground">
-                  {editingSupplier.active
-                    ? 'This supplier is currently active.'
-                    : 'This supplier is currently inactive.'}
-                </p>
-
-                <button
-                  type="button"
-                  disabled={
-                    isChangingStatus
-                  }
-                  onClick={() =>
-                    void handleStatusChange()
-                  }
-                  className={[
-                    'mt-4 min-h-11 rounded-lg border px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
-                    editingSupplier.active
-                      ? 'border-destructive/20 text-secondary-foreground hover:bg-destructive-soft'
-                      : 'border-success/20 text-secondary-foreground hover:bg-accent',
-                  ].join(' ')}
-                >
-                  {isChangingStatus
-                    ? 'Updating status...'
-                    : editingSupplier.active
-                      ? 'Deactivate supplier'
-                      : 'Reactivate supplier'}
-                </button>
-              </div>
-            )}
-        </section>
-      )}
-
-      {isLoading && (
-        <div className="py-12 text-center text-sm text-secondary-foreground">
-          Loading suppliers...
-        </div>
-      )}
-
-      {!isLoading &&
-        error && (
-          <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                void reload()
-              }
-              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-      {!isLoading &&
-        !error &&
-        suppliers.length ===
-          0 && (
-          <div className="py-12 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No suppliers yet
-            </p>
-          </div>
-        )}
-
-      {!isLoading &&
-        !error &&
-        suppliers.length >
-          0 && (
-          <div className="mt-6 space-y-3">
-            {suppliers.map(
-              (supplier) => (
-                <article
-                  key={
-                    supplier.id
-                  }
-                  className={[
-                    'rounded-lg border bg-card p-4',
-                    supplier.active
-                      ? 'border-border'
-                      : 'border-border opacity-70',
-                  ].join(' ')}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h2 className="font-semibold text-foreground">
-                        {
-                          supplier.name
+                      <Badge
+                        variant={
+                          editingSupplier.active
+                            ? 'success'
+                            : 'neutral'
                         }
-                      </h2>
-
-                      <p className="mt-2 whitespace-pre-wrap text-sm text-secondary-foreground">
-                        {supplier.contactDetails ??
-                          'No contact details'}
-                      </p>
+                      >
+                        {editingSupplier.active
+                          ? 'Active'
+                          : 'Inactive'}
+                      </Badge>
                     </div>
 
-                    <span
-                      className={[
-                        'shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold',
-                        supplier.active
-                          ? 'bg-success-soft text-secondary-foreground'
-                          : 'bg-muted text-secondary-foreground',
-                      ].join(' ')}
-                    >
-                      {supplier.active
-                        ? 'Active'
-                        : 'Inactive'}
-                    </span>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {editingSupplier.active
+                        ? 'This supplier is available when receiving stock.'
+                        : 'This supplier is currently unavailable for new stock receipts.'}
+                    </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleEdit(
-                        supplier,
-                      )
-                    }
-                    className="mt-4 min-h-11 rounded-lg border border-input px-4 text-sm font-medium text-secondary-foreground hover:bg-background"
-                  >
-                    Edit
-                  </button>
-                </article>
-              ),
+                  {editingSupplier.active ? (
+                    <Button
+                      variant="danger"
+                      disabled={
+                        isChangingStatus
+                      }
+                      onClick={() =>
+                        setDeactivateDialogOpen(
+                          true,
+                        )
+                      }
+                    >
+                      Deactivate
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      loading={
+                        isChangingStatus
+                      }
+                      onClick={() =>
+                        void changeSupplierStatus(
+                          true,
+                        )
+                      }
+                    >
+                      Reactivate
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
-          </div>
+        </Card>
+      )}
+
+      <div className="mt-6">
+        {isLoading && (
+          <LoadingState label="Loading suppliers..." />
         )}
-    </main>
+
+        {!isLoading &&
+          error && (
+            <ErrorState
+              title="Unable to load suppliers"
+              message={error}
+              onRetry={() =>
+                void reload()
+              }
+            />
+          )}
+
+        {!isLoading &&
+          !error &&
+          suppliers.length ===
+            0 && (
+            <EmptyState
+              title="No suppliers yet"
+              description="Add a supplier so it can be selected when receiving stock."
+              action={
+                <Button
+                  onClick={
+                    handleCreate
+                  }
+                >
+                  Add Supplier
+                </Button>
+              }
+            />
+          )}
+
+        {!isLoading &&
+          !error &&
+          suppliers.length >
+            0 && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {suppliers.map(
+                (
+                  supplier,
+                ) => (
+                  <Card
+                    key={
+                      supplier.id
+                    }
+                    className={[
+                      'p-4',
+                      supplier.active
+                        ? ''
+                        : 'opacity-75',
+                    ].join(
+                      ' ',
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h2 className="text-sm font-semibold text-foreground">
+                          {
+                            supplier.name
+                          }
+                        </h2>
+
+                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-secondary-foreground">
+                          {supplier.contactDetails ??
+                            'No contact details'}
+                        </p>
+                      </div>
+
+                      <Badge
+                        variant={
+                          supplier.active
+                            ? 'success'
+                            : 'neutral'
+                        }
+                      >
+                        {supplier.active
+                          ? 'Active'
+                          : 'Inactive'}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-4 flex justify-end border-t border-border pt-4">
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          handleEdit(
+                            supplier,
+                          )
+                        }
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </Card>
+                ),
+              )}
+            </div>
+          )}
+      </div>
+
+      <ConfirmationDialog
+        open={
+          deactivateDialogOpen
+        }
+        title="Deactivate supplier?"
+        description="This supplier will no longer appear when receiving stock. Existing receipt history will remain available."
+        confirmLabel="Deactivate"
+        cancelLabel="Cancel"
+        variant="danger"
+        loading={
+          isChangingStatus
+        }
+        onConfirm={() =>
+          void changeSupplierStatus(
+            false,
+          )
+        }
+        onCancel={() =>
+          setDeactivateDialogOpen(
+            false,
+          )
+        }
+      />
+    </PageContainer>
   )
 }
