@@ -1,31 +1,82 @@
+
+
 # TindaTrack Deployment Guide
 
-This document describes the production deployment requirements for TindaTrack.
+This document describes the production deployment architecture and configuration used by TindaTrack.
 
-It intentionally stays provider-agnostic. Provider-specific configuration should only be added after a frontend host, backend host, and managed PostgreSQL provider have been selected.
-
-## Deployment Topology
-
-TindaTrack uses a simple three-part production topology:
+TindaTrack is deployed as a simple three-part application:
 
 ```text
 Frontend
-→ Static Vite deployment
+→ Cloudflare Pages
 
 Backend
-→ Node.js / Express service
+→ Railway
 
 Database
-→ Managed PostgreSQL
+→ Railway PostgreSQL
 ```
 
-The application is intentionally deployed as a modular monolith.
+The application remains a modular monolith.
 
 No Kubernetes, microservices, or container orchestration are required for the current project scope.
 
 ---
 
-## Frontend Deployment
+## Live Deployment
+
+Frontend:
+https://your-project.pages.dev
+
+Backend health:
+https://your-api.up.railway.app/health
+
+
+---
+
+## Production Architecture
+
+```text
+┌────────────────────────────────────┐
+│ Cloudflare Pages                   │
+│                                    │
+│ React + TypeScript + Vite          │
+│ React Router BrowserRouter         │
+│ SPA deep-link fallback             │
+│                                    │
+│ VITE_API_BASE_URL                  │
+└─────────────────┬──────────────────┘
+                  │
+                  │ HTTPS
+                  │ Authorization: Bearer <JWT>
+                  ▼
+┌────────────────────────────────────┐
+│ Railway                            │
+│                                    │
+│ Node.js + Express                  │
+│ CORS                               │
+│ JWT authentication                 │
+│ /health                            │
+│                                    │
+│ CLIENT_ORIGIN                      │
+│ JWT_SECRET                         │
+│ PORT                               │
+└─────────────────┬──────────────────┘
+                  │
+                  │ DATABASE_URL
+                  ▼
+┌────────────────────────────────────┐
+│ Railway PostgreSQL                 │
+│                                    │
+│ PostgreSQL                         │
+│ Prisma ORM                         │
+│ committed migrations              │
+└────────────────────────────────────┘
+```
+
+---
+
+# Frontend Deployment
 
 The frontend is located in:
 
@@ -33,23 +84,17 @@ The frontend is located in:
 client/
 ```
 
-### Build Command
+and is deployed to **Cloudflare Pages**.
 
-From the repository root:
+## Build Command
+
+Cloudflare Pages builds the frontend from the repository workspace using:
 
 ```bash
 npm run build --workspace client
 ```
 
-or through the root workspace script:
-
-```bash
-npm run build
-```
-
-The root build command also builds the backend.
-
-### Build Output
+## Build Output
 
 The Vite production build is generated in:
 
@@ -57,43 +102,65 @@ The Vite production build is generated in:
 client/dist
 ```
 
-The selected frontend hosting provider should publish this directory as a static site.
+Cloudflare Pages publishes this directory as the production frontend.
 
-### Production Environment Variable
+---
 
-The frontend requires:
+## Frontend Environment
+
+The production frontend requires:
 
 ```text
 VITE_API_BASE_URL
 ```
 
+It points to the deployed Railway backend.
+
 Example:
 
 ```env
-VITE_API_BASE_URL="https://api.example.com"
+VITE_API_BASE_URL="https://<railway-backend>.up.railway.app"
 ```
 
-This value should point to the deployed Express backend.
+The value should contain the backend origin only.
 
-`VITE_API_BASE_URL` is a public frontend configuration value and is embedded into the Vite production build.
+Do not append `/api`.
 
-Secrets such as `JWT_SECRET`, database credentials, or passwords must never be stored in `VITE_*` variables.
+For example:
+
+```text
+VITE_API_BASE_URL
+https://example.up.railway.app
+
+Application request
+/api/products
+
+Final request
+https://example.up.railway.app/api/products
+```
+
+`VITE_API_BASE_URL` is public frontend configuration and is embedded into the Vite build.
+
+Secrets must never be placed in `VITE_*` environment variables.
+
+This includes:
+
+- `JWT_SECRET`
+- `DATABASE_URL`
+- database passwords
+- private credentials
 
 ---
 
-## React Router SPA Fallback
+# React Router SPA Fallback
 
-TindaTrack uses React Router with `BrowserRouter`.
-
-Because of this, the frontend hosting provider must support Single Page Application fallback behavior.
-
-Direct browser requests to application routes must return:
+TindaTrack uses React Router with:
 
 ```text
-/index.html
+BrowserRouter
 ```
 
-instead of a hosting-provider 404 page.
+This means frontend routes are resolved by React rather than corresponding to physical files on the static host.
 
 Examples include:
 
@@ -111,64 +178,53 @@ Examples include:
 /audit
 ```
 
-For example:
+A direct request such as:
+
+```text
+GET /reports
+```
+
+must still serve the frontend application.
+
+The production request flow is:
 
 ```text
 Browser requests:
 
-GET /reports
+/reports
 
         ↓
 
-Static frontend host receives /reports
+Cloudflare Pages
 
         ↓
 
-Host rewrites the request to:
-
-/index.html
+SPA fallback
 
         ↓
 
-React loads
+index.html
 
         ↓
 
-React Router resolves /reports
+React application loads
+
+        ↓
+
+BrowserRouter resolves /reports
 
         ↓
 
 Daily Sales page renders
 ```
 
-Without this fallback, navigation from inside the running application may work while refreshing or directly opening `/reports`, `/inventory`, `/sales/new`, and other client-side routes results in:
+Cloudflare Pages provides SPA fallback behavior for this deployment, so no provider-specific `vercel.json`, `netlify.toml`, or similar rewrite configuration is required.
 
-```text
-404 Not Found
-```
-
-### Required Hosting Behavior
-
-Conceptually, the frontend host needs a rewrite similar to:
-
-```text
-/* → /index.html
-```
-
-The exact configuration depends on the selected provider.
-
-Provider-specific files such as:
-
-```text
-vercel.json
-netlify.toml
-```
-
-should only be introduced after a deployment platform has been selected.
+Production deployment has been verified to support direct navigation and browser refreshes on application routes.
 
 ---
 
-## Backend Deployment
+# Backend Deployment
 
 The backend is located in:
 
@@ -176,117 +232,279 @@ The backend is located in:
 server/
 ```
 
-### Build Command
-
-From the repository root:
-
-```bash
-npm run build --workspace server
-```
-
-### Production Start Command
-
-```bash
-npm run start --workspace server
-```
-
-The root workspace also exposes:
-
-```bash
-npm run start
-```
-
-which starts the server workspace.
-
-### Required Environment Variables
-
-The Express service uses the following production configuration:
-
-```env
-DATABASE_URL="postgresql://..."
-JWT_SECRET="..."
-CLIENT_ORIGIN="https://frontend.example.com"
-PORT=3000
-NODE_ENV="production"
-```
-
-The hosting provider may supply `PORT` automatically.
-
-`CLIENT_ORIGIN` must match the deployed frontend origin so that browser requests are allowed by the API's CORS policy.
-
-Example:
-
-```env
-CLIENT_ORIGIN="https://tindatrack.example.com"
-```
-
-Do not use `"*"` as the production CORS origin.
+and is deployed as a Node.js service on **Railway**.
 
 ---
 
-## PostgreSQL
+## Railway Build Command
 
-Production should use a managed PostgreSQL database.
+The Railway backend build runs:
 
-The backend receives the connection string through:
+```bash
+npm run db:generate --workspace server && npm run build --workspace server
+```
+
+This performs:
 
 ```text
-DATABASE_URL
+Prisma Client generation
+        ↓
+TypeScript compilation
 ```
-
-Example format:
-
-```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE"
-```
-
-The actual production connection string must be stored in the backend hosting provider's environment configuration.
-
-It must never be committed to the repository.
 
 ---
 
-## Prisma Production Migrations
+## Railway Pre-Deploy Command
 
-Production schema changes must use committed Prisma migrations.
-
-Run:
+Before a new backend deployment becomes active, Railway runs:
 
 ```bash
-npm run db:migrate:deploy
+npm run db:migrate:deploy --workspace server
 ```
 
-This ultimately executes:
+This ultimately runs:
 
 ```bash
 prisma migrate deploy
 ```
 
-against the configured production `DATABASE_URL`.
+against the production database.
 
-Production deployment must not use:
+The pre-deploy migration step ensures committed schema migrations are applied before the new application version begins serving traffic.
+
+Production deployment must never use:
 
 ```bash
 prisma migrate dev
 ```
 
-`prisma migrate dev` remains a development-only workflow for creating and validating migrations.
+`prisma migrate dev` remains development-only.
 
-The production migration flow is:
+---
+
+## Railway Start Command
+
+The production server starts using:
+
+```bash
+npm run start --workspace server
+```
+
+which runs the compiled Node.js server.
+
+---
+
+# Backend Environment Variables
+
+The Railway backend requires the following production environment configuration:
 
 ```text
-Committed Prisma migrations
-        ↓
-Production DATABASE_URL
-        ↓
-prisma migrate deploy
-        ↓
-Application start
+DATABASE_URL
+JWT_SECRET
+CLIENT_ORIGIN
+NODE_ENV
+PORT
+```
+
+## DATABASE_URL
+
+The production `DATABASE_URL` comes from the Railway PostgreSQL service.
+
+The backend service references the PostgreSQL connection variable rather than committing database credentials to the repository.
+
+Conceptually:
+
+```text
+DATABASE_URL
+→ Railway PostgreSQL connection string
+```
+
+The actual connection string and credentials must remain private.
+
+---
+
+## JWT_SECRET
+
+`JWT_SECRET` is a production-only secret used to sign and verify authentication tokens.
+
+It must:
+
+- be at least 32 characters long
+- use a strong randomly generated value
+- not reuse the local development secret
+- never be committed to Git
+
+---
+
+## CLIENT_ORIGIN
+
+`CLIENT_ORIGIN` contains the deployed Cloudflare Pages frontend origin.
+
+Example:
+
+```env
+CLIENT_ORIGIN="https://<project>.pages.dev"
+```
+
+It must contain the origin only.
+
+Correct:
+
+```text
+https://example.pages.dev
+```
+
+Avoid:
+
+```text
+https://example.pages.dev/
+https://example.pages.dev/dashboard
+*
+```
+
+The Express CORS configuration uses this value to permit browser requests from the deployed frontend.
+
+---
+
+## NODE_ENV
+
+Production uses:
+
+```env
+NODE_ENV="production"
+```
+
+This also causes production environment validation to require the deployment-specific configuration.
+
+---
+
+## PORT
+
+The Express application reads:
+
+```text
+PORT
+```
+
+from the environment.
+
+Railway supplies the service port at deployment time, so a hard-coded production port is not required.
+
+For local development, the default remains:
+
+```text
+3000
 ```
 
 ---
 
-## Health Check
+# CORS
+
+The frontend and backend use different production origins:
+
+```text
+Cloudflare Pages
+https://<frontend>.pages.dev
+
+        ↓ HTTPS
+
+Railway
+https://<backend>.up.railway.app
+```
+
+The backend CORS policy allows requests from:
+
+```text
+CLIENT_ORIGIN
+```
+
+rather than opening the API to all browser origins.
+
+The production configuration must not use:
+
+```text
+Access-Control-Allow-Origin: *
+```
+
+for the application frontend.
+
+---
+
+# PostgreSQL
+
+Production PostgreSQL is hosted by **Railway PostgreSQL**.
+
+The backend communicates with PostgreSQL through:
+
+```text
+DATABASE_URL
+```
+
+The database is not accessed directly by the browser.
+
+The flow is:
+
+```text
+Cloudflare frontend
+        ↓
+Railway Express API
+        ↓
+Prisma
+        ↓
+Railway PostgreSQL
+```
+
+Only the backend owns database access.
+
+---
+
+# Prisma Production Migrations
+
+All production schema changes are represented by committed Prisma migrations.
+
+The production migration command is:
+
+```bash
+npm run db:migrate:deploy
+```
+
+or directly through the server workspace:
+
+```bash
+npm run db:migrate:deploy --workspace server
+```
+
+This runs:
+
+```bash
+prisma migrate deploy --config prisma7.config.ts
+```
+
+The deployment flow is:
+
+```text
+Committed migration files
+        ↓
+Railway deployment begins
+        ↓
+Prisma Client generation
+        ↓
+Server build
+        ↓
+Railway pre-deploy command
+        ↓
+prisma migrate deploy
+        ↓
+Migration succeeds
+        ↓
+New Express deployment starts
+```
+
+Migration creation continues to happen only during development.
+
+---
+
+# Health Check
 
 The backend exposes:
 
@@ -294,7 +512,7 @@ The backend exposes:
 GET /health
 ```
 
-A healthy server returns:
+A healthy deployment returns:
 
 ```json
 {
@@ -302,56 +520,68 @@ A healthy server returns:
 }
 ```
 
-The endpoint is intended for deployment monitoring and service health checks.
+Railway uses `/health` as the backend health-check path.
 
-It must not expose:
+This endpoint intentionally does not expose:
 
 - database credentials
-- environment variables
 - JWT secrets
+- environment variables
 - user information
+- database contents
 - internal infrastructure details
 
-A hosting provider may use `/health` as the backend service health-check path.
+Its purpose is only to confirm that the API process is alive and accepting requests.
 
 ---
 
-## Authentication Assumptions
+# Authentication
 
-TindaTrack currently uses bearer-token authentication.
+TindaTrack uses bearer-token authentication.
 
-The flow is:
+The production authentication flow is:
 
 ```text
-Login
+User logs in
+        ↓
+Railway Express API authenticates credentials
         ↓
 Server returns JWT
         ↓
-Frontend stores authentication session
+Frontend stores the authentication session
         ↓
-Frontend sends:
+Authenticated requests send:
 
 Authorization: Bearer <token>
 ```
 
-The application does not currently use authentication cookies.
+Authentication cookies are not currently used.
 
 Because of this:
 
-- cross-origin requests do not require `credentials: "include"`
-- CORS does not need credentialed-cookie support
-- SameSite cookie configuration is not required
-- the deployed frontend and API should both use HTTPS
+- API requests do not require `credentials: "include"`
+- SameSite authentication-cookie configuration is not required
+- credentialed-cookie CORS configuration is not required
+- frontend and backend production traffic should use HTTPS
 
-The production `JWT_SECRET` must be a strong value and must not reuse a development secret.
+The production `JWT_SECRET` must remain private.
 
 ---
 
-## Production Configuration Summary
+# Production Environment Summary
 
-### Frontend
+## Cloudflare Pages
 
 ```text
+Platform:
+Cloudflare Pages
+
+Source:
+GitHub repository
+
+Production branch:
+main
+
 Build:
 npm run build --workspace client
 
@@ -359,114 +589,298 @@ Output:
 client/dist
 
 Environment:
-VITE_API_BASE_URL=https://<backend-host>
-
-Hosting requirement:
-SPA rewrite/fallback to /index.html
+VITE_API_BASE_URL=https://<railway-backend>
 ```
 
-### Backend
+---
+
+## Railway Backend
 
 ```text
+Platform:
+Railway
+
+Source:
+GitHub repository
+
 Build:
+npm run db:generate --workspace server &&
 npm run build --workspace server
+
+Pre-deploy:
+npm run db:migrate:deploy --workspace server
 
 Start:
 npm run start --workspace server
+
+Health check:
+/health
 
 Environment:
 DATABASE_URL
 JWT_SECRET
 CLIENT_ORIGIN
-PORT
 NODE_ENV
-```
-
-### Database
-
-```text
-Managed PostgreSQL
-
-Migration command:
-npm run db:migrate:deploy
+PORT
 ```
 
 ---
 
-## Deployment Sequence
-
-A typical production deployment should follow this order:
+## Railway PostgreSQL
 
 ```text
-1. Provision managed PostgreSQL
+Platform:
+Railway PostgreSQL
 
-2. Configure backend environment variables
+Consumed by:
+Express backend only
 
-3. Build backend
+Connection:
+DATABASE_URL
 
-4. Run committed Prisma migrations
-
-5. Start backend
-
-6. Verify GET /health
-
-7. Obtain deployed backend URL
-
-8. Configure frontend VITE_API_BASE_URL
-
-9. Build frontend
-
-10. Deploy client/dist
-
-11. Configure SPA fallback to /index.html
-
-12. Configure backend CLIENT_ORIGIN
-    with the deployed frontend origin
-
-13. Verify authentication and API requests
-
-14. Verify direct frontend routes such as:
-    /inventory
-    /reports
-    /sales/new
+Schema management:
+Prisma migrations
 ```
 
 ---
 
-## Production Verification Checklist
+# Deployment Sequence
 
-Before considering a deployment complete, verify:
+The production deployment was configured in the following order:
 
-- Backend starts successfully with production environment validation.
-- `/health` returns HTTP 200.
-- The backend connects to the managed PostgreSQL database.
-- `prisma migrate deploy` completes successfully.
-- The frontend uses the deployed API URL.
-- CORS accepts the deployed frontend origin.
-- Login works over HTTPS.
-- Authenticated API calls send the bearer token correctly.
-- `/inventory` works through normal navigation.
-- Directly opening `/inventory` works.
-- Refreshing `/inventory` works.
-- Directly opening `/reports` works.
-- Directly opening `/sales/new` works.
-- Unknown API routes still return the API's JSON 404 response.
-- No secrets are present in the frontend bundle or committed environment files.
+```text
+1. Create Railway project.
+
+2. Provision Railway PostgreSQL.
+
+3. Create Railway backend service from the GitHub repository.
+
+4. Configure Railway backend environment variables.
+
+5. Configure the Prisma Client generation and backend build command.
+
+6. Configure:
+   prisma migrate deploy
+   as the Railway pre-deploy command.
+
+7. Configure:
+   npm run start --workspace server
+   as the production start command.
+
+8. Configure /health as the Railway health check.
+
+9. Deploy the backend.
+
+10. Generate the Railway backend public domain.
+
+11. Verify GET /health.
+
+12. Create the Cloudflare Pages project from the same GitHub repository.
+
+13. Configure:
+    npm run build --workspace client
+
+14. Configure:
+    client/dist
+    as the frontend build output.
+
+15. Configure VITE_API_BASE_URL
+    with the Railway backend origin.
+
+16. Deploy the frontend.
+
+17. Configure Railway CLIENT_ORIGIN
+    with the Cloudflare Pages frontend origin.
+
+18. Redeploy the backend with the final CORS configuration.
+
+19. Verify authentication, API requests, database access,
+    and SPA deep links.
+```
 
 ---
 
-## Provider-Specific Configuration
+# Production Verification
 
-TindaTrack currently does not commit provider-specific deployment configuration.
+The deployed application should be verified through the complete business workflow rather than only checking that the landing page loads.
 
-Files such as:
+## Infrastructure
+
+Verify:
+
+- Cloudflare Pages frontend is reachable over HTTPS.
+- Railway backend is reachable over HTTPS.
+- `GET /health` returns HTTP 200.
+- Railway PostgreSQL is reachable by the backend.
+- Prisma migrations have been applied successfully.
+- Production environment validation passes.
+
+## Authentication
+
+Verify:
+
+- first-owner setup works against a fresh production database
+- OWNER login works
+- STAFF login works
+- sign-out works
+- protected API requests use the bearer token
+- unauthenticated protected routes redirect appropriately
+
+## Inventory Flow
+
+Verify:
 
 ```text
-vercel.json
-netlify.toml
-render.yaml
+Create product
+        ↓
+Create supplier
+        ↓
+Receive stock
+        ↓
+Inventory reflects stock movement
+        ↓
+Record sale
+        ↓
+Inventory decreases
+        ↓
+Movement history records evidence
 ```
 
-should be added only after a deployment provider has been selected.
+Inventory quantities must continue to be derived from stock movements rather than edited directly.
 
-At that point, the provider configuration should implement the requirements documented here rather than changing the application architecture.
+## Sales
+
+Verify:
+
+- sale recording works
+- stock validation works
+- successful sales generate movement records
+- sale receipt renders from server-returned data
+- receipt printing works
+- Daily Sales reporting works
+
+## SPA Deep Links
+
+Directly open and refresh routes such as:
+
+```text
+/inventory
+/reports
+/sales/new
+```
+
+They must load the React application rather than returning a static-host 404 page.
+
+## CORS
+
+Verify that the Cloudflare Pages frontend can call the Railway backend using:
+
+```text
+CLIENT_ORIGIN
+```
+
+without using an unrestricted `*` origin.
+
+---
+
+# Secrets and Repository Safety
+
+The following must never be committed:
+
+```text
+server/.env
+client/.env
+DATABASE_URL credentials
+JWT_SECRET
+production database passwords
+```
+
+The repository should commit only example configuration:
+
+```text
+server/.env.example
+client/.env.example
+server/.env.test.example
+```
+
+Production environment values belong in Cloudflare and Railway environment-variable configuration.
+
+Public deployment URLs may be documented because they are not secrets.
+
+---
+
+# Local vs Production Configuration
+
+## Local Development
+
+```text
+Frontend:
+http://localhost:5173
+
+Backend:
+http://localhost:3000
+
+CLIENT_ORIGIN:
+http://localhost:5173
+
+VITE_API_BASE_URL:
+empty
+
+API requests:
+Vite development proxy
+```
+
+## Production
+
+```text
+Frontend:
+Cloudflare Pages
+
+Backend:
+Railway
+
+Database:
+Railway PostgreSQL
+
+CLIENT_ORIGIN:
+Cloudflare Pages origin
+
+VITE_API_BASE_URL:
+Railway backend origin
+
+API requests:
+Browser → Railway directly over HTTPS
+```
+
+---
+
+# Future Provider Changes
+
+The application is not tightly coupled to Cloudflare Pages or Railway.
+
+The deployment architecture depends only on:
+
+```text
+Static frontend hosting
++
+Node.js hosting
++
+PostgreSQL
+```
+
+A future provider change should normally require configuration changes rather than application architecture changes.
+
+For example:
+
+```text
+Frontend provider changes
+→ update frontend build/deployment configuration
+
+Backend provider changes
+→ configure the same server environment variables
+
+PostgreSQL provider changes
+→ update DATABASE_URL
+```
+
+The core TindaTrack application architecture remains unchanged.
