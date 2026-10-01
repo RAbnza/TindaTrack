@@ -6,7 +6,10 @@ import {
 import { prisma } from "../db/prisma.js";
 import { getCurrentStock } from "../repositories/product.repository.js";
 import { recordStockAdjustment } from "./stock-adjustment.service.js";
-import { recordSale } from "./sale.service.js";
+import {
+  recordSale,
+  SaleValidationError,
+} from "./sale.service.js";
 
 async function getVerificationRecords() {
   const user = await prisma.user.findFirst({
@@ -43,7 +46,9 @@ async function setStockToExactlyOne(
   userId: number,
   productId: number,
 ): Promise<void> {
-  const currentStock = await getCurrentStock(productId);
+  const currentStock = await getCurrentStock(
+    productId,
+  );
 
   const quantityDelta = 1 - currentStock;
 
@@ -59,7 +64,9 @@ async function setStockToExactlyOne(
     adjustedBy: userId,
   });
 
-  const stockAfter = await getCurrentStock(productId);
+  const stockAfter = await getCurrentStock(
+    productId,
+  );
 
   if (stockAfter !== 1) {
     throw new Error(
@@ -70,7 +77,7 @@ async function setStockToExactlyOne(
 
 async function runConcurrencyRound(
   round: number,
-): Promise<boolean> {
+): Promise<void> {
   const { user, product } =
     await getVerificationRecords();
 
@@ -123,13 +130,16 @@ async function runConcurrencyRound(
     recordSale(saleInput),
   ]);
 
-  const fulfilledCount = results.filter(
+  const fulfilledResults = results.filter(
     (result) => result.status === "fulfilled",
-  ).length;
+  );
 
-  const rejectedCount = results.filter(
+  const rejectedResults = results.filter(
     (result) => result.status === "rejected",
-  ).length;
+  );
+
+  const fulfilledCount = fulfilledResults.length;
+  const rejectedCount = rejectedResults.length;
 
   const saleCountAfter =
     await prisma.sale.count();
@@ -167,17 +177,6 @@ async function runConcurrencyRound(
     currentStock,
   });
 
-  for (const [index, result] of results.entries()) {
-    if (result.status === "rejected") {
-      console.log(
-        `Sale ${index + 1} rejected:`,
-        result.reason instanceof Error
-          ? result.reason.message
-          : result.reason,
-      );
-    }
-  }
-
   const invariantSatisfied =
     fulfilledCount === 1 &&
     rejectedCount === 1 &&
@@ -186,82 +185,72 @@ async function runConcurrencyRound(
     saleMovementsCreated === 1 &&
     currentStock === 0;
 
-  if (invariantSatisfied) {
-    console.log(
-      `Round ${round}: concurrency invariant held.`,
+  if (!invariantSatisfied) {
+    throw new Error(
+      `Round ${round}: sale concurrency invariant failed. ` +
+        `Expected fulfilled=1, rejected=1, salesCreated=1, ` +
+        `saleItemsCreated=1, saleMovementsCreated=1, stock=0. ` +
+        `Actual fulfilled=${fulfilledCount}, rejected=${rejectedCount}, ` +
+        `salesCreated=${salesCreated}, saleItemsCreated=${saleItemsCreated}, ` +
+        `saleMovementsCreated=${saleMovementsCreated}, stock=${currentStock}.`,
     );
-
-    return false;
   }
 
-  console.log();
+  const rejectedResult = rejectedResults[0];
+
+  if (
+    !rejectedResult ||
+    rejectedResult.status !== "rejected"
+  ) {
+    throw new Error(
+      `Round ${round}: expected exactly one rejected sale result.`,
+    );
+  }
+
+  if (
+    !(
+      rejectedResult.reason instanceof
+      SaleValidationError
+    )
+  ) {
+    throw new Error(
+      `Round ${round}: losing concurrent sale did not resolve to the expected SaleValidationError.`,
+    );
+  }
+
+  if (
+    !rejectedResult.reason.message.includes(
+      "Insufficient stock",
+    )
+  ) {
+    throw new Error(
+      `Round ${round}: losing concurrent sale failed with an unexpected validation message: ${rejectedResult.reason.message}`,
+    );
+  }
+
   console.log(
-    "!!! CONCURRENCY BUG OBSERVED !!!",
+    `Round ${round}: concurrency invariant passed.`,
   );
 
-  console.log({
-    expected: {
-      fulfilledCount: 1,
-      rejectedCount: 1,
-      salesCreated: 1,
-      saleItemsCreated: 1,
-      saleMovementsCreated: 1,
-      currentStock: 0,
-    },
-    actual: {
-      fulfilledCount,
-      rejectedCount,
-      salesCreated,
-      saleItemsCreated,
-      saleMovementsCreated,
-      currentStock,
-    },
-  });
-
-  return true;
+  console.log(
+    `Round ${round}: losing sale retried and resolved to insufficient-stock validation.`,
+  );
 }
 
 async function main(): Promise<void> {
-  /*
-   * Concurrency bugs are timing-dependent.
-   *
-   * Run several rounds to make the stale-read race easier
-   * to observe under READ COMMITTED.
-   */
   const maxRounds = 20;
-
-  let raceObserved = false;
 
   for (
     let round = 1;
     round <= maxRounds;
     round += 1
   ) {
-    const observed =
-      await runConcurrencyRound(round);
-
-    if (observed) {
-      raceObserved = true;
-      break;
-    }
-  }
-
-  if (!raceObserved) {
-    console.log();
-    console.log(
-      `The race was not reproduced in ${maxRounds} rounds.`,
-    );
-
-    console.log(
-      "That does NOT prove the current implementation is safe; concurrency races are scheduling-dependent.",
-    );
-
-    return;
+    await runConcurrencyRound(round);
   }
 
   console.log();
   console.log(
-    "The current sale implementation failed the required concurrency invariant.",
+    `Sale concurrency verification passed for ${maxRounds} rounds.`,
   );
 }
 
