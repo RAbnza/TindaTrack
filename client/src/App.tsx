@@ -1,21 +1,44 @@
-import { useState } from 'react'
+import {
+  useState,
+} from 'react'
 
-import { useAuth } from './auth/useAuth'
+import {
+  useAuth,
+} from './auth/useAuth'
 
 import {
   AppShell,
   type AppView,
 } from './components/AppShell'
 
-import { useProducts } from './features/inventory/useProducts'
+import {
+  useProducts,
+} from './features/inventory/useProducts'
 
-import { InventoryPage } from './pages/InventoryPage'
-import { LoginPage } from './pages/LoginPage'
-import { NewSalePage } from './pages/NewSalePage'
+import {
+  InventoryPage,
+} from './pages/InventoryPage'
+
+import {
+  LoginPage,
+} from './pages/LoginPage'
+
+import {
+  NewSalePage,
+} from './pages/NewSalePage'
+
+import {
+  ReceiveStockPage,
+} from './pages/ReceiveStockPage'
 
 function AuthenticatedApp() {
-  const [activeView, setActiveView] =
-    useState<AppView>('inventory')
+  const [
+    activeView,
+    setActiveView,
+  ] =
+    useState<AppView>(
+      'inventory',
+    )
 
   const {
     products,
@@ -27,23 +50,48 @@ function AuthenticatedApp() {
   return (
     <AppShell
       activeView={activeView}
-      onNavigate={setActiveView}
+      onNavigate={
+        setActiveView
+      }
     >
       {activeView ===
-      'inventory' ? (
+        'inventory' && (
         <InventoryPage
           products={products}
-          isLoading={isLoading}
+          isLoading={
+            isLoading
+          }
           error={error}
           reload={reload}
         />
-      ) : (
+      )}
+
+      {activeView ===
+        'sale' && (
         <NewSalePage
           products={products}
           isProductsLoading={
             isLoading
           }
-          productsError={error}
+          productsError={
+            error
+          }
+          reloadProducts={
+            reload
+          }
+        />
+      )}
+
+      {activeView ===
+        'receiving' && (
+        <ReceiveStockPage
+          products={products}
+          isProductsLoading={
+            isLoading
+          }
+          productsError={
+            error
+          }
           reloadProducts={
             reload
           }
@@ -54,14 +102,17 @@ function AuthenticatedApp() {
 }
 
 function App() {
-  const { isAuthenticated } =
-    useAuth()
+  const {
+    isAuthenticated,
+  } = useAuth()
 
   if (!isAuthenticated) {
     return <LoginPage />
   }
 
-  return <AuthenticatedApp />
+  return (
+    <AuthenticatedApp />
+  )
 }
 
 export default App

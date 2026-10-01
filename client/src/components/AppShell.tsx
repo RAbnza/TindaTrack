@@ -1,15 +1,22 @@
-import type { ReactNode } from 'react'
+import type {
+  ReactNode,
+} from 'react'
 
-import { useAuth } from '../auth/useAuth'
+import {
+  useAuth,
+} from '../auth/useAuth'
 
 export type AppView =
   | 'inventory'
   | 'sale'
+  | 'receiving'
 
 type AppShellProps = {
   children: ReactNode
   activeView: AppView
-  onNavigate: (view: AppView) => void
+  onNavigate: (
+    view: AppView,
+  ) => void
 }
 
 export function AppShell({
@@ -17,7 +24,10 @@ export function AppShell({
   activeView,
   onNavigate,
 }: AppShellProps) {
-  const { user, logout } = useAuth()
+  const {
+    user,
+    logout,
+  } = useAuth()
 
   if (!user) {
     return null
@@ -48,7 +58,8 @@ export function AppShell({
 
             <p className="truncate text-xs text-slate-500">
               {user.name} ·{' '}
-              {user.role === 'OWNER'
+              {user.role ===
+              'OWNER'
                 ? 'Owner'
                 : 'Staff'}
             </p>
@@ -99,10 +110,32 @@ export function AppShell({
               onNavigate('sale')
             }
             className={navButtonClass(
-              activeView === 'sale',
+              activeView ===
+                'sale',
             )}
           >
             New Sale
+          </button>
+
+          <button
+            type="button"
+            aria-current={
+              activeView ===
+              'receiving'
+                ? 'page'
+                : undefined
+            }
+            onClick={() =>
+              onNavigate(
+                'receiving',
+              )
+            }
+            className={navButtonClass(
+              activeView ===
+                'receiving',
+            )}
+          >
+            Receive Stock
           </button>
 
           {isOwner && (
