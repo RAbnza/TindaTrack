@@ -13,6 +13,8 @@ import {
   findSaleUserById,
 } from "../repositories/sale.repository.js";
 
+import { createAuditLog } from "../repositories/audit-log.repository.js";
+
 export type RecordSaleInput = {
   recordedBy: number;
   paymentMethod: PaymentMethod;
@@ -269,6 +271,30 @@ async function executeSaleTransaction(
 
             actorId:
               input.recordedBy,
+          },
+        );
+
+        await createAuditLog(
+          tx,
+          {
+            actorId: input.recordedBy,
+
+            action: "SALE_CREATED",
+
+            entityType: "Sale",
+
+            entityId: sale.id,
+
+            metadata: {
+              totalAmount:
+                sale.totalAmount.toString(),
+
+              paymentMethod:
+                sale.paymentMethod,
+
+              itemCount:
+                pricedItems.length,
+            },
           },
         );
       }

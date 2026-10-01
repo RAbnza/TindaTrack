@@ -10,6 +10,8 @@ import {
   findSupplierById,
 } from "../repositories/stock-receipt.repository.js";
 
+import { createAuditLog } from "../repositories/audit-log.repository.js";
+
 export type RecordStockReceiptInput = {
   supplierId: number;
   receivedBy: number;
@@ -184,6 +186,35 @@ export async function recordStockReceipt(
         stockReceiptItemId: receiptItem.id,
         actorId: input.receivedBy,
       });
+
+      await createAuditLog(
+        tx,
+        {
+          actorId:
+            input.receivedBy,
+
+          action:
+            "STOCK_RECEIPT_CREATED",
+
+          entityType:
+            "StockReceipt",
+
+          entityId:
+            receipt.id,
+
+          metadata: {
+            supplierId:
+              receipt.supplierId,
+
+            referenceNo:
+              receipt.referenceNo,
+
+            itemCount:
+              parsedItems.length,
+          },
+        },
+      );
+
     }
 
     return receipt;

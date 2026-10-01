@@ -9,6 +9,8 @@ import {
   findAdjustmentUserById,
 } from "../repositories/stock-adjustment.repository.js";
 
+import { createAuditLog } from "../repositories/audit-log.repository.js";
+
 export type RecordStockAdjustmentInput = {
   productId: number;
   quantityDelta: number;
@@ -121,6 +123,36 @@ export async function recordStockAdjustment(
       actorId: input.adjustedBy,
       type: movementType,
     });
+
+    await createAuditLog(
+      tx,
+      {
+        actorId:
+          input.adjustedBy,
+
+        action:
+          "STOCK_ADJUSTMENT_CREATED",
+
+        entityType:
+          "StockAdjustment",
+
+        entityId:
+          adjustment.id,
+
+        metadata: {
+          productId:
+            adjustment.productId,
+
+          quantityDelta:
+            adjustment.quantityDelta,
+
+          reason:
+            adjustment.reason,
+
+          movementType,
+        },
+      },
+    );
 
     return adjustment;
   });

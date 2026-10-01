@@ -9,6 +9,7 @@ import { stockAdjustmentRouter } from "./routes/stock-adjustment.routes.js";
 import { stockReceiptRouter } from "./routes/stock-receipt.routes.js";
 import { reportRouter } from "./routes/report.routes.js";
 import { stockMovementRouter } from "./routes/stock-movement.routes.js";
+import { auditLogRouter } from "./routes/audit-log.routes.js";
 
 export const app = express();
 
@@ -54,6 +55,11 @@ app.use(
 app.use(
   "/api/stock-movements",
   stockMovementRouter,
+);
+
+app.use(
+  "/api/audit-logs",
+  auditLogRouter,
 );
 
 app.use((_req, res) => {
