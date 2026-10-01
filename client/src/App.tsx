@@ -70,6 +70,10 @@ import {
   StockMovementsPage,
 } from './pages/StockMovementsPage'
 
+import {
+  SupplierManagementPage,
+} from './pages/SupplierManagementPage'
+
 import type {
   Product,
 } from './types/product'
@@ -443,6 +447,15 @@ function App() {
           element={
             <RequireOwner>
               <ProductManagementRoute />
+            </RequireOwner>
+          }
+        />
+
+        <Route
+          path="/suppliers"
+          element={
+            <RequireOwner>
+              <SupplierManagementPage />
             </RequireOwner>
           }
         />
