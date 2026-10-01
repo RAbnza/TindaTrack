@@ -1,6 +1,7 @@
 import { Prisma } from "../../generated/prisma/client.js";
 
 import { prisma } from "../db/prisma.js";
+import { createAuditLog } from "../repositories/audit-log.repository.js";
 import {
   createReceiptStockMovement,
   createStockReceipt,
@@ -9,8 +10,6 @@ import {
   findReceivingUserById,
   findSupplierById,
 } from "../repositories/stock-receipt.repository.js";
-
-import { createAuditLog } from "../repositories/audit-log.repository.js";
 
 export type RecordStockReceiptInput = {
   supplierId: number;
@@ -26,15 +25,21 @@ export type RecordStockReceiptInput = {
 export class StockReceiptValidationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "StockReceiptValidationError";
+    this.name =
+      "StockReceiptValidationError";
   }
 }
 
-function parseUnitCost(value: string): Prisma.Decimal {
+function parseUnitCost(
+  value: string,
+): Prisma.Decimal {
   let unitCost: Prisma.Decimal;
 
   try {
-    unitCost = new Prisma.Decimal(value);
+    unitCost =
+      new Prisma.Decimal(
+        value,
+      );
   } catch {
     throw new StockReceiptValidationError(
       `Invalid unit cost: ${value}`,
@@ -59,19 +64,28 @@ function validateItems(
     );
   }
 
-  const seenProductIds = new Set<number>();
+  const seenProductIds =
+    new Set<number>();
 
   for (const item of input.items) {
-    if (seenProductIds.has(item.productId)) {
+    if (
+      seenProductIds.has(
+        item.productId,
+      )
+    ) {
       throw new StockReceiptValidationError(
         `Duplicate productId in receipt: ${item.productId}`,
       );
     }
 
-    seenProductIds.add(item.productId);
+    seenProductIds.add(
+      item.productId,
+    );
 
     if (
-      !Number.isInteger(item.quantity) ||
+      !Number.isInteger(
+        item.quantity,
+      ) ||
       item.quantity <= 0
     ) {
       throw new StockReceiptValidationError(
@@ -79,7 +93,9 @@ function validateItems(
       );
     }
 
-    parseUnitCost(item.unitCost);
+    parseUnitCost(
+      item.unitCost,
+    );
   }
 }
 
@@ -88,105 +104,174 @@ export async function recordStockReceipt(
 ) {
   validateItems(input);
 
-  const parsedItems = input.items.map((item) => ({
-    ...item,
-    unitCost: parseUnitCost(item.unitCost),
-  }));
+  const parsedItems =
+    input.items.map(
+      (item) => ({
+        ...item,
 
-  return prisma.$transaction(async (tx) => {
-    const supplier = await findSupplierById(
-      tx,
-      input.supplierId,
+        unitCost:
+          parseUnitCost(
+            item.unitCost,
+          ),
+      }),
     );
 
-    if (!supplier) {
-      throw new StockReceiptValidationError(
-        `Supplier ${input.supplierId} does not exist.`,
-      );
-    }
+  return prisma.$transaction(
+    async (tx) => {
+      const supplier =
+        await findSupplierById(
+          tx,
+          input.supplierId,
+        );
 
-    if (!supplier.active) {
-      throw new StockReceiptValidationError(
-        `Supplier ${input.supplierId} is inactive.`,
-      );
-    }
+      if (!supplier) {
+        throw new StockReceiptValidationError(
+          `Supplier ${input.supplierId} does not exist.`,
+        );
+      }
 
-    const user = await findReceivingUserById(
-      tx,
-      input.receivedBy,
-    );
+      if (!supplier.active) {
+        throw new StockReceiptValidationError(
+          `Supplier ${input.supplierId} is inactive.`,
+        );
+      }
 
-    if (!user) {
-      throw new StockReceiptValidationError(
-        `User ${input.receivedBy} does not exist.`,
-      );
-    }
+      const user =
+        await findReceivingUserById(
+          tx,
+          input.receivedBy,
+        );
 
-    if (!user.active) {
-      throw new StockReceiptValidationError(
-        `User ${input.receivedBy} is inactive.`,
-      );
-    }
+      if (!user) {
+        throw new StockReceiptValidationError(
+          `User ${input.receivedBy} does not exist.`,
+        );
+      }
 
-    const productIds = parsedItems.map(
-      (item) => item.productId,
-    );
+      if (!user.active) {
+        throw new StockReceiptValidationError(
+          `User ${input.receivedBy} is inactive.`,
+        );
+      }
 
-    const products = await findProductsByIds(
-      tx,
-      productIds,
-    );
+      const productIds =
+        parsedItems.map(
+          (item) =>
+            item.productId,
+        );
 
-    if (products.length !== productIds.length) {
-      const foundIds = new Set(
-        products.map((product) => product.id),
-      );
+      const products =
+        await findProductsByIds(
+          tx,
+          productIds,
+        );
 
-      const missingProductIds = productIds.filter(
-        (productId) => !foundIds.has(productId),
-      );
+      if (
+        products.length !==
+        productIds.length
+      ) {
+        const foundIds =
+          new Set(
+            products.map(
+              (product) =>
+                product.id,
+            ),
+          );
 
-      throw new StockReceiptValidationError(
-        `Products do not exist: ${missingProductIds.join(", ")}`,
-      );
-    }
+        const missingProductIds =
+          productIds.filter(
+            (productId) =>
+              !foundIds.has(
+                productId,
+              ),
+          );
 
-    const inactiveProducts = products.filter(
-      (product) => !product.active,
-    );
+        throw new StockReceiptValidationError(
+          `Products do not exist: ${missingProductIds.join(", ")}`,
+        );
+      }
 
-    if (inactiveProducts.length > 0) {
-      throw new StockReceiptValidationError(
-        `Inactive products cannot be received: ${inactiveProducts
-          .map((product) => product.id)
-          .join(", ")}`,
-      );
-    }
+      const inactiveProducts =
+        products.filter(
+          (product) =>
+            !product.active,
+        );
 
-    const receipt = await createStockReceipt(tx, {
-      supplierId: input.supplierId,
-      receivedBy: input.receivedBy,
-      referenceNo: input.referenceNo ?? null,
-    });
+      if (
+        inactiveProducts.length >
+        0
+      ) {
+        throw new StockReceiptValidationError(
+          `Inactive products cannot be received: ${inactiveProducts
+            .map(
+              (product) =>
+                product.id,
+            )
+            .join(", ")}`,
+        );
+      }
 
-    for (const item of parsedItems) {
-      const receiptItem = await createStockReceiptItem(
-        tx,
-        {
-          receiptId: receipt.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitCost: item.unitCost,
-        },
-      );
+      const receipt =
+        await createStockReceipt(
+          tx,
+          {
+            supplierId:
+              input.supplierId,
 
-      await createReceiptStockMovement(tx, {
-        productId: item.productId,
-        quantityDelta: item.quantity,
-        stockReceiptItemId: receiptItem.id,
-        actorId: input.receivedBy,
-      });
+            receivedBy:
+              input.receivedBy,
 
+            referenceNo:
+              input.referenceNo ??
+              null,
+          },
+        );
+
+      for (
+        const item of parsedItems
+      ) {
+        const receiptItem =
+          await createStockReceiptItem(
+            tx,
+            {
+              receiptId:
+                receipt.id,
+
+              productId:
+                item.productId,
+
+              quantity:
+                item.quantity,
+
+              unitCost:
+                item.unitCost,
+            },
+          );
+
+        await createReceiptStockMovement(
+          tx,
+          {
+            productId:
+              item.productId,
+
+            quantityDelta:
+              item.quantity,
+
+            stockReceiptItemId:
+              receiptItem.id,
+
+            actorId:
+              input.receivedBy,
+          },
+        );
+      }
+
+      /*
+       * One StockReceipt is one audit event.
+       *
+       * This stays inside the same transaction
+       * as the receipt, its items, and movements.
+       */
       await createAuditLog(
         tx,
         {
@@ -215,8 +300,7 @@ export async function recordStockReceipt(
         },
       );
 
-    }
-
-    return receipt;
-  });
+      return receipt;
+    },
+  );
 }

@@ -6,6 +6,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
 
 import {
@@ -72,26 +73,40 @@ async function createFixtures() {
   const owner =
     await prisma.user.create({
       data: {
-        name: "Audit Owner",
+        name:
+          "Audit Owner",
+
         email:
           "audit-owner@test.local",
+
         passwordHash:
           ownerPasswordHash,
-        role: UserRole.OWNER,
-        active: true,
+
+        role:
+          UserRole.OWNER,
+
+        active:
+          true,
       },
     });
 
   const staff =
     await prisma.user.create({
       data: {
-        name: "Audit Staff",
+        name:
+          "Audit Staff",
+
         email:
           "audit-staff@test.local",
+
         passwordHash:
           staffPasswordHash,
-        role: UserRole.STAFF,
-        active: true,
+
+        role:
+          UserRole.STAFF,
+
+        active:
+          true,
       },
     });
 
@@ -100,20 +115,32 @@ async function createFixtures() {
       data: {
         name:
           "Audit Supplier",
-        active: true,
+
+        active:
+          true,
       },
     });
 
   const product =
     await prisma.product.create({
       data: {
-        sku: "AUDIT-001",
+        sku:
+          "AUDIT-001",
+
         name:
           "Audit Product",
-        category: "Testing",
-        sellingPrice: "25.00",
-        reorderLevel: 2,
-        active: true,
+
+        category:
+          "Testing",
+
+        sellingPrice:
+          "25.00",
+
+        reorderLevel:
+          2,
+
+        active:
+          true,
       },
     });
 
@@ -145,6 +172,7 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await cleanDatabase();
+
   await prisma.$disconnect();
 });
 
@@ -160,17 +188,16 @@ describe(
         await createFixtures();
 
       /*
-       * Establish stock through the real
-       * inventory flow.
-       *
-       * This itself creates an audit row,
+       * Establish stock first.
+       * This creates its own adjustment audit,
        * so capture the count afterwards.
        */
       await recordStockAdjustment({
         productId:
           product.id,
 
-        quantityDelta: 5,
+        quantityDelta:
+          5,
 
         reason:
           "Prepare stock for sale audit test",
@@ -197,7 +224,9 @@ describe(
               {
                 productId:
                   product.id,
-                quantity: 2,
+
+                quantity:
+                  2,
               },
             ],
           })
@@ -229,15 +258,161 @@ describe(
 
       expect(
         saleAudit?.actorId,
-      ).toBe(owner.id);
+      ).toBe(
+        owner.id,
+      );
 
       expect(
         saleAudit?.metadata,
       ).toEqual({
-        totalAmount: "50",
+        totalAmount:
+          "50",
+
         paymentMethod:
           PaymentMethod.CASH,
-        itemCount: 1,
+
+        itemCount:
+          1,
+      });
+    });
+
+    it("creates exactly one SALE_CREATED audit record for a multi-item sale", async () => {
+      const {
+        owner,
+        product,
+        ownerToken,
+      } =
+        await createFixtures();
+
+      const secondProduct =
+        await prisma.product.create({
+          data: {
+            sku:
+              "AUDIT-002",
+
+            name:
+              "Second Audit Product",
+
+            category:
+              "Testing",
+
+            sellingPrice:
+              "10.00",
+
+            reorderLevel:
+              2,
+
+            active:
+              true,
+          },
+        });
+
+      await recordStockAdjustment({
+        productId:
+          product.id,
+
+        quantityDelta:
+          5,
+
+        reason:
+          "Prepare first product for multi-item sale",
+
+        adjustedBy:
+          owner.id,
+      });
+
+      await recordStockAdjustment({
+        productId:
+          secondProduct.id,
+
+        quantityDelta:
+          5,
+
+        reason:
+          "Prepare second product for multi-item sale",
+
+        adjustedBy:
+          owner.id,
+      });
+
+      const saleAuditCountBefore =
+        await prisma.auditLog.count({
+          where: {
+            action:
+              "SALE_CREATED",
+          },
+        });
+
+      const response =
+        await request(app)
+          .post("/api/sales")
+          .set(
+            "Authorization",
+            `Bearer ${ownerToken}`,
+          )
+          .send({
+            paymentMethod:
+              PaymentMethod.CASH,
+
+            items: [
+              {
+                productId:
+                  product.id,
+
+                quantity:
+                  1,
+              },
+              {
+                productId:
+                  secondProduct.id,
+
+                quantity:
+                  2,
+              },
+            ],
+          })
+          .expect(201);
+
+      const saleAudits =
+        await prisma.auditLog.findMany({
+          where: {
+            action:
+              "SALE_CREATED",
+
+            entityType:
+              "Sale",
+
+            entityId:
+              response.body.id,
+          },
+        });
+
+      expect(
+        saleAudits,
+      ).toHaveLength(1);
+
+      expect(
+        await prisma.auditLog.count({
+          where: {
+            action:
+              "SALE_CREATED",
+          },
+        }),
+      ).toBe(
+        saleAuditCountBefore + 1,
+      );
+
+      expect(
+        saleAudits[0]?.metadata,
+      ).toEqual({
+        totalAmount:
+          "45",
+
+        paymentMethod:
+          PaymentMethod.CASH,
+
+        itemCount:
+          2,
       });
     });
 
@@ -265,7 +440,9 @@ describe(
             {
               productId:
                 product.id,
-              quantity: 1,
+
+              quantity:
+                1,
             },
           ],
         })
@@ -323,7 +500,10 @@ describe(
               {
                 productId:
                   product.id,
-                quantity: 5,
+
+                quantity:
+                  5,
+
                 unitCost:
                   "15.00",
               },
@@ -357,7 +537,267 @@ describe(
 
       expect(
         audit?.actorId,
-      ).toBe(owner.id);
+      ).toBe(
+        owner.id,
+      );
+    });
+
+    it("creates exactly one STOCK_RECEIPT_CREATED audit record for a multi-item receipt", async () => {
+      const {
+        supplier,
+        product,
+        ownerToken,
+      } =
+        await createFixtures();
+
+      const secondProduct =
+        await prisma.product.create({
+          data: {
+            sku:
+              "AUDIT-RCP-002",
+
+            name:
+              "Second Receipt Product",
+
+            category:
+              "Testing",
+
+            sellingPrice:
+              "15.00",
+
+            reorderLevel:
+              2,
+
+            active:
+              true,
+          },
+        });
+
+      const receiptAuditCountBefore =
+        await prisma.auditLog.count({
+          where: {
+            action:
+              "STOCK_RECEIPT_CREATED",
+          },
+        });
+
+      const response =
+        await request(app)
+          .post(
+            "/api/stock-receipts",
+          )
+          .set(
+            "Authorization",
+            `Bearer ${ownerToken}`,
+          )
+          .send({
+            supplierId:
+              supplier.id,
+
+            referenceNo:
+              "MULTI-AUDIT-RCP",
+
+            items: [
+              {
+                productId:
+                  product.id,
+
+                quantity:
+                  3,
+
+                unitCost:
+                  "12.00",
+              },
+              {
+                productId:
+                  secondProduct.id,
+
+                quantity:
+                  4,
+
+                unitCost:
+                  "9.50",
+              },
+            ],
+          })
+          .expect(201);
+
+      const receiptAudits =
+        await prisma.auditLog.findMany({
+          where: {
+            action:
+              "STOCK_RECEIPT_CREATED",
+
+            entityType:
+              "StockReceipt",
+
+            entityId:
+              response.body.id,
+          },
+        });
+
+      expect(
+        receiptAudits,
+      ).toHaveLength(1);
+
+      expect(
+        await prisma.auditLog.count({
+          where: {
+            action:
+              "STOCK_RECEIPT_CREATED",
+          },
+        }),
+      ).toBe(
+        receiptAuditCountBefore + 1,
+      );
+
+      expect(
+        receiptAudits[0]?.metadata,
+      ).toEqual({
+        supplierId:
+          supplier.id,
+
+        referenceNo:
+          "MULTI-AUDIT-RCP",
+
+        itemCount:
+          2,
+      });
+    });
+
+    it("rolls back the receipt audit record when a later receipt item fails", async () => {
+      const {
+        supplier,
+        product,
+        ownerToken,
+      } =
+        await createFixtures();
+
+      const secondProduct =
+        await prisma.product.create({
+          data: {
+            sku:
+              "AUDIT-ROLLBACK-002",
+
+            name:
+              "Rollback Product",
+
+            category:
+              "Testing",
+
+            sellingPrice:
+              "15.00",
+
+            reorderLevel:
+              2,
+
+            active:
+              true,
+          },
+        });
+
+      const receiptCountBefore =
+        await prisma.stockReceipt.count();
+
+      const receiptItemCountBefore =
+        await prisma.stockReceiptItem.count();
+
+      const movementCountBefore =
+        await prisma.stockMovement.count();
+
+      const auditCountBefore =
+        await prisma.auditLog.count();
+
+      const consoleErrorSpy =
+        vi
+          .spyOn(
+            console,
+            "error",
+          )
+          .mockImplementation(
+            () => {},
+          );
+
+      try {
+        await request(app)
+          .post(
+            "/api/stock-receipts",
+          )
+          .set(
+            "Authorization",
+            `Bearer ${ownerToken}`,
+          )
+          .send({
+            supplierId:
+              supplier.id,
+
+            referenceNo:
+              "AUDIT-ROLLBACK",
+
+            items: [
+              {
+                productId:
+                  product.id,
+
+                quantity:
+                  5,
+
+                unitCost:
+                  "15.50",
+              },
+              {
+                productId:
+                  secondProduct.id,
+
+                quantity:
+                  2,
+
+                /*
+                 * Valid transport format but too
+                 * large for NUMERIC(12,2).
+                 */
+                unitCost:
+                  "10000000000.00",
+              },
+            ],
+          })
+          .expect(500);
+
+        expect(
+          await prisma.stockReceipt.count(),
+        ).toBe(
+          receiptCountBefore,
+        );
+
+        expect(
+          await prisma.stockReceiptItem.count(),
+        ).toBe(
+          receiptItemCountBefore,
+        );
+
+        expect(
+          await prisma.stockMovement.count(),
+        ).toBe(
+          movementCountBefore,
+        );
+
+        expect(
+          await prisma.auditLog.count(),
+        ).toBe(
+          auditCountBefore,
+        );
+
+        expect(
+          await prisma.auditLog.count({
+            where: {
+              action:
+                "STOCK_RECEIPT_CREATED",
+            },
+          }),
+        ).toBe(0);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
 
     it("creates an audit record for a successful stock adjustment", async () => {
@@ -384,7 +824,8 @@ describe(
             productId:
               product.id,
 
-            quantityDelta: 3,
+            quantityDelta:
+              3,
 
             reason:
               "Audit adjustment",
@@ -416,12 +857,13 @@ describe(
       ).not.toBeNull();
 
       /*
-       * This proves the actor comes from
-       * authenticated request context.
+       * Actor comes from authenticated context.
        */
       expect(
         audit?.actorId,
-      ).toBe(owner.id);
+      ).toBe(
+        owner.id,
+      );
     });
   },
 );
@@ -436,7 +878,9 @@ describe(
         await createFixtures();
 
       await request(app)
-        .get("/api/audit-logs")
+        .get(
+          "/api/audit-logs",
+        )
         .set(
           "Authorization",
           `Bearer ${staffToken}`,
@@ -453,7 +897,9 @@ describe(
         await createFixtures();
 
       await request(app)
-        .post("/api/adjustments")
+        .post(
+          "/api/adjustments",
+        )
         .set(
           "Authorization",
           `Bearer ${ownerToken}`,
@@ -462,7 +908,8 @@ describe(
           productId:
             product.id,
 
-          quantityDelta: 2,
+          quantityDelta:
+            2,
 
           reason:
             "First audit event",
@@ -470,7 +917,9 @@ describe(
         .expect(201);
 
       await request(app)
-        .post("/api/adjustments")
+        .post(
+          "/api/adjustments",
+        )
         .set(
           "Authorization",
           `Bearer ${ownerToken}`,
@@ -479,7 +928,8 @@ describe(
           productId:
             product.id,
 
-          quantityDelta: 1,
+          quantityDelta:
+            1,
 
           reason:
             "Second audit event",
@@ -488,7 +938,9 @@ describe(
 
       const response =
         await request(app)
-          .get("/api/audit-logs")
+          .get(
+            "/api/audit-logs",
+          )
           .set(
             "Authorization",
             `Bearer ${ownerToken}`,
@@ -502,9 +954,14 @@ describe(
       expect(
         response.body[0].actor,
       ).toEqual({
-        id: owner.id,
-        name: owner.name,
-        role: UserRole.OWNER,
+        id:
+          owner.id,
+
+        name:
+          owner.name,
+
+        role:
+          UserRole.OWNER,
       });
 
       expect(
@@ -521,12 +978,14 @@ describe(
 
       const firstCreatedAt =
         new Date(
-          response.body[0].createdAt,
+          response.body[0]
+            .createdAt,
         ).getTime();
 
       const secondCreatedAt =
         new Date(
-          response.body[1].createdAt,
+          response.body[1]
+            .createdAt,
         ).getTime();
 
       expect(

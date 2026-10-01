@@ -4,6 +4,7 @@ import {
 } from "../../generated/prisma/client.js";
 
 import { prisma } from "../db/prisma.js";
+import { createAuditLog } from "../repositories/audit-log.repository.js";
 import { getCurrentStockWithClient } from "../repositories/product.repository.js";
 import {
   createSale,
@@ -12,8 +13,6 @@ import {
   findSaleProductsByIds,
   findSaleUserById,
 } from "../repositories/sale.repository.js";
-
-import { createAuditLog } from "../repositories/audit-log.repository.js";
 
 export type RecordSaleInput = {
   recordedBy: number;
@@ -42,19 +41,28 @@ function validateItems(
     );
   }
 
-  const seenProductIds = new Set<number>();
+  const seenProductIds =
+    new Set<number>();
 
   for (const item of input.items) {
-    if (seenProductIds.has(item.productId)) {
+    if (
+      seenProductIds.has(
+        item.productId,
+      )
+    ) {
       throw new SaleValidationError(
         `Duplicate productId in sale: ${item.productId}`,
       );
     }
 
-    seenProductIds.add(item.productId);
+    seenProductIds.add(
+      item.productId,
+    );
 
     if (
-      !Number.isInteger(item.quantity) ||
+      !Number.isInteger(
+        item.quantity,
+      ) ||
       item.quantity <= 0
     ) {
       throw new SaleValidationError(
@@ -79,10 +87,11 @@ async function executeSaleTransaction(
 ) {
   return prisma.$transaction(
     async (tx) => {
-      const user = await findSaleUserById(
-        tx,
-        input.recordedBy,
-      );
+      const user =
+        await findSaleUserById(
+          tx,
+          input.recordedBy,
+        );
 
       if (!user) {
         throw new SaleValidationError(
@@ -97,21 +106,23 @@ async function executeSaleTransaction(
       }
 
       /*
-       * Deterministic product order.
-       *
-       * This matters more as concurrent multi-product
-       * transactions become common.
+       * Deterministic product ordering helps
+       * concurrent multi-product transactions
+       * acquire/read resources consistently.
        */
       const orderedItems = [
         ...input.items,
       ].sort(
         (a, b) =>
-          a.productId - b.productId,
+          a.productId -
+          b.productId,
       );
 
-      const productIds = orderedItems.map(
-        (item) => item.productId,
-      );
+      const productIds =
+        orderedItems.map(
+          (item) =>
+            item.productId,
+        );
 
       const products =
         await findSaleProductsByIds(
@@ -123,11 +134,13 @@ async function executeSaleTransaction(
         products.length !==
         productIds.length
       ) {
-        const foundProductIds = new Set(
-          products.map(
-            (product) => product.id,
-          ),
-        );
+        const foundProductIds =
+          new Set(
+            products.map(
+              (product) =>
+                product.id,
+            ),
+          );
 
         const missingProductIds =
           productIds.filter(
@@ -144,62 +157,77 @@ async function executeSaleTransaction(
 
       const inactiveProducts =
         products.filter(
-          (product) => !product.active,
+          (product) =>
+            !product.active,
         );
 
       if (
-        inactiveProducts.length > 0
+        inactiveProducts.length >
+        0
       ) {
         throw new SaleValidationError(
           `Inactive products cannot be sold: ${inactiveProducts
             .map(
-              (product) => product.id,
+              (product) =>
+                product.id,
             )
             .join(", ")}`,
         );
       }
 
-      const productsById = new Map(
-        products.map((product) => [
-          product.id,
-          product,
-        ]),
-      );
+      const productsById =
+        new Map(
+          products.map(
+            (product) => [
+              product.id,
+              product,
+            ],
+          ),
+        );
 
       const pricedItems =
-        orderedItems.map((item) => {
-          const product =
-            productsById.get(
-              item.productId,
-            );
+        orderedItems.map(
+          (item) => {
+            const product =
+              productsById.get(
+                item.productId,
+              );
 
-          if (!product) {
-            throw new SaleValidationError(
-              `Product ${item.productId} does not exist.`,
-            );
-          }
+            if (!product) {
+              throw new SaleValidationError(
+                `Product ${item.productId} does not exist.`,
+              );
+            }
 
-          const unitPrice =
-            product.sellingPrice;
+            /*
+             * Price always comes from
+             * the server-side Product.
+             */
+            const unitPrice =
+              product.sellingPrice;
 
-          const lineTotal =
-            unitPrice.mul(
-              item.quantity,
-            );
+            const lineTotal =
+              unitPrice.mul(
+                item.quantity,
+              );
 
-          return {
-            productId:
-              item.productId,
-            quantity: item.quantity,
-            unitPrice,
-            lineTotal,
-          };
-        });
+            return {
+              productId:
+                item.productId,
+              quantity:
+                item.quantity,
+              unitPrice,
+              lineTotal,
+            };
+          },
+        );
 
       let totalAmount =
         new Prisma.Decimal(0);
 
-      for (const item of pricedItems) {
+      for (
+        const item of pricedItems
+      ) {
         totalAmount =
           totalAmount.add(
             item.lineTotal,
@@ -207,10 +235,12 @@ async function executeSaleTransaction(
       }
 
       /*
-       * All stock reads use the same Serializable
-       * transaction client.
+       * All stock checks happen inside the
+       * same Serializable transaction.
        */
-      for (const item of pricedItems) {
+      for (
+        const item of pricedItems
+      ) {
         const currentStock =
           await getCurrentStockWithClient(
             tx,
@@ -227,16 +257,19 @@ async function executeSaleTransaction(
         }
       }
 
-      const sale = await createSale(
-        tx,
-        {
-          recordedBy:
-            input.recordedBy,
-          paymentMethod:
-            input.paymentMethod,
-          totalAmount,
-        },
-      );
+      const sale =
+        await createSale(
+          tx,
+          {
+            recordedBy:
+              input.recordedBy,
+
+            paymentMethod:
+              input.paymentMethod,
+
+            totalAmount,
+          },
+        );
 
       for (
         const item of pricedItems
@@ -245,13 +278,18 @@ async function executeSaleTransaction(
           await createSaleItem(
             tx,
             {
-              saleId: sale.id,
+              saleId:
+                sale.id,
+
               productId:
                 item.productId,
+
               quantity:
                 item.quantity,
+
               unitPrice:
                 item.unitPrice,
+
               lineTotal:
                 item.lineTotal,
             },
@@ -273,37 +311,48 @@ async function executeSaleTransaction(
               input.recordedBy,
           },
         );
-
-        await createAuditLog(
-          tx,
-          {
-            actorId: input.recordedBy,
-
-            action: "SALE_CREATED",
-
-            entityType: "Sale",
-
-            entityId: sale.id,
-
-            metadata: {
-              totalAmount:
-                sale.totalAmount.toString(),
-
-              paymentMethod:
-                sale.paymentMethod,
-
-              itemCount:
-                pricedItems.length,
-            },
-          },
-        );
       }
+
+      /*
+       * One Sale is one audit event.
+       *
+       * This remains inside the same transaction
+       * as the Sale, SaleItems, and movements.
+       */
+      await createAuditLog(
+        tx,
+        {
+          actorId:
+            input.recordedBy,
+
+          action:
+            "SALE_CREATED",
+
+          entityType:
+            "Sale",
+
+          entityId:
+            sale.id,
+
+          metadata: {
+            totalAmount:
+              sale.totalAmount.toString(),
+
+            paymentMethod:
+              sale.paymentMethod,
+
+            itemCount:
+              pricedItems.length,
+          },
+        },
+      );
 
       return sale;
     },
     {
       isolationLevel:
-        Prisma.TransactionIsolationLevel
+        Prisma
+          .TransactionIsolationLevel
           .Serializable,
     },
   );
@@ -316,7 +365,8 @@ export async function recordSale(
 
   for (
     let attempt = 1;
-    attempt <= MAX_TRANSACTION_ATTEMPTS;
+    attempt <=
+    MAX_TRANSACTION_ATTEMPTS;
     attempt += 1
   ) {
     try {
@@ -346,7 +396,7 @@ export async function recordSale(
 
   /*
    * The loop either returns or throws.
-   * This exists only to satisfy control-flow reasoning.
+   * This exists only for control-flow completeness.
    */
   throw new Error(
     "Sale transaction retry loop exited unexpectedly.",
