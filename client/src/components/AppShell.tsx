@@ -10,6 +10,7 @@ export type AppView =
   | 'inventory'
   | 'sale'
   | 'receiving'
+  | 'adjustment'
 
 type AppShellProps = {
   children: ReactNode
@@ -137,6 +138,29 @@ export function AppShell({
           >
             Receive Stock
           </button>
+
+          {isOwner && (
+            <button
+              type="button"
+              aria-current={
+                activeView ===
+                'adjustment'
+                  ? 'page'
+                  : undefined
+              }
+              onClick={() =>
+                onNavigate(
+                  'adjustment',
+                )
+              }
+              className={navButtonClass(
+                activeView ===
+                  'adjustment',
+              )}
+            >
+              Adjust Stock
+            </button>
+          )}
 
           {isOwner && (
             <>

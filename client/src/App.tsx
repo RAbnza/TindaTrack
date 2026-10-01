@@ -16,6 +16,10 @@ import {
 } from './features/inventory/useProducts'
 
 import {
+  AdjustStockPage,
+} from './pages/AdjustStockPage'
+
+import {
   InventoryPage,
 } from './pages/InventoryPage'
 
@@ -32,6 +36,10 @@ import {
 } from './pages/ReceiveStockPage'
 
 function AuthenticatedApp() {
+  const {
+    user,
+  } = useAuth()
+
   const [
     activeView,
     setActiveView,
@@ -47,11 +55,34 @@ function AuthenticatedApp() {
     reload,
   } = useProducts()
 
+  const isOwner =
+    user?.role === 'OWNER'
+
+  function handleNavigate(
+    view: AppView,
+  ) {
+    /*
+     * UI guard only.
+     *
+     * The API's OWNER-only RBAC remains
+     * the actual security boundary.
+     */
+    if (
+      view ===
+        'adjustment' &&
+      !isOwner
+    ) {
+      return
+    }
+
+    setActiveView(view)
+  }
+
   return (
     <AppShell
       activeView={activeView}
       onNavigate={
-        setActiveView
+        handleNavigate
       }
     >
       {activeView ===
@@ -97,6 +128,25 @@ function AuthenticatedApp() {
           }
         />
       )}
+
+      {activeView ===
+        'adjustment' &&
+        isOwner && (
+          <AdjustStockPage
+            products={
+              products
+            }
+            isProductsLoading={
+              isLoading
+            }
+            productsError={
+              error
+            }
+            reloadProducts={
+              reload
+            }
+          />
+        )}
     </AppShell>
   )
 }
