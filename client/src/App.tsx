@@ -27,6 +27,10 @@ import {
 } from './features/inventory/useProducts'
 
 import {
+  useSetupStatus,
+} from './features/setup/useSetupStatus'
+
+import {
   AdjustStockPage,
 } from './pages/AdjustStockPage'
 
@@ -55,6 +59,10 @@ import {
 } from './pages/ReceiveStockPage'
 
 import {
+  SetupPage,
+} from './pages/SetupPage'
+
+import {
   StockMovementsPage,
 } from './pages/StockMovementsPage'
 
@@ -69,10 +77,95 @@ type ProductRouteContext = {
   reload: () => Promise<void>
 }
 
-function RootRedirect() {
+type SetupStatusStateProps = {
+  isLoading: boolean
+  error: string | null
+  onRetry: () => Promise<void>
+}
+
+function SetupStatusState({
+  isLoading,
+  error,
+  onRetry,
+}: SetupStatusStateProps) {
+  if (isLoading) {
+    return (
+      <main className="min-h-dvh bg-slate-50 px-4 py-8">
+        <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-sm items-center justify-center">
+          <p className="text-sm text-slate-600">
+            Checking setup
+            status...
+          </p>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-dvh bg-slate-50 px-4 py-8">
+        <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-sm items-center">
+          <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-4">
+            <p
+              role="alert"
+              className="text-sm text-red-800"
+            >
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                void onRetry()
+              }
+              className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return null
+}
+
+function RootRoute() {
   const {
     isAuthenticated,
   } = useAuth()
+
+  const {
+    setupRequired,
+    isLoading,
+    error,
+    reload,
+  } = useSetupStatus()
+
+  if (
+    isLoading ||
+    error
+  ) {
+    return (
+      <SetupStatusState
+        isLoading={
+          isLoading
+        }
+        error={error}
+        onRetry={reload}
+      />
+    )
+  }
+
+  if (setupRequired) {
+    return (
+      <Navigate
+        to="/setup"
+        replace
+      />
+    )
+  }
 
   return (
     <Navigate
@@ -91,6 +184,41 @@ function LoginRoute() {
     isAuthenticated,
   } = useAuth()
 
+  const {
+    setupRequired,
+    isLoading,
+    error,
+    reload,
+  } = useSetupStatus()
+
+  if (
+    isLoading ||
+    error
+  ) {
+    return (
+      <SetupStatusState
+        isLoading={
+          isLoading
+        }
+        error={error}
+        onRetry={reload}
+      />
+    )
+  }
+
+  /*
+   * A login screen is useless before
+   * the first OWNER exists.
+   */
+  if (setupRequired) {
+    return (
+      <Navigate
+        to="/setup"
+        replace
+      />
+    )
+  }
+
   if (isAuthenticated) {
     return (
       <Navigate
@@ -103,6 +231,53 @@ function LoginRoute() {
   return <LoginPage />
 }
 
+function SetupRoute() {
+  const {
+    isAuthenticated,
+  } = useAuth()
+
+  const {
+    setupRequired,
+    isLoading,
+    error,
+    reload,
+  } = useSetupStatus()
+
+  if (
+    isLoading ||
+    error
+  ) {
+    return (
+      <SetupStatusState
+        isLoading={
+          isLoading
+        }
+        error={error}
+        onRetry={reload}
+      />
+    )
+  }
+
+  /*
+   * Once any User exists, the setup
+   * page can no longer be used.
+   */
+  if (!setupRequired) {
+    return (
+      <Navigate
+        to={
+          isAuthenticated
+            ? '/inventory'
+            : '/login'
+        }
+        replace
+      />
+    )
+  }
+
+  return <SetupPage />
+}
+
 function AuthenticatedLayout() {
   const {
     products,
@@ -111,12 +286,13 @@ function AuthenticatedLayout() {
     reload,
   } = useProducts()
 
-  const context: ProductRouteContext = {
-    products,
-    isLoading,
-    error,
-    reload,
-  }
+  const context:
+    ProductRouteContext = {
+      products,
+      isLoading,
+      error,
+      reload,
+    }
 
   return (
     <AppShell>
@@ -215,7 +391,14 @@ function App() {
       <Route
         path="/"
         element={
-          <RootRedirect />
+          <RootRoute />
+        }
+      />
+
+      <Route
+        path="/setup"
+        element={
+          <SetupRoute />
         }
       />
 
@@ -294,7 +477,7 @@ function App() {
       <Route
         path="*"
         element={
-          <RootRedirect />
+          <RootRoute />
         }
       />
     </Routes>
