@@ -84,6 +84,21 @@ export function AppShell({
             Inventory
           </NavLink>
 
+          {isOwner && (
+            <NavLink
+              to="/products"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
+                )
+              }
+            >
+              Products
+            </NavLink>
+          )}
+
           <NavLink
             to="/sales/new"
             className={({

@@ -55,6 +55,10 @@ import {
 } from './pages/NewSalePage'
 
 import {
+  ProductManagementPage,
+} from './pages/ProductManagementPage'
+
+import {
   ReceiveStockPage,
 } from './pages/ReceiveStockPage'
 
@@ -206,10 +210,6 @@ function LoginRoute() {
     )
   }
 
-  /*
-   * A login screen is useless before
-   * the first OWNER exists.
-   */
   if (setupRequired) {
     return (
       <Navigate
@@ -258,10 +258,6 @@ function SetupRoute() {
     )
   }
 
-  /*
-   * Once any User exists, the setup
-   * page can no longer be used.
-   */
   if (!setupRequired) {
     return (
       <Navigate
@@ -314,6 +310,25 @@ function InventoryRoute() {
 
   return (
     <InventoryPage
+      products={products}
+      isLoading={isLoading}
+      error={error}
+      reload={reload}
+    />
+  )
+}
+
+function ProductManagementRoute() {
+  const {
+    products,
+    isLoading,
+    error,
+    reload,
+  } =
+    useOutletContext<ProductRouteContext>()
+
+  return (
+    <ProductManagementPage
       products={products}
       isLoading={isLoading}
       error={error}
@@ -420,6 +435,15 @@ function App() {
           path="/inventory"
           element={
             <InventoryRoute />
+          }
+        />
+
+        <Route
+          path="/products"
+          element={
+            <RequireOwner>
+              <ProductManagementRoute />
+            </RequireOwner>
           }
         />
 
