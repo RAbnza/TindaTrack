@@ -23,7 +23,8 @@
     "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts",
     "db:test:reset": "tsx src/db/reset-test.ts",
     "db:test:seed": "tsx src/db/seed-test.ts",
-    "db:test:reseed": "npm run db:test:reset && npm run db:test:seed"
+    "db:test:reseed": "npm run db:test:reset && npm run db:test:seed",
+    "db:dev:seed": "tsx src/db/seed-dev.ts"
   },
   "keywords": [],
   "author": "",
