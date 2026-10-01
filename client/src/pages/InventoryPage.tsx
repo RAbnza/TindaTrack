@@ -1,19 +1,32 @@
-import { useMemo, useState } from 'react'
+import {
+  useMemo,
+  useState,
+} from 'react'
 
 import { ProductCard } from '../features/inventory/ProductCard'
-import { useProducts } from '../features/inventory/useProducts'
 
-export function InventoryPage() {
-  const {
-    products,
-    isLoading,
-    error,
-    reload,
-  } = useProducts()
+import type { Product } from '../types/product'
 
-  const [search, setSearch] = useState('')
-  const [showLowStockOnly, setShowLowStockOnly] =
-    useState(false)
+type InventoryPageProps = {
+  products: Product[]
+  isLoading: boolean
+  error: string | null
+  reload: () => Promise<void>
+}
+
+export function InventoryPage({
+  products,
+  isLoading,
+  error,
+  reload,
+}: InventoryPageProps) {
+  const [search, setSearch] =
+    useState('')
+
+  const [
+    showLowStockOnly,
+    setShowLowStockOnly,
+  ] = useState(false)
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = search
@@ -25,15 +38,23 @@ export function InventoryPage() {
         normalizedSearch.length === 0 ||
         product.name
           .toLowerCase()
-          .includes(normalizedSearch) ||
+          .includes(
+            normalizedSearch,
+          ) ||
         product.sku
           .toLowerCase()
-          .includes(normalizedSearch)
+          .includes(
+            normalizedSearch,
+          )
 
       const matchesStockFilter =
-        !showLowStockOnly || product.lowStock
+        !showLowStockOnly ||
+        product.lowStock
 
-      return matchesSearch && matchesStockFilter
+      return (
+        matchesSearch &&
+        matchesStockFilter
+      )
     })
   }, [
     products,
@@ -66,7 +87,9 @@ export function InventoryPage() {
           type="search"
           value={search}
           onChange={(event) =>
-            setSearch(event.target.value)
+            setSearch(
+              event.target.value,
+            )
           }
           placeholder="Search name or SKU"
           className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
@@ -74,10 +97,13 @@ export function InventoryPage() {
 
         <button
           type="button"
-          aria-pressed={showLowStockOnly}
+          aria-pressed={
+            showLowStockOnly
+          }
           onClick={() =>
             setShowLowStockOnly(
-              (current) => !current,
+              (current) =>
+                !current,
             )
           }
           className={[
@@ -110,7 +136,9 @@ export function InventoryPage() {
 
           <button
             type="button"
-            onClick={() => void reload()}
+            onClick={() =>
+              void reload()
+            }
             className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
           >
             Try again
@@ -120,36 +148,48 @@ export function InventoryPage() {
 
       {!isLoading &&
         !error &&
-        filteredProducts.length === 0 && (
+        filteredProducts.length ===
+          0 && (
           <div className="py-12 text-center">
             <p className="text-base font-medium text-slate-800">
               No products found
             </p>
 
             <p className="mt-1 text-sm text-slate-500">
-              Try changing your search or filter.
+              Try changing your search
+              or filter.
             </p>
           </div>
         )}
 
       {!isLoading &&
         !error &&
-        filteredProducts.length > 0 && (
+        filteredProducts.length >
+          0 && (
           <>
             <p className="mt-5 text-sm text-slate-500">
-              {filteredProducts.length}{' '}
-              {filteredProducts.length === 1
+              {
+                filteredProducts.length
+              }{' '}
+              {filteredProducts.length ===
+              1
                 ? 'product'
                 : 'products'}
             </p>
 
             <div className="mt-3 space-y-3">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                />
-              ))}
+              {filteredProducts.map(
+                (product) => (
+                  <ProductCard
+                    key={
+                      product.id
+                    }
+                    product={
+                      product
+                    }
+                  />
+                ),
+              )}
             </div>
           </>
         )}

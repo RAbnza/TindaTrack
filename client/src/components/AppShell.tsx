@@ -2,12 +2,20 @@ import type { ReactNode } from 'react'
 
 import { useAuth } from '../auth/useAuth'
 
+export type AppView =
+  | 'inventory'
+  | 'sale'
+
 type AppShellProps = {
   children: ReactNode
+  activeView: AppView
+  onNavigate: (view: AppView) => void
 }
 
 export function AppShell({
   children,
+  activeView,
+  onNavigate,
 }: AppShellProps) {
   const { user, logout } = useAuth()
 
@@ -15,7 +23,19 @@ export function AppShell({
     return null
   }
 
-  const isOwner = user.role === 'OWNER'
+  const isOwner =
+    user.role === 'OWNER'
+
+  function navButtonClass(
+    isActive: boolean,
+  ) {
+    return [
+      'min-h-11 shrink-0 rounded-xl px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+      isActive
+        ? 'bg-emerald-700 text-white'
+        : 'bg-white text-slate-700 hover:bg-slate-100',
+    ].join(' ')
+  }
 
   return (
     <div className="min-h-dvh bg-slate-50">
@@ -49,20 +69,62 @@ export function AppShell({
         >
           <button
             type="button"
-            className="min-h-11 shrink-0 rounded-xl bg-emerald-50 px-4 text-sm font-semibold text-emerald-800"
+            aria-current={
+              activeView ===
+              'inventory'
+                ? 'page'
+                : undefined
+            }
+            onClick={() =>
+              onNavigate(
+                'inventory',
+              )
+            }
+            className={navButtonClass(
+              activeView ===
+                'inventory',
+            )}
           >
             Inventory
           </button>
 
+          <button
+            type="button"
+            aria-current={
+              activeView === 'sale'
+                ? 'page'
+                : undefined
+            }
+            onClick={() =>
+              onNavigate('sale')
+            }
+            className={navButtonClass(
+              activeView === 'sale',
+            )}
+          >
+            New Sale
+          </button>
+
           {isOwner && (
-            <button
-              type="button"
-              disabled
-              title="Owner tools will be added in a later slice."
-              className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Owner tools
-            </button>
+            <>
+              <button
+                type="button"
+                disabled
+                title="Reports will be added in a later slice."
+                className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Reports
+              </button>
+
+              <button
+                type="button"
+                disabled
+                title="Audit history will be added in a later slice."
+                className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Audit
+              </button>
+            </>
           )}
         </nav>
       </header>
