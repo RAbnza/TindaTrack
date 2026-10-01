@@ -39,6 +39,10 @@ import {
   ReceiveStockPage,
 } from './pages/ReceiveStockPage'
 
+import {
+  StockMovementsPage,
+} from './pages/StockMovementsPage'
+
 function AuthenticatedApp() {
   const {
     user,
@@ -68,13 +72,14 @@ function AuthenticatedApp() {
     /*
      * UI guard only.
      *
-     * Backend RBAC remains the actual
+     * Backend RBAC remains the real
      * authorization boundary.
      */
     const ownerOnlyViews:
       AppView[] = [
         'adjustment',
         'reports',
+        'movements',
       ]
 
     if (
@@ -163,6 +168,12 @@ function AuthenticatedApp() {
         'reports' &&
         isOwner && (
           <DailySalesPage />
+        )}
+
+      {activeView ===
+        'movements' &&
+        isOwner && (
+          <StockMovementsPage />
         )}
     </AppShell>
   )

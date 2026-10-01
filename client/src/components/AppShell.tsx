@@ -12,6 +12,7 @@ export type AppView =
   | 'receiving'
   | 'adjustment'
   | 'reports'
+  | 'movements'
 
 type AppShellProps = {
   children: ReactNode
@@ -189,8 +190,31 @@ export function AppShell({
           {isOwner && (
             <button
               type="button"
+              aria-current={
+                activeView ===
+                'movements'
+                  ? 'page'
+                  : undefined
+              }
+              onClick={() =>
+                onNavigate(
+                  'movements',
+                )
+              }
+              className={navButtonClass(
+                activeView ===
+                  'movements',
+              )}
+            >
+              Movements
+            </button>
+          )}
+
+          {isOwner && (
+            <button
+              type="button"
               disabled
-              title="Audit history will be added in a later slice."
+              title="Audit history will be added in the next slice."
               className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Audit
