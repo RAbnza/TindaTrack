@@ -7,6 +7,8 @@ import { productRouter } from "./routes/product.routes.js";
 import { saleRouter } from "./routes/sale.routes.js";
 import { stockAdjustmentRouter } from "./routes/stock-adjustment.routes.js";
 import { stockReceiptRouter } from "./routes/stock-receipt.routes.js";
+import { reportRouter } from "./routes/report.routes.js";
+import { stockMovementRouter } from "./routes/stock-movement.routes.js";
 
 export const app = express();
 
@@ -42,6 +44,16 @@ app.use(
 app.use(
   "/api/sales",
   saleRouter,
+);
+
+app.use(
+  "/api/reports",
+  reportRouter,
+);
+
+app.use(
+  "/api/stock-movements",
+  stockMovementRouter,
 );
 
 app.use((_req, res) => {
