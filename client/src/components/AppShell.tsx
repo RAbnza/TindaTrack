@@ -9,7 +9,6 @@ import {
   Link,
   NavLink,
   useLocation,
-  useNavigate,
 } from 'react-router-dom'
 
 import {
@@ -109,7 +108,6 @@ function Navigation({
                       [
                         'flex min-h-11 items-center gap-3 rounded-lg px-3 text-ui transition-colors motion-reduce:transition-none',
                         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-
                         isActive
                           ? 'bg-accent font-medium text-accent-foreground'
                           : 'text-secondary-foreground hover:bg-secondary',
@@ -150,9 +148,6 @@ function ShellLayout({
 
   const location =
     useLocation()
-
-  const navigate =
-    useNavigate()
 
   const [
     mobileMenuOpen,
@@ -265,18 +260,20 @@ function ShellLayout({
     logout()
 
     /*
-     * Explicit sign-out returns to
-     * the public root route.
+     * Explicit sign-out leaves the
+     * authenticated application entirely.
      *
-     * RootRoute then decides:
-     * configured + unauthenticated
-     * → LandingPage.
+     * Using a full location replacement
+     * avoids RequireAuth racing the
+     * client-side route change and
+     * sending the user to /login.
+     *
+     * RootRoute will then render the
+     * LandingPage for a configured,
+     * unauthenticated store.
      */
-    navigate(
+    window.location.replace(
       '/',
-      {
-        replace: true,
-      },
     )
   }
 
@@ -397,7 +394,9 @@ function ShellLayout({
               to="/sales/new"
               className="hidden min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-ui font-medium text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:inline-flex"
             >
-              <AppIcon name="sale" />
+              <AppIcon
+                name="sale"
+              />
 
               New Sale
             </Link>
