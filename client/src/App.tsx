@@ -39,6 +39,10 @@ import {
 } from './pages/AuditHistoryPage'
 
 import {
+  DashboardPage,
+} from './pages/DashboardPage'
+
+import {
   DailySalesPage,
 } from './pages/DailySalesPage'
 
@@ -183,7 +187,7 @@ function RootRoute() {
     <Navigate
       to={
         isAuthenticated
-          ? '/inventory'
+          ? '/dashboard'
           : '/login'
       }
       replace
@@ -230,7 +234,7 @@ function LoginRoute() {
   if (isAuthenticated) {
     return (
       <Navigate
-        to="/inventory"
+        to="/dashboard"
         replace
       />
     )
@@ -271,7 +275,7 @@ function SetupRoute() {
       <Navigate
         to={
           isAuthenticated
-            ? '/inventory'
+            ? '/dashboard'
             : '/login'
         }
         replace
@@ -439,6 +443,13 @@ function App() {
           </RequireAuth>
         }
       >
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage />
+          }
+        />
+
         <Route
           path="/inventory"
           element={

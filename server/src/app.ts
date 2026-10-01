@@ -23,6 +23,10 @@ import {
 } from "./routes/staff.routes.js";
 
 import {
+  dashboardRouter,
+} from "./routes/dashboard.routes.js";
+
+import {
   saleRouter,
 } from "./routes/sale.routes.js";
 
@@ -86,6 +90,11 @@ app.use(
 app.use(
   "/api/staff",
   staffRouter,
+);
+
+app.use(
+  "/api/dashboard",
+  dashboardRouter,
 );
 
 app.use(

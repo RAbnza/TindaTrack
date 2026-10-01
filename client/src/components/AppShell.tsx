@@ -72,6 +72,19 @@ export function AppShell({
           className="mx-auto flex w-full max-w-2xl gap-2 overflow-x-auto px-4 pb-3"
         >
           <NavLink
+            to="/dashboard"
+            className={({
+              isActive,
+            }) =>
+              navLinkClass(
+                isActive,
+              )
+            }
+          >
+            Dashboard
+          </NavLink>
+
+          <NavLink
             to="/inventory"
             className={({
               isActive,
