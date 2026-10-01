@@ -11,8 +11,6 @@ const saleItemSchema = z
 
 export const createSaleSchema = z
   .object({
-    recordedBy: z.number().int().positive(),
-
     paymentMethod: z.enum([
       PaymentMethod.CASH,
       PaymentMethod.GCASH,

@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import request from "supertest";
 import {
   afterAll,
@@ -18,6 +19,9 @@ import { prisma } from "../db/prisma.js";
 import { getCurrentStock } from "../repositories/product.repository.js";
 import { recordStockAdjustment } from "../services/stock-adjustment.service.js";
 
+const TEST_PASSWORD =
+  "SaleTestPassword123!";
+
 async function cleanDatabase(): Promise<void> {
   await prisma.stockMovement.deleteMany();
   await prisma.stockAdjustment.deleteMany();
@@ -35,41 +39,74 @@ async function cleanDatabase(): Promise<void> {
   await prisma.user.deleteMany();
 }
 
+async function loginUser(
+  email: string,
+  password: string,
+): Promise<string> {
+  const response = await request(app)
+    .post("/api/auth/login")
+    .send({
+      email,
+      password,
+    })
+    .expect(200);
+
+  return response.body.token as string;
+}
+
 async function createSaleFixtures() {
-  const user = await prisma.user.create({
-    data: {
-      name: "Sale Test Owner",
-      email: "sale-owner@test.local",
-      passwordHash: "integration-test-placeholder",
-      role: UserRole.OWNER,
-      active: true,
-    },
-  });
+  const passwordHash =
+    await bcrypt.hash(
+      TEST_PASSWORD,
+      4,
+    );
 
-  const firstProduct = await prisma.product.create({
-    data: {
-      sku: "SALE-001",
-      name: "Sale Product One",
-      category: "Testing",
-      sellingPrice: "25.00",
-      reorderLevel: 2,
-      active: true,
-    },
-  });
+  const user =
+    await prisma.user.create({
+      data: {
+        name: "Sale Test Owner",
+        email:
+          "sale-owner@test.local",
+        passwordHash,
+        role: UserRole.OWNER,
+        active: true,
+      },
+    });
 
-  const secondProduct = await prisma.product.create({
-    data: {
-      sku: "SALE-002",
-      name: "Sale Product Two",
-      category: "Testing",
-      sellingPrice: "10.50",
-      reorderLevel: 2,
-      active: true,
-    },
-  });
+  const firstProduct =
+    await prisma.product.create({
+      data: {
+        sku: "SALE-001",
+        name:
+          "Sale Product One",
+        category: "Testing",
+        sellingPrice: "25.00",
+        reorderLevel: 2,
+        active: true,
+      },
+    });
+
+  const secondProduct =
+    await prisma.product.create({
+      data: {
+        sku: "SALE-002",
+        name:
+          "Sale Product Two",
+        category: "Testing",
+        sellingPrice: "10.50",
+        reorderLevel: 2,
+        active: true,
+      },
+    });
+
+  const token = await loginUser(
+    user.email,
+    TEST_PASSWORD,
+  );
 
   return {
     user,
+    token,
     firstProduct,
     secondProduct,
   };
@@ -83,7 +120,8 @@ async function addStock(
   await recordStockAdjustment({
     productId,
     quantityDelta: quantity,
-    reason: "Prepare stock for sale API integration test",
+    reason:
+      "Prepare stock for sale API integration test",
     adjustedBy: userId,
   });
 }
@@ -101,9 +139,11 @@ describe("POST /api/sales", () => {
   it("creates a successful multi-item sale with authoritative totals and SALE movements", async () => {
     const {
       user,
+      token,
       firstProduct,
       secondProduct,
-    } = await createSaleFixtures();
+    } =
+      await createSaleFixtures();
 
     await addStock(
       user.id,
@@ -118,127 +158,185 @@ describe("POST /api/sales", () => {
     );
 
     const firstStockBefore =
-      await getCurrentStock(firstProduct.id);
+      await getCurrentStock(
+        firstProduct.id,
+      );
 
     const secondStockBefore =
-      await getCurrentStock(secondProduct.id);
+      await getCurrentStock(
+        secondProduct.id,
+      );
 
-    const response = await request(app)
-      .post("/api/sales")
-      .send({
-        recordedBy: user.id,
-        paymentMethod: "CASH",
-        items: [
-          {
-            productId: firstProduct.id,
-            quantity: 2,
-          },
-          {
-            productId: secondProduct.id,
-            quantity: 3,
-          },
-        ],
-      })
-      .expect(201);
+    const response =
+      await request(app)
+        .post("/api/sales")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send({
+          paymentMethod: "CASH",
+          items: [
+            {
+              productId:
+                firstProduct.id,
+              quantity: 2,
+            },
+            {
+              productId:
+                secondProduct.id,
+              quantity: 3,
+            },
+          ],
+        })
+        .expect(201);
 
-    const sale = await prisma.sale.findUnique({
-      where: {
-        id: response.body.id,
-      },
-      include: {
-        saleItems: {
-          include: {
-            stockMovement: true,
-          },
-          orderBy: {
-            productId: "asc",
+    expect(
+      response.body.recordedBy,
+    ).toBe(user.id);
+
+    const sale =
+      await prisma.sale.findUnique({
+        where: {
+          id: response.body.id,
+        },
+        include: {
+          saleItems: {
+            include: {
+              stockMovement:
+                true,
+            },
+            orderBy: {
+              productId: "asc",
+            },
           },
         },
-      },
-    });
+      });
 
-    expect(sale).not.toBeNull();
+    expect(
+      sale,
+    ).not.toBeNull();
+
+    expect(
+      sale?.recordedBy,
+    ).toBe(user.id);
 
     expect(
       sale?.totalAmount.toString(),
     ).toBe("81.5");
 
-    expect(sale?.saleItems).toHaveLength(2);
+    expect(
+      sale?.saleItems,
+    ).toHaveLength(2);
 
-    const firstItem = sale?.saleItems.find(
-      (item) =>
-        item.productId === firstProduct.id,
-    );
+    const firstItem =
+      sale?.saleItems.find(
+        (item) =>
+          item.productId ===
+          firstProduct.id,
+      );
 
-    const secondItem = sale?.saleItems.find(
-      (item) =>
-        item.productId === secondProduct.id,
-    );
+    const secondItem =
+      sale?.saleItems.find(
+        (item) =>
+          item.productId ===
+          secondProduct.id,
+      );
 
-    expect(firstItem).toBeDefined();
-    expect(secondItem).toBeDefined();
+    expect(
+      firstItem,
+    ).toBeDefined();
 
-    expect(firstItem?.unitPrice.toString()).toBe(
-      "25",
-    );
+    expect(
+      secondItem,
+    ).toBeDefined();
 
-    expect(firstItem?.lineTotal.toString()).toBe(
-      "50",
-    );
+    expect(
+      firstItem?.unitPrice.toString(),
+    ).toBe("25");
 
-    expect(secondItem?.unitPrice.toString()).toBe(
-      "10.5",
-    );
+    expect(
+      firstItem?.lineTotal.toString(),
+    ).toBe("50");
 
-    expect(secondItem?.lineTotal.toString()).toBe(
-      "31.5",
-    );
+    expect(
+      secondItem?.unitPrice.toString(),
+    ).toBe("10.5");
 
-    expect(firstItem?.stockMovement?.type).toBe(
+    expect(
+      secondItem?.lineTotal.toString(),
+    ).toBe("31.5");
+
+    expect(
+      firstItem?.stockMovement
+        ?.type,
+    ).toBe(
       StockMovementType.SALE,
     );
 
     expect(
-      firstItem?.stockMovement?.quantityDelta,
+      firstItem?.stockMovement
+        ?.quantityDelta,
     ).toBe(-2);
 
     expect(
-      firstItem?.stockMovement?.saleItemId,
-    ).toBe(firstItem?.id);
+      firstItem?.stockMovement
+        ?.actorId,
+    ).toBe(user.id);
 
-    expect(secondItem?.stockMovement?.type).toBe(
+    expect(
+      secondItem?.stockMovement
+        ?.type,
+    ).toBe(
       StockMovementType.SALE,
     );
 
     expect(
-      secondItem?.stockMovement?.quantityDelta,
+      secondItem?.stockMovement
+        ?.quantityDelta,
     ).toBe(-3);
 
     expect(
-      secondItem?.stockMovement?.saleItemId,
-    ).toBe(secondItem?.id);
+      secondItem?.stockMovement
+        ?.actorId,
+    ).toBe(user.id);
 
     expect(
-      await getCurrentStock(firstProduct.id),
-    ).toBe(firstStockBefore - 2);
+      await getCurrentStock(
+        firstProduct.id,
+      ),
+    ).toBe(
+      firstStockBefore - 2,
+    );
 
     expect(
-      await getCurrentStock(secondProduct.id),
-    ).toBe(secondStockBefore - 3);
+      await getCurrentStock(
+        secondProduct.id,
+      ),
+    ).toBe(
+      secondStockBefore - 3,
+    );
   });
 
   it("returns 400 for a malformed body", async () => {
-    const { user, firstProduct } =
+    const {
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await request(app)
       .post("/api/sales")
+      .set(
+        "Authorization",
+        `Bearer ${token}`,
+      )
       .send({
-        recordedBy: user.id,
         paymentMethod: "CASH",
         items: [
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 0,
           },
         ],
@@ -255,7 +353,11 @@ describe("POST /api/sales", () => {
   });
 
   it("returns 400 for duplicate product IDs", async () => {
-    const { user, firstProduct } =
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -266,16 +368,21 @@ describe("POST /api/sales", () => {
 
     await request(app)
       .post("/api/sales")
+      .set(
+        "Authorization",
+        `Bearer ${token}`,
+      )
       .send({
-        recordedBy: user.id,
         paymentMethod: "CASH",
         items: [
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 1,
           },
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 2,
           },
         ],
@@ -291,8 +398,12 @@ describe("POST /api/sales", () => {
     ).toBe(0);
   });
 
-  it("rejects an inactive user", async () => {
-    const { user, firstProduct } =
+  it("rejects a previously valid token after the user becomes inactive", async () => {
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -312,17 +423,21 @@ describe("POST /api/sales", () => {
 
     await request(app)
       .post("/api/sales")
+      .set(
+        "Authorization",
+        `Bearer ${token}`,
+      )
       .send({
-        recordedBy: user.id,
         paymentMethod: "CASH",
         items: [
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 1,
           },
         ],
       })
-      .expect(400);
+      .expect(401);
 
     expect(
       await prisma.sale.count(),
@@ -330,7 +445,11 @@ describe("POST /api/sales", () => {
   });
 
   it("rejects an inactive product", async () => {
-    const { user, firstProduct } =
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -350,12 +469,16 @@ describe("POST /api/sales", () => {
 
     await request(app)
       .post("/api/sales")
+      .set(
+        "Authorization",
+        `Bearer ${token}`,
+      )
       .send({
-        recordedBy: user.id,
         paymentMethod: "CASH",
         items: [
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 1,
           },
         ],
@@ -367,16 +490,20 @@ describe("POST /api/sales", () => {
     ).toBe(0);
 
     expect(
-      await getCurrentStock(firstProduct.id),
+      await getCurrentStock(
+        firstProduct.id,
+      ),
     ).toBe(5);
   });
 
   it("rejects insufficient stock without persisting sale state", async () => {
     const {
       user,
+      token,
       firstProduct,
       secondProduct,
-    } = await createSaleFixtures();
+    } =
+      await createSaleFixtures();
 
     await addStock(
       user.id,
@@ -391,10 +518,14 @@ describe("POST /api/sales", () => {
     );
 
     const firstStockBefore =
-      await getCurrentStock(firstProduct.id);
+      await getCurrentStock(
+        firstProduct.id,
+      );
 
     const secondStockBefore =
-      await getCurrentStock(secondProduct.id);
+      await getCurrentStock(
+        secondProduct.id,
+      );
 
     const saleCountBefore =
       await prisma.sale.count();
@@ -405,22 +536,28 @@ describe("POST /api/sales", () => {
     const saleMovementCountBefore =
       await prisma.stockMovement.count({
         where: {
-          type: StockMovementType.SALE,
+          type:
+            StockMovementType.SALE,
         },
       });
 
     await request(app)
       .post("/api/sales")
+      .set(
+        "Authorization",
+        `Bearer ${token}`,
+      )
       .send({
-        recordedBy: user.id,
         paymentMethod: "GCASH",
         items: [
           {
-            productId: firstProduct.id,
+            productId:
+              firstProduct.id,
             quantity: 2,
           },
           {
-            productId: secondProduct.id,
+            productId:
+              secondProduct.id,
             quantity: 2,
           },
         ],
@@ -429,31 +566,52 @@ describe("POST /api/sales", () => {
 
     expect(
       await prisma.sale.count(),
-    ).toBe(saleCountBefore);
+    ).toBe(
+      saleCountBefore,
+    );
 
     expect(
       await prisma.saleItem.count(),
-    ).toBe(saleItemCountBefore);
+    ).toBe(
+      saleItemCountBefore,
+    );
 
     expect(
-      await prisma.stockMovement.count({
-        where: {
-          type: StockMovementType.SALE,
+      await prisma.stockMovement.count(
+        {
+          where: {
+            type:
+              StockMovementType.SALE,
+          },
         },
-      }),
-    ).toBe(saleMovementCountBefore);
+      ),
+    ).toBe(
+      saleMovementCountBefore,
+    );
 
     expect(
-      await getCurrentStock(firstProduct.id),
-    ).toBe(firstStockBefore);
+      await getCurrentStock(
+        firstProduct.id,
+      ),
+    ).toBe(
+      firstStockBefore,
+    );
 
     expect(
-      await getCurrentStock(secondProduct.id),
-    ).toBe(secondStockBefore);
+      await getCurrentStock(
+        secondProduct.id,
+      ),
+    ).toBe(
+      secondStockBefore,
+    );
   });
 
   it("rejects attempted caller-supplied money fields at the API boundary", async () => {
-    const { user, firstProduct } =
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -462,27 +620,37 @@ describe("POST /api/sales", () => {
       5,
     );
 
-    const response = await request(app)
-      .post("/api/sales")
-      .send({
-        recordedBy: user.id,
-        paymentMethod: "CASH",
+    const response =
+      await request(app)
+        .post("/api/sales")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send({
+          paymentMethod: "CASH",
 
-        totalAmount: "0.01",
+          totalAmount: "0.01",
 
-        items: [
-          {
-            productId: firstProduct.id,
-            quantity: 2,
+          items: [
+            {
+              productId:
+                firstProduct.id,
+              quantity: 2,
 
-            unitPrice: "0.01",
-            lineTotal: "0.02",
-          },
-        ],
-      })
-      .expect(400);
+              unitPrice:
+                "0.01",
 
-    expect(response.body.error).toBe(
+              lineTotal:
+                "0.02",
+            },
+          ],
+        })
+        .expect(400);
+
+    expect(
+      response.body.error,
+    ).toBe(
       "Invalid sale request.",
     );
 
@@ -492,7 +660,11 @@ describe("POST /api/sales", () => {
   });
 
   it("uses authoritative Product pricing when no caller money fields are supplied", async () => {
-    const { user, firstProduct } =
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -501,32 +673,44 @@ describe("POST /api/sales", () => {
       5,
     );
 
-    const response = await request(app)
-      .post("/api/sales")
-      .send({
-        recordedBy: user.id,
-        paymentMethod: "MAYA",
-        items: [
-          {
-            productId: firstProduct.id,
-            quantity: 2,
-          },
-        ],
-      })
-      .expect(201);
+    const response =
+      await request(app)
+        .post("/api/sales")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send({
+          paymentMethod: "MAYA",
+          items: [
+            {
+              productId:
+                firstProduct.id,
+              quantity: 2,
+            },
+          ],
+        })
+        .expect(201);
 
     const saleItem =
-      await prisma.saleItem.findFirst({
-        where: {
-          saleId: response.body.id,
+      await prisma.saleItem.findFirst(
+        {
+          where: {
+            saleId:
+              response.body.id,
+          },
         },
-      });
+      );
 
-    expect(saleItem).not.toBeNull();
+    expect(
+      saleItem,
+    ).not.toBeNull();
 
     expect(
       saleItem?.unitPrice.toString(),
-    ).toBe(firstProduct.sellingPrice.toString());
+    ).toBe(
+      firstProduct.sellingPrice.toString(),
+    );
 
     expect(
       saleItem?.lineTotal.toString(),
@@ -538,7 +722,11 @@ describe("POST /api/sales", () => {
   });
 
   it("allows exactly one concurrent HTTP sale of the final unit", async () => {
-    const { user, firstProduct } =
+    const {
+      user,
+      token,
+      firstProduct,
+    } =
       await createSaleFixtures();
 
     await addStock(
@@ -548,7 +736,9 @@ describe("POST /api/sales", () => {
     );
 
     expect(
-      await getCurrentStock(firstProduct.id),
+      await getCurrentStock(
+        firstProduct.id,
+      ),
     ).toBe(1);
 
     const saleCountBefore =
@@ -557,31 +747,44 @@ describe("POST /api/sales", () => {
     const saleMovementCountBefore =
       await prisma.stockMovement.count({
         where: {
-          type: StockMovementType.SALE,
+          type:
+            StockMovementType.SALE,
         },
       });
 
     const body = {
-      recordedBy: user.id,
-      paymentMethod: PaymentMethod.CASH,
+      paymentMethod:
+        PaymentMethod.CASH,
+
       items: [
         {
-          productId: firstProduct.id,
+          productId:
+            firstProduct.id,
           quantity: 1,
         },
       ],
     };
 
-    const [firstResponse, secondResponse] =
-      await Promise.all([
-        request(app)
-          .post("/api/sales")
-          .send(body),
+    const [
+      firstResponse,
+      secondResponse,
+    ] = await Promise.all([
+      request(app)
+        .post("/api/sales")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send(body),
 
-        request(app)
-          .post("/api/sales")
-          .send(body),
-      ]);
+      request(app)
+        .post("/api/sales")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send(body),
+    ]);
 
     const statuses = [
       firstResponse.status,
@@ -595,18 +798,27 @@ describe("POST /api/sales", () => {
 
     expect(
       await prisma.sale.count(),
-    ).toBe(saleCountBefore + 1);
+    ).toBe(
+      saleCountBefore + 1,
+    );
 
     expect(
-      await prisma.stockMovement.count({
-        where: {
-          type: StockMovementType.SALE,
+      await prisma.stockMovement.count(
+        {
+          where: {
+            type:
+              StockMovementType.SALE,
+          },
         },
-      }),
-    ).toBe(saleMovementCountBefore + 1);
+      ),
+    ).toBe(
+      saleMovementCountBefore + 1,
+    );
 
     expect(
-      await getCurrentStock(firstProduct.id),
+      await getCurrentStock(
+        firstProduct.id,
+      ),
     ).toBe(0);
 
     const rejectedResponse =
@@ -616,6 +828,8 @@ describe("POST /api/sales", () => {
 
     expect(
       rejectedResponse.body.error,
-    ).toContain("Insufficient stock");
+    ).toContain(
+      "Insufficient stock",
+    );
   });
 });

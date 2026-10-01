@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { config } from "dotenv";
 
 config({
@@ -5,7 +6,8 @@ config({
   override: true,
 });
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl =
+  process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error(
@@ -27,96 +29,137 @@ const { UserRole } = await import(
   "../../generated/prisma/client.js"
 );
 
-const { prisma } = await import("./prisma.js");
-
-const { recordStockReceipt } = await import(
-  "../services/stock-receipt.service.js"
+const { prisma } = await import(
+  "./prisma.js"
 );
 
+const { recordStockReceipt } =
+  await import(
+    "../services/stock-receipt.service.js"
+  );
+
 async function seedTestDatabase(): Promise<void> {
-  /*
-   * Seed assumes an empty database.
-   * Use db:test:reseed when you want a guaranteed clean start.
-   */
+  const ownerPassword =
+    "Owner123!";
 
-  const owner = await prisma.user.create({
-    data: {
-      name: "Test Owner",
-      email: "owner@tindatrack.test",
-      passwordHash: "not-a-real-password-hash",
-      role: UserRole.OWNER,
-      active: true,
-    },
-  });
+  const staffPassword =
+    "Staff123!";
 
-  const staff = await prisma.user.create({
-    data: {
-      name: "Test Staff",
-      email: "staff@tindatrack.test",
-      passwordHash: "not-a-real-password-hash",
-      role: UserRole.STAFF,
-      active: true,
-    },
-  });
+  const inactivePassword =
+    "Inactive123!";
 
-  const inactiveStaff = await prisma.user.create({
-    data: {
-      name: "Inactive Staff",
-      email: "inactive@tindatrack.test",
-      passwordHash: "not-a-real-password-hash",
-      role: UserRole.STAFF,
-      active: false,
-    },
-  });
+  const ownerPasswordHash =
+    await bcrypt.hash(
+      ownerPassword,
+      10,
+    );
 
-  const supplier = await prisma.supplier.create({
-    data: {
-      name: "Sample Wholesale Supplier",
-      contactDetails: "09170000001",
-      active: true,
-    },
-  });
+  const staffPasswordHash =
+    await bcrypt.hash(
+      staffPassword,
+      10,
+    );
 
-  const inactiveSupplier =
-    await prisma.supplier.create({
+  const inactivePasswordHash =
+    await bcrypt.hash(
+      inactivePassword,
+      10,
+    );
+
+  const owner =
+    await prisma.user.create({
       data: {
-        name: "Inactive Supplier",
+        name: "Test Owner",
+        email:
+          "owner@tindatrack.test",
+        passwordHash:
+          ownerPasswordHash,
+        role: UserRole.OWNER,
+        active: true,
+      },
+    });
+
+  const staff =
+    await prisma.user.create({
+      data: {
+        name: "Test Staff",
+        email:
+          "staff@tindatrack.test",
+        passwordHash:
+          staffPasswordHash,
+        role: UserRole.STAFF,
+        active: true,
+      },
+    });
+
+  const inactiveStaff =
+    await prisma.user.create({
+      data: {
+        name: "Inactive Staff",
+        email:
+          "inactive@tindatrack.test",
+        passwordHash:
+          inactivePasswordHash,
+        role: UserRole.STAFF,
         active: false,
       },
     });
 
-  const coke = await prisma.product.create({
-    data: {
-      sku: "COKE-1L",
-      name: "Coke 1L",
-      category: "Beverages",
-      sellingPrice: "75.00",
-      reorderLevel: 5,
-      active: true,
-    },
-  });
+  const supplier =
+    await prisma.supplier.create({
+      data: {
+        name:
+          "Sample Wholesale Supplier",
+        contactDetails:
+          "09170000001",
+        active: true,
+      },
+    });
 
-  const sardines = await prisma.product.create({
-    data: {
-      sku: "SARDINES-155",
-      name: "Sardines 155g",
-      category: "Canned Goods",
-      sellingPrice: "28.50",
-      reorderLevel: 10,
-      active: true,
-    },
-  });
+  const inactiveSupplier =
+    await prisma.supplier.create({
+      data: {
+        name:
+          "Inactive Supplier",
+        active: false,
+      },
+    });
 
-  const noodles = await prisma.product.create({
-    data: {
-      sku: "NOODLES-001",
-      name: "Instant Noodles",
-      category: "Dry Goods",
-      sellingPrice: "16.00",
-      reorderLevel: 8,
-      active: true,
-    },
-  });
+  const coke =
+    await prisma.product.create({
+      data: {
+        sku: "COKE-1L",
+        name: "Coke 1L",
+        category: "Beverages",
+        sellingPrice: "75.00",
+        reorderLevel: 5,
+        active: true,
+      },
+    });
+
+  const sardines =
+    await prisma.product.create({
+      data: {
+        sku: "SARDINES-155",
+        name: "Sardines 155g",
+        category: "Canned Goods",
+        sellingPrice: "28.50",
+        reorderLevel: 10,
+        active: true,
+      },
+    });
+
+  const noodles =
+    await prisma.product.create({
+      data: {
+        sku: "NOODLES-001",
+        name: "Instant Noodles",
+        category: "Dry Goods",
+        sellingPrice: "16.00",
+        reorderLevel: 8,
+        active: true,
+      },
+    });
 
   const inactiveProduct =
     await prisma.product.create({
@@ -131,13 +174,14 @@ async function seedTestDatabase(): Promise<void> {
     });
 
   /*
-   * Establish inventory through the real Inventory Truth flow.
-   * No Product.stock field exists and no stock is edited directly.
+   * Inventory is still established through
+   * the real inventory transaction flow.
    */
   await recordStockReceipt({
     supplierId: supplier.id,
     receivedBy: owner.id,
-    referenceNo: "SEED-RECEIPT-001",
+    referenceNo:
+      "SEED-RECEIPT-001",
     items: [
       {
         productId: coke.id,
@@ -145,12 +189,14 @@ async function seedTestDatabase(): Promise<void> {
         unitCost: "55.00",
       },
       {
-        productId: sardines.id,
+        productId:
+          sardines.id,
         quantity: 30,
         unitCost: "20.00",
       },
       {
-        productId: noodles.id,
+        productId:
+          noodles.id,
         quantity: 15,
         unitCost: "11.50",
       },
@@ -160,6 +206,37 @@ async function seedTestDatabase(): Promise<void> {
   console.log(
     `Test database "${databaseName}" seeded successfully.`,
   );
+
+  console.log();
+  console.log(
+    "Test login credentials:",
+  );
+
+  console.table([
+    {
+      role: "OWNER",
+      email:
+        owner.email,
+      password:
+        ownerPassword,
+    },
+    {
+      role: "STAFF",
+      email:
+        staff.email,
+      password:
+        staffPassword,
+    },
+    {
+      role: "INACTIVE STAFF",
+      email:
+        inactiveStaff.email,
+      password:
+        inactivePassword,
+    },
+  ]);
+
+  console.log();
 
   console.table([
     {
@@ -177,7 +254,8 @@ async function seedTestDatabase(): Promise<void> {
     {
       id: inactiveStaff.id,
       type: "User",
-      name: inactiveStaff.name,
+      name:
+        inactiveStaff.name,
       note: "STAFF inactive",
     },
     {
@@ -189,7 +267,8 @@ async function seedTestDatabase(): Promise<void> {
     {
       id: inactiveSupplier.id,
       type: "Supplier",
-      name: inactiveSupplier.name,
+      name:
+        inactiveSupplier.name,
       note: "inactive",
     },
     {
@@ -213,7 +292,8 @@ async function seedTestDatabase(): Promise<void> {
     {
       id: inactiveProduct.id,
       type: "Product",
-      name: inactiveProduct.name,
+      name:
+        inactiveProduct.name,
       note: "inactive",
     },
   ]);
@@ -221,7 +301,11 @@ async function seedTestDatabase(): Promise<void> {
 
 seedTestDatabase()
   .catch((error: unknown) => {
-    console.error("Test database seed failed:", error);
+    console.error(
+      "Test database seed failed:",
+      error,
+    );
+
     process.exitCode = 1;
   })
   .finally(async () => {

@@ -17,7 +17,6 @@ const stockReceiptItemSchema = z.object({
 export const createStockReceiptSchema = z
   .object({
     supplierId: z.number().int().positive(),
-    receivedBy: z.number().int().positive(),
 
     referenceNo: z
       .string()
