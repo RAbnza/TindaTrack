@@ -5,6 +5,7 @@ import {
   describe,
   expect,
   it,
+  vi,
 } from "vitest";
 
 import {
@@ -360,70 +361,80 @@ describe("POST /api/stock-receipts", () => {
   });
 
   it("rolls back the whole receipt when a later item fails after the first item and movement were written", async () => {
-    const {
-      user,
-      supplier,
-      product,
-      secondProduct,
-    } = await createBaseFixtures();
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
 
-    const beforeReceiptCount =
-      await prisma.stockReceipt.count();
+    try {
+      const {
+        user,
+        supplier,
+        product,
+        secondProduct,
+      } = await createBaseFixtures();
 
-    const beforeItemCount =
-      await prisma.stockReceiptItem.count();
+      const beforeReceiptCount =
+        await prisma.stockReceipt.count();
 
-    const beforeMovementCount =
-      await prisma.stockMovement.count();
+      const beforeItemCount =
+        await prisma.stockReceiptItem.count();
 
-    const firstStockBefore =
-      await getCurrentStock(product.id);
+      const beforeMovementCount =
+        await prisma.stockMovement.count();
 
-    const secondStockBefore =
-      await getCurrentStock(secondProduct.id);
+      const firstStockBefore =
+        await getCurrentStock(product.id);
 
-    await request(app)
-      .post("/api/stock-receipts")
-      .send({
-        supplierId: supplier.id,
-        receivedBy: user.id,
-        referenceNo: "ROLLBACK-TEST",
-        items: [
-          {
-            productId: product.id,
-            quantity: 5,
-            unitCost: "15.50",
-          },
-          {
-            productId: secondProduct.id,
-            quantity: 2,
+      const secondStockBefore =
+        await getCurrentStock(secondProduct.id);
 
-            // Valid transport shape, but too large for NUMERIC(12,2).
-            unitCost: "10000000000.00",
-          },
-        ],
-      })
-      .expect(500);
+      await request(app)
+        .post("/api/stock-receipts")
+        .send({
+          supplierId: supplier.id,
+          receivedBy: user.id,
+          referenceNo: "ROLLBACK-TEST",
+          items: [
+            {
+              productId: product.id,
+              quantity: 5,
+              unitCost: "15.50",
+            },
+            {
+              productId: secondProduct.id,
+              quantity: 2,
 
-    expect(
-      await prisma.stockReceipt.count(),
-    ).toBe(beforeReceiptCount);
+              // Valid transport shape, but too large for NUMERIC(12,2).
+              unitCost: "10000000000.00",
+            },
+          ],
+        })
+        .expect(500);
 
-    expect(
-      await prisma.stockReceiptItem.count(),
-    ).toBe(beforeItemCount);
+      expect(
+        await prisma.stockReceipt.count(),
+      ).toBe(beforeReceiptCount);
 
-    expect(
-      await prisma.stockMovement.count(),
-    ).toBe(beforeMovementCount);
+      expect(
+        await prisma.stockReceiptItem.count(),
+      ).toBe(beforeItemCount);
 
-    expect(
-      await getCurrentStock(product.id),
-    ).toBe(firstStockBefore);
+      expect(
+        await prisma.stockMovement.count(),
+      ).toBe(beforeMovementCount);
 
-    expect(
-      await getCurrentStock(secondProduct.id),
-    ).toBe(secondStockBefore);
+      expect(
+        await getCurrentStock(product.id),
+      ).toBe(firstStockBefore);
+
+      expect(
+        await getCurrentStock(secondProduct.id),
+      ).toBe(secondStockBefore);
+
+      expect(consoleErrorSpy).toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it("rejects an inactive supplier", async () => {
