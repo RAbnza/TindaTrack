@@ -5,27 +5,39 @@ import express, {
 import {
   authRouter,
 } from "./routes/auth.routes.js";
+
+import {
+  setupRouter,
+} from "./routes/setup.routes.js";
+
 import {
   productRouter,
 } from "./routes/product.routes.js";
+
 import {
   saleRouter,
 } from "./routes/sale.routes.js";
+
 import {
   stockAdjustmentRouter,
 } from "./routes/stock-adjustment.routes.js";
+
 import {
   stockReceiptRouter,
 } from "./routes/stock-receipt.routes.js";
+
 import {
   reportRouter,
 } from "./routes/report.routes.js";
+
 import {
   stockMovementRouter,
 } from "./routes/stock-movement.routes.js";
+
 import {
   auditLogRouter,
 } from "./routes/audit-log.routes.js";
+
 import {
   supplierRouter,
 } from "./routes/supplier.routes.js";
@@ -33,6 +45,17 @@ import {
 export const app = express();
 
 app.use(express.json());
+
+/*
+ * Public bootstrap boundary.
+ *
+ * Setup is protected by the invariant
+ * that no User may already exist.
+ */
+app.use(
+  "/api/setup",
+  setupRouter,
+);
 
 /*
  * Public authentication boundary.
