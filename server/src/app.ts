@@ -2,14 +2,33 @@ import express, {
   type ErrorRequestHandler,
 } from "express";
 
-import { authRouter } from "./routes/auth.routes.js";
-import { productRouter } from "./routes/product.routes.js";
-import { saleRouter } from "./routes/sale.routes.js";
-import { stockAdjustmentRouter } from "./routes/stock-adjustment.routes.js";
-import { stockReceiptRouter } from "./routes/stock-receipt.routes.js";
-import { reportRouter } from "./routes/report.routes.js";
-import { stockMovementRouter } from "./routes/stock-movement.routes.js";
-import { auditLogRouter } from "./routes/audit-log.routes.js";
+import {
+  authRouter,
+} from "./routes/auth.routes.js";
+import {
+  productRouter,
+} from "./routes/product.routes.js";
+import {
+  saleRouter,
+} from "./routes/sale.routes.js";
+import {
+  stockAdjustmentRouter,
+} from "./routes/stock-adjustment.routes.js";
+import {
+  stockReceiptRouter,
+} from "./routes/stock-receipt.routes.js";
+import {
+  reportRouter,
+} from "./routes/report.routes.js";
+import {
+  stockMovementRouter,
+} from "./routes/stock-movement.routes.js";
+import {
+  auditLogRouter,
+} from "./routes/audit-log.routes.js";
+import {
+  supplierRouter,
+} from "./routes/supplier.routes.js";
 
 export const app = express();
 
@@ -30,6 +49,11 @@ app.use(
 app.use(
   "/api/products",
   productRouter,
+);
+
+app.use(
+  "/api/suppliers",
+  supplierRouter,
 );
 
 app.use(
