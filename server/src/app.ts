@@ -15,6 +15,14 @@ import {
 } from "./routes/product.routes.js";
 
 import {
+  supplierRouter,
+} from "./routes/supplier.routes.js";
+
+import {
+  staffRouter,
+} from "./routes/staff.routes.js";
+
+import {
   saleRouter,
 } from "./routes/sale.routes.js";
 
@@ -37,10 +45,6 @@ import {
 import {
   auditLogRouter,
 } from "./routes/audit-log.routes.js";
-
-import {
-  supplierRouter,
-} from "./routes/supplier.routes.js";
 
 export const app = express();
 
@@ -77,6 +81,11 @@ app.use(
 app.use(
   "/api/suppliers",
   supplierRouter,
+);
+
+app.use(
+  "/api/staff",
+  staffRouter,
 );
 
 app.use(

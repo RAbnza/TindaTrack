@@ -114,6 +114,21 @@ export function AppShell({
             </NavLink>
           )}
 
+          {isOwner && (
+            <NavLink
+              to="/staff"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
+                )
+              }
+            >
+              Staff
+            </NavLink>
+          )}
+
           <NavLink
             to="/sales/new"
             className={({

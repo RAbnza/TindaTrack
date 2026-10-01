@@ -67,6 +67,10 @@ import {
 } from './pages/SetupPage'
 
 import {
+  StaffManagementPage,
+} from './pages/StaffManagementPage'
+
+import {
   StockMovementsPage,
 } from './pages/StockMovementsPage'
 
@@ -456,6 +460,15 @@ function App() {
           element={
             <RequireOwner>
               <SupplierManagementPage />
+            </RequireOwner>
+          }
+        />
+
+        <Route
+          path="/staff"
+          element={
+            <RequireOwner>
+              <StaffManagementPage />
             </RequireOwner>
           }
         />
