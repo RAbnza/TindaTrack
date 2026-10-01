@@ -1,6 +1,12 @@
+import cors from "cors";
+
 import express, {
   type ErrorRequestHandler,
 } from "express";
+
+import {
+  env,
+} from "./config/env.js";
 
 import {
   authRouter,
@@ -50,9 +56,55 @@ import {
   auditLogRouter,
 } from "./routes/audit-log.routes.js";
 
-export const app = express();
+export const app =
+  express();
 
-app.use(express.json());
+app.use(
+  cors({
+    origin:
+      env.CLIENT_ORIGIN,
+
+    methods: [
+      "GET",
+      "POST",
+      "PATCH",
+      "PUT",
+      "DELETE",
+      "OPTIONS",
+    ],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
+  }),
+);
+
+app.use(
+  express.json(),
+);
+
+/*
+ * Public health boundary.
+ *
+ * This confirms that the API process
+ * is alive and accepting HTTP requests.
+ *
+ * It deliberately does not expose
+ * database, environment, or credential
+ * information.
+ */
+app.get(
+  "/health",
+  (_req, res) => {
+    res
+      .status(200)
+      .json({
+        status:
+          "ok",
+      });
+  },
+);
 
 /*
  * Public bootstrap boundary.
@@ -127,24 +179,36 @@ app.use(
   auditLogRouter,
 );
 
-app.use((_req, res) => {
-  res.status(404).json({
-    error: "Route not found.",
-  });
-});
+app.use(
+  (_req, res) => {
+    res
+      .status(404)
+      .json({
+        error:
+          "Route not found.",
+      });
+  },
+);
 
-const errorHandler: ErrorRequestHandler = (
-  error,
-  _req,
-  res,
-  _next,
-) => {
-  console.error(error);
+const errorHandler:
+  ErrorRequestHandler = (
+    error,
+    _req,
+    res,
+    _next,
+  ) => {
+    console.error(
+      error,
+    );
 
-  res.status(500).json({
-    error:
-      "Internal server error.",
-  });
-};
+    res
+      .status(500)
+      .json({
+        error:
+          "Internal server error.",
+      });
+  };
 
-app.use(errorHandler);
+app.use(
+  errorHandler,
+);

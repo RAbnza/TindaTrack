@@ -1,9 +1,16 @@
-import { app } from "./app.js";
+import {
+  app,
+} from "./app.js";
 
-const port = 3000;
+import {
+  env,
+} from "./config/env.js";
 
-app.listen(port, () => {
-  console.log(
-    `TindaTrack API listening on http://localhost:${port}`,
-  );
-});
+app.listen(
+  env.PORT,
+  () => {
+    console.log(
+      `TindaTrack API listening on port ${env.PORT}`,
+    );
+  },
+);

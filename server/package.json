@@ -24,7 +24,9 @@
     "db:test:reset": "tsx src/db/reset-test.ts",
     "db:test:seed": "tsx src/db/seed-test.ts",
     "db:test:reseed": "npm run db:test:reset && npm run db:test:seed",
-    "db:dev:seed": "tsx src/db/seed-dev.ts"
+    "db:dev:seed": "tsx src/db/seed-dev.ts",
+    "db:migrate:deploy": "prisma migrate deploy --config prisma7.config.ts",
+    "db:generate": "prisma generate --config prisma7.config.ts"
   },
   "keywords": [],
   "author": "",

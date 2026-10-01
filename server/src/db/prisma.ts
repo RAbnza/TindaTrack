@@ -1,20 +1,22 @@
-import "dotenv/config";
+import {
+  PrismaPg,
+} from "@prisma/adapter-pg";
 
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../../generated/prisma/client.js";
+import {
+  PrismaClient,
+} from "../../generated/prisma/client.js";
 
-const databaseUrl = process.env.DATABASE_URL;
+import {
+  env,
+} from "../config/env.js";
 
-if (!databaseUrl) {
-  throw new Error(
-    "DATABASE_URL is required but was not found in the environment.",
-  );
-}
+const adapter =
+  new PrismaPg({
+    connectionString:
+      env.DATABASE_URL,
+  });
 
-const adapter = new PrismaPg({
-  connectionString: databaseUrl,
-});
-
-export const prisma = new PrismaClient({
-  adapter,
-});
+export const prisma =
+  new PrismaClient({
+    adapter,
+  });

@@ -1,15 +1,21 @@
 {
   "name": "tindatrack",
   "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "workspaces": [
     "client",
     "server"
   ],
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "test": "npm run test --workspace server && npm run test --workspace client",
+    "build": "npm run build --workspace server && npm run build --workspace client",
+    "lint": "npm run lint --workspace client",
+    "start": "npm run start --workspace server",
+    "db:migrate:deploy": "npm run db:migrate:deploy --workspace server"
   },
   "repository": {
     "type": "git",
