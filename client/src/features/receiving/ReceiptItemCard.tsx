@@ -1,6 +1,7 @@
-import type {
-  Product,
-} from '../../types/product'
+import type { Product } from '../../types/product'
+import { Button } from '../../components/ui'
+import { FormField, Input } from '../../components/ui/Field'
+import { QuantityControl } from '../../components/ui/QuantityControl'
 
 type ReceiptItemCardProps = {
   product: Product
@@ -9,12 +10,10 @@ type ReceiptItemCardProps = {
   unitCostError: string | null
   onDecrease: () => void
   onIncrease: () => void
-  onUnitCostChange: (
-    value: string,
-  ) => void
+  onQuantityChange: (quantity: number) => void
+  onUnitCostChange: (value: string) => void
   onRemove: () => void
 }
-
 export function ReceiptItemCard({
   product,
   quantity,
@@ -22,113 +21,57 @@ export function ReceiptItemCard({
   unitCostError,
   onDecrease,
   onIncrease,
+  onQuantityChange,
   onUnitCostChange,
   onRemove,
 }: ReceiptItemCardProps) {
+  const errorId = `cost-error-${product.id}`
   return (
-    <article className="rounded-lg border border-border bg-card p-4">
-      <div>
-        <h3 className="text-base font-semibold text-foreground">
-          {product.name}
-        </h3>
-
-        <p className="mt-1 text-sm text-muted-foreground">
-          SKU {product.sku}
-        </p>
-
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Current stock:{' '}
-          {product.currentStock}
-        </p>
-      </div>
-
-      <div className="mt-5">
-        <p className="text-sm font-medium text-secondary-foreground">
-          Quantity
-        </p>
-
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            type="button"
-            aria-label={`Decrease ${product.name} received quantity`}
-            disabled={quantity <= 1}
-            onClick={onDecrease}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            −
-          </button>
-
-          <span className="min-w-12 text-center text-lg font-semibold tabular-nums text-foreground">
-            {quantity}
-          </span>
-
-          <button
-            type="button"
-            aria-label={`Increase ${product.name} received quantity`}
-            onClick={onIncrease}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-5">
-        <label
-          htmlFor={`unit-cost-${product.id}`}
-          className="block text-sm font-medium text-secondary-foreground"
-        >
-          Unit cost
-        </label>
-
-        <div className="relative mt-2">
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-            ₱
-          </span>
-
-          <input
-            id={`unit-cost-${product.id}`}
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={unitCost}
-            onChange={(event) =>
-              onUnitCostChange(
-                event.target.value,
-              )
-            }
-            placeholder="55.00"
-            aria-invalid={
-              unitCostError
-                ? true
-                : undefined
-            }
-            className={[
-              'min-h-12 w-full rounded-lg border bg-card py-2 pl-9 pr-4 text-base text-foreground outline-none focus:ring-2',
-              unitCostError
-                ? 'border-destructive/50 focus:border-destructive focus:ring-destructive/20'
-                : 'border-input focus:border-primary focus:ring-ring/20',
-            ].join(' ')}
+    <article className="selected-item-row">
+      <h3 className="break-words font-semibold">{product.name}</h3>
+      <p className="text-caption text-muted-foreground">
+        {product.sku} · {product.currentStock} currently in stock
+      </p>
+      <div className="selected-item-fields">
+        <div>
+          <p className="mb-2 text-ui font-medium">Quantity</p>
+          <QuantityControl
+            label={`${product.name} received quantity`}
+            value={quantity}
+            onDecrease={onDecrease}
+            onIncrease={onIncrease}
+            onChange={onQuantityChange}
           />
         </div>
-
-        {unitCostError && (
-          <p
-            role="alert"
-            className="mt-2 text-sm text-destructive"
-          >
-            {unitCostError}
-          </p>
-        )}
+        <div className="cost-field">
+          <FormField label="Unit cost" id={`unit-cost-${product.id}`}>
+            <Input
+              id={`unit-cost-${product.id}`}
+              aria-describedby={unitCostError ? errorId : undefined}
+              aria-invalid={Boolean(unitCostError)}
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="₱ 0.00"
+              value={unitCost}
+              onChange={(e) => onUnitCostChange(e.target.value)}
+            />
+          </FormField>
+        </div>
+        <Button variant="ghost" aria-label={`Remove ${product.name}`} onClick={onRemove}>
+          Remove
+        </Button>
       </div>
-
-      <button
-        type="button"
-        onClick={onRemove}
-        className="mt-5 min-h-11 rounded-lg border border-destructive/20 px-4 text-sm font-medium text-secondary-foreground hover:bg-destructive-soft"
-      >
-        Remove
-      </button>
+      {unitCostError && (
+        <p id={errorId} role="alert" className="mt-2 text-ui text-destructive">
+          {unitCostError}
+        </p>
+      )}
+      {(!Number.isInteger(quantity) || quantity < 1 || !product.active) && (
+        <p role="alert" className="mt-2 text-ui text-destructive">
+          Use an active product and a positive whole quantity.
+        </p>
+      )}
     </article>
   )
 }

@@ -1,4 +1,5 @@
 import cors from "cors";
+import { workspaceRouter } from "./routes/workspace.routes.js";
 
 import express, {
   type ErrorRequestHandler,
@@ -129,6 +130,8 @@ app.use(
  * Individual routers enforce their
  * authentication and RBAC requirements.
  */
+app.use("/api", workspaceRouter);
+
 app.use(
   "/api/products",
   productRouter,

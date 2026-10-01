@@ -93,14 +93,11 @@ const product: Product = {
   lowStock: false,
 }
 
-function getProductAddButton(
+async function getProductAddButton(
   productName: string,
 ) {
   const productCard =
-    screen
-      .getByText(
-        productName,
-      )
+    (await screen.findByText(productName))
       .closest(
         'article',
       )
@@ -189,10 +186,12 @@ describe(
         )
 
         await user.click(
-          getProductAddButton(
+          await getProductAddButton(
             'Rice 1kg',
           ),
         )
+
+        await user.click(screen.getByRole('button', { name: 'Selected items (1)' }))
 
         await user.click(
           screen.getByRole(
@@ -290,10 +289,12 @@ describe(
         )
 
         await user.click(
-          getProductAddButton(
+          await getProductAddButton(
             'Rice 1kg',
           ),
         )
+
+        await user.click(screen.getByRole('button', { name: 'Selected items (1)' }))
 
         await user.type(
           screen.getByLabelText(

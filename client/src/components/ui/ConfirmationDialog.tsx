@@ -123,7 +123,7 @@ export function ConfirmationDialog({
           onCancel()
         }
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-black/30"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-foreground/30"
     >
       <div className="p-5 sm:p-6">
         <h2

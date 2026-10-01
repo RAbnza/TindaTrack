@@ -3,7 +3,6 @@ import {
   Outlet,
   Route,
   Routes,
-  useOutletContext,
 } from 'react-router-dom'
 
 import {
@@ -94,17 +93,6 @@ import {
 import {
   SupplierManagementPage,
 } from './pages/SupplierManagementPage'
-
-import type {
-  Product,
-} from './types/product'
-
-type ProductRouteContext = {
-  products: Product[]
-  isLoading: boolean
-  error: string | null
-  reload: () => Promise<void>
-}
 
 type SetupStatusStateProps = {
   isLoading: boolean
@@ -313,30 +301,7 @@ function SetupRoute() {
 }
 
 function AuthenticatedLayout() {
-  const {
-    products,
-    isLoading,
-    error,
-    reload,
-  } = useProducts()
-
-  const context:
-    ProductRouteContext = {
-      products,
-      isLoading,
-      error,
-      reload,
-    }
-
-  return (
-    <AppShell>
-      <Outlet
-        context={
-          context
-        }
-      />
-    </AppShell>
-  )
+  return <AppShell><Outlet /></AppShell>
 }
 
 function InventoryRoute() {
@@ -346,7 +311,7 @@ function InventoryRoute() {
     error,
     reload,
   } =
-    useOutletContext<ProductRouteContext>()
+    useProducts()
 
   return (
     <InventoryPage
@@ -369,7 +334,7 @@ function ProductManagementRoute() {
     error,
     reload,
   } =
-    useOutletContext<ProductRouteContext>()
+    useProducts()
 
   return (
     <ProductManagementPage
@@ -386,84 +351,15 @@ function ProductManagementRoute() {
 }
 
 function NewSaleRoute() {
-  const {
-    products,
-    isLoading,
-    error,
-    reload,
-  } =
-    useOutletContext<ProductRouteContext>()
-
-  return (
-    <NewSalePage
-      products={
-        products
-      }
-      isProductsLoading={
-        isLoading
-      }
-      productsError={
-        error
-      }
-      reloadProducts={
-        reload
-      }
-    />
-  )
+  return <NewSalePage />
 }
 
 function ReceivingRoute() {
-  const {
-    products,
-    isLoading,
-    error,
-    reload,
-  } =
-    useOutletContext<ProductRouteContext>()
-
-  return (
-    <ReceiveStockPage
-      products={
-        products
-      }
-      isProductsLoading={
-        isLoading
-      }
-      productsError={
-        error
-      }
-      reloadProducts={
-        reload
-      }
-    />
-  )
+  return <ReceiveStockPage />
 }
 
 function AdjustmentRoute() {
-  const {
-    products,
-    isLoading,
-    error,
-    reload,
-  } =
-    useOutletContext<ProductRouteContext>()
-
-  return (
-    <AdjustStockPage
-      products={
-        products
-      }
-      isProductsLoading={
-        isLoading
-      }
-      productsError={
-        error
-      }
-      reloadProducts={
-        reload
-      }
-    />
-  )
+  return <AdjustStockPage />
 }
 
 function App() {

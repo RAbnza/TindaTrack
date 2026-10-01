@@ -4,6 +4,7 @@ import { WorkspaceContext, type WorkspaceProduct } from './workspace-context'
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [selectedProduct, setSelectedProduct] = useState<WorkspaceProduct | null>(null)
   const [inspectorOpen, setInspectorOpen] = useState(false)
+  const [summaryTarget, setSummaryTarget] = useState<HTMLDivElement | null>(null)
 
   function selectProduct(product: WorkspaceProduct) {
     setSelectedProduct(product)
@@ -19,6 +20,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       clearSelection: () => setSelectedProduct(null),
       inspectorOpen,
       setInspectorOpen,
+      summaryTarget,
+      setSummaryTarget,
     }}>
       {children}
     </WorkspaceContext.Provider>

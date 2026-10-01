@@ -1,118 +1,63 @@
 import type { Product } from '../../types/product'
+import { Button } from '../../components/ui'
+import { QuantityControl } from '../../components/ui/QuantityControl'
 
 type SaleCartItemProps = {
   product: Product
   quantity: number
   onDecrease: () => void
   onIncrease: () => void
+  onQuantityChange: (quantity: number) => void
   onRemove: () => void
 }
-
-const pesoFormatter = new Intl.NumberFormat(
-  'en-PH',
-  {
-    style: 'currency',
-    currency: 'PHP',
-  },
-)
-
+const peso = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' })
 export function SaleCartItem({
   product,
   quantity,
   onDecrease,
   onIncrease,
+  onQuantityChange,
   onRemove,
 }: SaleCartItemProps) {
-  const sellingPrice =
-    Number(product.sellingPrice)
-
-  const displayedLineTotal =
-    sellingPrice * quantity
-
-  const exceedsCurrentStock =
-    quantity > product.currentStock
-
+  const invalid =
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > product.currentStock ||
+    !product.active
   return (
-    <article
-      className={[
-        'rounded-lg border bg-card p-4',
-        exceedsCurrentStock
-          ? 'border-destructive/30'
-          : 'border-border',
-      ].join(' ')}
-    >
-      <div className="flex items-start justify-between gap-4">
+    <article className="selected-item-row">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-foreground">
-            {product.name}
-          </h3>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            {pesoFormatter.format(
-              sellingPrice,
-            )}{' '}
-            × {quantity}
+          <h3 className="break-words font-semibold">{product.name}</h3>
+          <p className="text-caption text-muted-foreground">
+            {product.sku} · {product.currentStock} in stock
+          </p>
+          <p className="text-ui text-secondary-foreground">
+            {peso.format(Number(product.sellingPrice))} per unit
           </p>
         </div>
-
-        <p className="shrink-0 text-base font-semibold text-foreground">
-          {pesoFormatter.format(
-            displayedLineTotal,
-          )}
+        <p className="shrink-0 font-semibold tabular-nums">
+          {peso.format(Number(product.sellingPrice) * quantity)}
         </p>
       </div>
-
-      {exceedsCurrentStock && (
-        <div
-          role="alert"
-          className="mt-3 rounded-lg bg-destructive-soft px-3 py-2 text-sm text-secondary-foreground"
-        >
-          Only {product.currentStock}{' '}
-          currently in stock. Reduce the
-          quantity or remove this item.
-        </div>
-      )}
-
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            aria-label={`Decrease ${product.name} quantity`}
-            disabled={quantity <= 1}
-            onClick={onDecrease}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            −
-          </button>
-
-          <span
-            aria-label={`${product.name} quantity`}
-            className="min-w-10 text-center text-lg font-semibold tabular-nums text-foreground"
-          >
-            {quantity}
-          </span>
-
-          <button
-            type="button"
-            aria-label={`Increase ${product.name} quantity`}
-            disabled={
-              quantity >= product.currentStock
-            }
-            onClick={onIncrease}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            +
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={onRemove}
-          className="min-h-11 rounded-lg border border-destructive/20 px-4 text-sm font-medium text-secondary-foreground hover:bg-destructive-soft focus:outline-none focus:ring-2 focus:ring-destructive"
-        >
+      <div className="selected-item-fields">
+        <QuantityControl
+          label={`${product.name} quantity`}
+          value={quantity}
+          max={product.currentStock}
+          onDecrease={onDecrease}
+          onIncrease={onIncrease}
+          onChange={onQuantityChange}
+        />
+        <Button variant="ghost" onClick={onRemove} aria-label={`Remove ${product.name}`}>
           Remove
-        </button>
+        </Button>
       </div>
+      {invalid && (
+        <p role="alert" className="mt-2 text-ui text-destructive">
+          Enter a positive whole quantity. Only {product.currentStock} currently in stock.
+        </p>
+      )}
     </article>
   )
 }

@@ -138,7 +138,7 @@ describe(
         )
 
         await user.click(
-          screen.getByRole(
+          await screen.findByRole(
             'button',
             {
               name: 'Add',
@@ -319,7 +319,7 @@ describe(
         )
 
         await user.click(
-          screen.getByRole(
+          await screen.findByRole(
             'button',
             {
               name: 'Add',

@@ -12,6 +12,8 @@ export type WorkspaceContextValue = {
   clearSelection: () => void
   inspectorOpen: boolean
   setInspectorOpen: (open: boolean) => void
+  summaryTarget: HTMLDivElement | null
+  setSummaryTarget: (target: HTMLDivElement | null) => void
 }
 
 export const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)

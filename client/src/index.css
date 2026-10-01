@@ -1,47 +1,50 @@
 @import "tailwindcss";
+@import "./workspace.css";
 
 :root {
-  --background: #f8f7fa;
-  --foreground: #1b1b1f;
+  --background: #edf1f6;
+  --foreground: #182c42;
 
   --card: #ffffff;
-  --card-foreground: #1b1b1f;
+  --card-foreground: #182c42;
 
   --popover: #ffffff;
-  --popover-foreground: #1b1b1f;
+  --popover-foreground: #182c42;
 
-  --primary: #5367a6;
-  --primary-hover: #43558f;
+  --primary: #3157a0;
+  --primary-hover: #254580;
   --primary-foreground: #ffffff;
 
-  --secondary: #f1f0f4;
-  --secondary-foreground: #303038;
+  --secondary: #e8edf5;
+  --secondary-foreground: #40546b;
 
-  --muted: #ecebf0;
-  --muted-foreground: #74737c;
+  --muted: #dfe6ef;
+  --muted-foreground: #53647a;
 
-  --accent: #e8ebf7;
-  --accent-foreground: #354477;
+  --accent: #dce7fb;
+  --accent-foreground: #254580;
 
-  --destructive: #b84a4a;
+  --destructive: #a53043;
   --destructive-foreground: #ffffff;
-  --destructive-soft: #f8e3e3;
+  --destructive-soft: #fce9ed;
 
-  --border: #dddce3;
-  --input: #cbcad2;
-  --ring: #6679b7;
+  --border: #cad5e3;
+  --input: #7c8da6;
+  --ring: #3157a0;
 
-  --success: #3e7c59;
-  --success-soft: #e4f1e8;
+  --success: #256345;
+  --success-soft: #e0f1e8;
 
-  --warning: #a96c16;
-  --warning-soft: #faecd6;
+  --warning: #86520e;
+  --warning-soft: #fff0d7;
 
-  --info: #3f6f9f;
-  --info-soft: #e3edf6;
+  --info: #235f87;
+  --info-soft: #e0eff9;
 
-  --disabled-foreground: #9a99a2;
+  --disabled-foreground: #63738a;
 
+  --surface-tint: #f0f4fb;
+  --navigation: #e6edf8;
   --radius: 0.75rem;
   --navigation-width: 14rem;
   --inspector-width: 17.5rem;
@@ -58,6 +61,8 @@
 }
 
 @theme inline {
+  --color-surface-tint: var(--surface-tint);
+  --color-navigation: var(--navigation);
   --color-background:
     var(--background);
 
@@ -316,6 +321,9 @@
     background:
       var(--card);
   }
+
+  .shell-navigation { background: var(--navigation); }
+  .shell-inspector { background: var(--surface-tint); }
 
   .workspace-canvas {
     min-width: 0;
@@ -653,6 +661,20 @@
  * dialog. No PDF dependency is needed.
  */
 @media print {
+  .application-root, .app-shell, .shell-body, .workspace-canvas, .page-preview,
+  #workspace-content, .page-container, .page-content {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .shell-header, .shell-navigation, .shell-inspector, .preview-toolbar { display: none !important; }
+
   @page {
     margin: 14mm;
   }
@@ -732,6 +754,7 @@
   }
 
   .daily-sales-print-document {
+    display: block !important;
     position:
       absolute !important;
 

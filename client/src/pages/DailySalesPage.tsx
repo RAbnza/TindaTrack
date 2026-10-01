@@ -1,11 +1,6 @@
-import {
-  useState,
-} from 'react'
-
-import {
-  PageContainer,
-} from '../components/layout/PageContainer'
-
+import { useState } from 'react'
+import { flushSync } from 'react-dom'
+import { PageContainer } from '../components/layout/PageContainer'
 import {
   Badge,
   Button,
@@ -15,618 +10,337 @@ import {
   LoadingState,
   PageHeader,
 } from '../components/ui'
-
-import {
-  useDailySales,
-} from '../features/reports/useDailySales'
+import { DataTable } from '../components/ui/DataTable'
+import { Pagination } from '../components/ui/Pagination'
+import { Input, FormField } from '../components/ui/Field'
+import { browseDailySales } from '../api/workspace.api'
+import { getDailySales } from '../api/reports.api'
+import { usePagedQuery } from '../features/workspace/usePagedQuery'
+import { pesoFormatter } from '../features/workspace/format'
+import type { DailySalesReport } from '../types/report'
 
 function getLocalDateInputValue(): string {
-  const now = new Date()
+  const now = new Date(Date.now() + 8 * 60 * 60 * 1000)
 
-  const year =
-    now.getFullYear()
+  const year = now.getUTCFullYear()
 
-  const month =
-    String(
-      now.getMonth() + 1,
-    ).padStart(
-      2,
-      '0',
-    )
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0')
 
-  const day =
-    String(
-      now.getDate(),
-    ).padStart(
-      2,
-      '0',
-    )
+  const day = String(now.getUTCDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
 }
 
-function formatReportDate(
-  date: string,
-): string {
-  const [
-    yearText,
-    monthText,
-    dayText,
-  ] = date.split('-')
+function formatReportDate(date: string): string {
+  const [yearText, monthText, dayText] = date.split('-')
 
-  const year =
-    Number(yearText)
+  const year = Number(yearText)
 
-  const month =
-    Number(monthText)
+  const month = Number(monthText)
 
-  const day =
-    Number(dayText)
+  const day = Number(dayText)
 
-  const localDate =
-    new Date(
-      year,
-      month - 1,
-      day,
-    )
+  const localDate = new Date(year, month - 1, day)
 
-  return new Intl.DateTimeFormat(
-    'en-PH',
-    {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    },
-  ).format(
-    localDate,
-  )
+  return new Intl.DateTimeFormat('en-PH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(localDate)
 }
 
-function formatSaleDateTime(
-  value: string,
-): string {
-  return new Intl.DateTimeFormat(
-    'en-PH',
-    {
-      timeZone:
-        'Asia/Manila',
+function formatSaleDateTime(value: string): string {
+  return new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila',
 
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
 
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    },
-  ).format(
-    new Date(value),
-  )
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).format(new Date(value))
 }
 
-function formatSaleTime(
-  value: string,
-): string {
-  return new Intl.DateTimeFormat(
-    'en-PH',
-    {
-      timeZone:
-        'Asia/Manila',
+function escapeCsvValue(value: string | number): string {
+  const text = String(value)
 
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    },
-  ).format(
-    new Date(value),
-  )
-}
-
-const pesoFormatter =
-  new Intl.NumberFormat(
-    'en-PH',
-    {
-      style: 'currency',
-      currency: 'PHP',
-    },
-  )
-
-function escapeCsvValue(
-  value:
-    | string
-    | number,
-): string {
-  const text =
-    String(value)
-
-  if (
-    text.includes(',') ||
-    text.includes('"') ||
-    text.includes('\n')
-  ) {
-    return `"${text.replace(
-      /"/g,
-      '""',
-    )}"`
+  if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+    return `"${text.replace(/"/g, '""')}"`
   }
 
   return text
 }
 
-function downloadCsv(
-  filename: string,
-  rows: Array<
-    Array<string | number>
-  >,
-) {
-  const csv =
-    rows
-      .map(
-        (row) =>
-          row
-            .map(
-              escapeCsvValue,
-            )
-            .join(','),
-      )
-      .join('\r\n')
+function downloadCsv(filename: string, rows: Array<Array<string | number>>) {
+  const csv = rows.map((row) => row.map(escapeCsvValue).join(',')).join('\r\n')
 
-  const blob =
-    new Blob(
-      [
-        '\uFEFF',
-        csv,
-      ],
-      {
-        type:
-          'text/csv;charset=utf-8',
-      },
-    )
+  const blob = new Blob(['\uFEFF', csv], {
+    type: 'text/csv;charset=utf-8',
+  })
 
-  const url =
-    URL.createObjectURL(
-      blob,
-    )
+  const url = URL.createObjectURL(blob)
 
-  const anchor =
-    document.createElement(
-      'a',
-    )
+  const anchor = document.createElement('a')
 
   anchor.href = url
-  anchor.download =
-    filename
+  anchor.download = filename
 
-  document.body.appendChild(
-    anchor,
-  )
+  document.body.appendChild(anchor)
 
   anchor.click()
   anchor.remove()
 
-  URL.revokeObjectURL(
-    url,
-  )
+  URL.revokeObjectURL(url)
 }
 
 export function DailySalesPage() {
-  const [
-    selectedDate,
-    setSelectedDate,
-  ] = useState(
-    getLocalDateInputValue,
-  )
-
+  const [query, setQuery] = useState({
+    date: getLocalDateInputValue(),
+    page: 1,
+    pageSize: 25,
+  })
   const {
-    report,
+    data: report,
     isLoading,
     error,
-  } = useDailySales(
-    selectedDate,
-  )
+    reload,
+  } = usePagedQuery(browseDailySales, query)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [printReport, setPrintReport] = useState<DailySalesReport | null>(null)
 
-  function handleExportCsv() {
-    if (!report) {
-      return
-    }
-
-    const rows: Array<
-      Array<
-        string | number
-      >
-    > = [
-      [
-        'sale_id',
-        'date_time',
-        'payment_method',
-        'recorded_by',
-        'product',
-        'quantity',
-        'unit_price',
-        'line_total',
-        'sale_total',
-      ],
-    ]
-
-    for (
-      const sale of
-      report.sales
-    ) {
-      for (
-        const item of
-        sale.items
-      ) {
-        rows.push([
-          sale.id,
-
-          /*
-           * Preserve the server-returned
-           * timestamp in ISO form.
-           */
-          sale.createdAt,
-
-          sale.paymentMethod,
-
-          sale.recordedBy
-            .name,
-
-          item.productName,
-
-          item.quantity,
-
-          /*
-           * Historical money values are
-           * taken directly from the API.
-           */
-          item.unitPrice,
-          item.lineTotal,
-          sale.totalAmount,
-        ])
+  async function handleExport(kind: 'csv' | 'print') {
+    if (exporting || !report) return
+    setExporting(true)
+    setExportError(null)
+    try {
+      // Full-day data is fetched only on an explicit export/print action.
+      const complete = await getDailySales(query.date)
+      if (kind === 'print') {
+        flushSync(() => setPrintReport(complete))
+        window.print()
+        setPrintReport(null)
+      } else {
+        const rows: Array<Array<string | number>> = [
+          [
+            'sale_id',
+            'date_time',
+            'payment_method',
+            'recorded_by',
+            'product',
+            'quantity',
+            'unit_price',
+            'line_total',
+            'sale_total',
+          ],
+        ]
+        for (const sale of complete.sales)
+          for (const item of sale.items)
+            rows.push([
+              sale.id,
+              sale.createdAt,
+              sale.paymentMethod,
+              sale.recordedBy.name,
+              item.productName,
+              item.quantity,
+              item.unitPrice,
+              item.lineTotal,
+              sale.totalAmount,
+            ])
+        downloadCsv(`tindatrack-daily-sales-${complete.date}.csv`, rows)
       }
+    } catch {
+      setExportError('Unable to export the full daily report. Please try again.')
+    } finally {
+      setExporting(false)
     }
-
-    downloadCsv(
-      `tindatrack-daily-sales-${report.date}.csv`,
-      rows,
-    )
   }
-
   return (
     <PageContainer>
-      <div className="daily-sales-print-document">
-        <div className="no-print">
-          <PageHeader
-            title="Daily Sales"
-            description="Review recorded transactions for a selected business day."
-            actions={
-              <>
-                <Button
-                  variant="secondary"
-                  disabled={
-                    !report ||
-                    isLoading ||
-                    Boolean(
-                      error,
-                    )
-                  }
-                  onClick={() =>
-                    window.print()
-                  }
-                >
-                  Print / Save PDF
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  disabled={
-                    !report ||
-                    isLoading ||
-                    Boolean(
-                      error,
-                    )
-                  }
-                  onClick={
-                    handleExportCsv
-                  }
-                >
-                  Export CSV
-                </Button>
-              </>
-            }
-          />
-
-          <Card className="mt-6 p-4 sm:p-5">
-            <label
-              htmlFor="report-date"
-              className="block text-sm font-medium text-secondary-foreground"
-            >
-              Business date
-            </label>
-
-            <input
+      <div className="no-print">
+        <PageHeader
+          title="Daily Sales"
+          description="Review the selected Manila business day, with totals across every transaction."
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                disabled={!report || isLoading || exporting}
+                onClick={() => void handleExport('print')}
+              >
+                Print / Save PDF
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={!report || isLoading || exporting}
+                onClick={() => void handleExport('csv')}
+              >
+                {exporting ? 'Preparing report...' : 'Export CSV'}
+              </Button>
+            </>
+          }
+        />
+        <Card surface="tint" className="mt-5 p-4">
+          <FormField id="report-date" label="Business date">
+            <Input
               id="report-date"
+              className="max-w-xs"
               type="date"
-              value={
-                selectedDate
-              }
-              onChange={(
-                event,
-              ) =>
-                setSelectedDate(
-                  event.target
-                    .value,
-                )
-              }
-              className="mt-2 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20 sm:max-w-xs"
+              disabled={exporting}
+              value={query.date}
+              onChange={(e) => setQuery((q) => ({ ...q, date: e.target.value, page: 1 }))}
             />
-          </Card>
-        </div>
-
-        {isLoading && (
-          <div className="no-print mt-6">
-            <LoadingState label="Loading daily sales..." />
-          </div>
+          </FormField>
+        </Card>
+        {exportError && (
+          <p role="alert" className="mt-3 text-destructive">
+            {exportError}
+          </p>
         )}
-
-        {!isLoading &&
-          error && (
-            <div className="no-print mt-6">
-              <ErrorState
-                title="Unable to load daily sales"
-                message={
-                  error
-                }
-              />
-            </div>
-          )}
-
-        {!isLoading &&
-          !error &&
+        {isLoading ? (
+          <LoadingState label="Loading daily sales..." />
+        ) : error ? (
+          <ErrorState
+            title="Unable to load daily sales"
+            message={error}
+            onRetry={reload}
+          />
+        ) : (
           report && (
             <>
-              <header className="daily-sales-print-header hidden">
-                <h1>
-                  TindaTrack
-                </h1>
-
-                <p>
-                  Daily Sales Report
-                </p>
-              </header>
-
-              <section className="mt-6">
-                <div className="flex flex-col gap-1">
-                  <p className="text-caption font-medium text-muted-foreground">
-                    Summary
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <Card surface="accent" className="p-4">
+                  <p className="text-ui text-accent-foreground">Total sales</p>
+                  <p className="mt-2 text-metric font-semibold tabular-nums text-primary">
+                    {pesoFormatter.format(Number(report.totalSalesAmount))}
                   </p>
-
-                  <h2 className="text-section font-semibold text-foreground">
-                    {formatReportDate(
-                      report.date,
-                    )}
-                  </h2>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <Card className="p-5">
-                    <p className="text-sm text-muted-foreground">
-                      Total sales
-                    </p>
-
-                    <p className="mt-2 text-metric-primary font-semibold tabular-nums text-foreground">
-                      {pesoFormatter.format(
-                        Number(
-                          report.totalSalesAmount,
-                        ),
-                      )}
-                    </p>
-
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Server-reported
-                      business-day
-                      total
-                    </p>
-                  </Card>
-
-                  <Card className="p-5">
-                    <p className="text-sm text-muted-foreground">
-                      Transactions
-                    </p>
-
-                    <p className="mt-2 text-metric-primary font-semibold tabular-nums text-foreground">
-                      {
-                        report.saleCount
-                      }
-                    </p>
-
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Recorded sales
-                      for this day
-                    </p>
-                  </Card>
-                </div>
-              </section>
-
-              <section className="mt-8">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-caption font-medium text-muted-foreground">
-                      Transactions
-                    </p>
-
-                    <h2 className="mt-1 text-section font-semibold text-foreground">
-                      Sales activity
-                    </h2>
-                  </div>
-
-                  <span className="text-sm tabular-nums text-muted-foreground">
-                    {
-                      report.sales
-                        .length
-                    }{' '}
-                    {report.sales
-                      .length ===
-                    1
-                      ? 'sale'
-                      : 'sales'}
-                  </span>
-                </div>
-
-                {report.sales
-                  .length ===
-                0 ? (
-                  <div className="mt-4">
-                    <EmptyState
-                      title="No sales for this date"
-                      description="No sales were recorded for the selected business day."
-                    />
-                  </div>
+                </Card>
+                <Card surface="tint" className="p-4">
+                  <p className="text-ui text-secondary-foreground">Transactions</p>
+                  <p className="mt-2 text-metric font-semibold tabular-nums">
+                    {report.saleCount}
+                  </p>
+                </Card>
+              </div>
+              <h2 className="mt-5 text-section font-semibold">
+                {formatReportDate(report.date)}
+              </h2>
+              <Card className="mt-3 overflow-hidden">
+                {report.sales.length === 0 ? (
+                  <EmptyState
+                    title="No sales for this date"
+                    description="No sales were recorded for the selected business day."
+                  />
                 ) : (
-                  <div className="mt-4 space-y-4">
-                    {report.sales.map(
-                      (sale) => (
-                        <Card
-                          key={
-                            sale.id
-                          }
-                          className="daily-sales-print-sale overflow-hidden"
-                        >
-                          <div className="p-4 sm:p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="min-w-0">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h3 className="text-sm font-semibold text-foreground">
-                                    Sale #
-                                    {
-                                      sale.id
-                                    }
-                                  </h3>
-
-                                  <Badge variant="neutral">
-                                    {
-                                      sale.paymentMethod
-                                    }
-                                  </Badge>
-                                </div>
-
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                  {formatSaleTime(
-                                    sale.createdAt,
-                                  )}
-                                </p>
-
-                                <p className="daily-sales-print-date mt-1 hidden text-sm">
-                                  {formatSaleDateTime(
-                                    sale.createdAt,
-                                  )}
-                                </p>
-                              </div>
-
-                              <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
-                                {pesoFormatter.format(
-                                  Number(
-                                    sale.totalAmount,
-                                  ),
-                                )}
-                              </p>
-                            </div>
-
-                            <dl className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-                              <div>
-                                <dt className="text-xs text-muted-foreground">
-                                  Recorded
-                                  by
-                                </dt>
-
-                                <dd className="mt-1 text-sm font-medium text-secondary-foreground">
-                                  {
-                                    sale
-                                      .recordedBy
-                                      .name
-                                  }
-                                </dd>
-                              </div>
-
-                              <div>
-                                <dt className="text-xs text-muted-foreground">
-                                  Item
-                                  count
-                                </dt>
-
-                                <dd className="mt-1 text-sm font-medium tabular-nums text-secondary-foreground">
-                                  {
-                                    sale
-                                      .items
-                                      .length
-                                  }{' '}
-                                  {sale
-                                    .items
-                                    .length ===
-                                  1
-                                    ? 'line'
-                                    : 'lines'}
-                                </dd>
-                              </div>
-                            </dl>
-                          </div>
-
-                          <div className="border-t border-border bg-secondary/30 px-4 py-4 sm:px-5">
-                            <p className="mb-3 text-caption font-medium text-muted-foreground">
-                              Items
-                            </p>
-
-                            <div className="divide-y divide-border/70">
-                              {sale.items.map(
-                                (
-                                  item,
-                                ) => (
-                                  <div
-                                    key={
-                                      item.productId
-                                    }
-                                    className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-medium text-foreground">
-                                        {
-                                          item.productName
-                                        }
-                                      </p>
-
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        {
-                                          item.quantity
-                                        }{' '}
-                                        ×{' '}
-                                        {pesoFormatter.format(
-                                          Number(
-                                            item.unitPrice,
-                                          ),
-                                        )}
-                                      </p>
-                                    </div>
-
-                                    <p className="shrink-0 text-sm font-medium tabular-nums text-foreground">
-                                      {pesoFormatter.format(
-                                        Number(
-                                          item.lineTotal,
-                                        ),
-                                      )}
-                                    </p>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        </Card>
-                      ),
-                    )}
-                  </div>
+                  <DataTable
+                    caption="Daily sales transactions"
+                    headings={[
+                      'Sale / time',
+                      'Payment',
+                      'Recorded by',
+                      { label: 'Total', numeric: true },
+                      'Items',
+                    ]}
+                  >
+                    {report.sales.map((sale) => (
+                      <tr key={sale.id}>
+                        <td>
+                          <p className="font-semibold">Sale #{sale.id}</p>
+                          <p className="text-caption text-muted-foreground">
+                            {formatSaleDateTime(sale.createdAt)}
+                          </p>
+                        </td>
+                        <td>
+                          <Badge variant="info">{sale.paymentMethod}</Badge>
+                        </td>
+                        <td>{sale.recordedBy.name}</td>
+                        <td className="numeric font-semibold">
+                          {pesoFormatter.format(Number(sale.totalAmount))}
+                        </td>
+                        <td>
+                          <details>
+                            <summary>{sale.items.length} items · View</summary>
+                            <ul className="space-y-3">
+                              {sale.items.map((item) => (
+                                <li
+                                  key={item.productId}
+                                  className="rounded-lg bg-surface-tint p-3"
+                                >
+                                  <p className="font-medium">{item.productName}</p>
+                                  <p>
+                                    {item.quantity} ×{' '}
+                                    {pesoFormatter.format(Number(item.unitPrice))}
+                                  </p>
+                                  <p className="font-semibold">
+                                    {pesoFormatter.format(Number(item.lineTotal))}
+                                  </p>
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        </td>
+                      </tr>
+                    ))}
+                  </DataTable>
                 )}
-              </section>
+                <Pagination
+                  label="Daily sales"
+                  meta={report.pagination}
+                  onPageChange={(page) => setQuery((q) => ({ ...q, page }))}
+                  onPageSizeChange={(pageSize) =>
+                    setQuery((q) => ({ ...q, pageSize, page: 1 }))
+                  }
+                />
+              </Card>
             </>
-          )}
+          )
+        )}
       </div>
+      {printReport && (
+        <div className="daily-sales-print-document hidden">
+          <header className="daily-sales-print-header">
+            <h1>TindaTrack</h1>
+            <p>Daily Sales Report · {formatReportDate(printReport.date)}</p>
+          </header>
+          <p>
+            {printReport.saleCount} transactions ·{' '}
+            {pesoFormatter.format(Number(printReport.totalSalesAmount))}
+          </p>
+          {printReport.sales.map((sale) => (
+            <section key={sale.id} className="daily-sales-print-sale mt-5">
+              <h2>
+                Sale #{sale.id} · {formatSaleDateTime(sale.createdAt)}
+              </h2>
+              <p>
+                {sale.paymentMethod} · {sale.recordedBy.name} ·{' '}
+                {pesoFormatter.format(Number(sale.totalAmount))}
+              </p>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Unit price</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sale.items.map((i) => (
+                    <tr key={i.productId}>
+                      <td>{i.productName}</td>
+                      <td>{i.quantity}</td>
+                      <td>{pesoFormatter.format(Number(i.unitPrice))}</td>
+                      <td>{pesoFormatter.format(Number(i.lineTotal))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          ))}
+        </div>
+      )}
     </PageContainer>
   )
 }

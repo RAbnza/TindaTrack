@@ -1,391 +1,182 @@
+import { TransactionWorkspace } from '../components/workspace/TransactionWorkspace'
+import { TransactionSummary } from '../components/workspace/TransactionSummary'
+import { ProductBrowser } from '../components/workspace/ProductBrowser'
+import { SelectedItems } from '../components/workspace/SelectedItems'
 import {
-  useMemo,
-  useState,
-} from 'react'
+  useTransactionCatalog,
+  type TransactionProductsProps,
+} from '../features/workspace/useTransactionCatalog'
+import { useMemo, useState } from 'react'
 
-import {
-  ApiError,
-} from '../api/api'
+import { ApiError } from '../api/api'
 
-import {
-  createSale,
-} from '../api/sales.api'
+import { createSale } from '../api/sales.api'
 
-import {
-  PageContainer,
-} from '../components/layout/PageContainer'
+import { PageContainer } from '../components/layout/PageContainer'
 
-import {
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  PageHeader,
-  useToast,
-} from '../components/ui'
+import { Button, PageHeader, useToast } from '../components/ui'
 
-import {
-  AvailableProductCard,
-} from '../features/sales/AvailableProductCard'
+import { SaleCartItem } from '../features/sales/SaleCartItem'
 
-import {
-  SaleCartItem,
-} from '../features/sales/SaleCartItem'
+import { SaleReceipt } from '../features/sales/SaleReceipt'
 
-import {
-  SaleReceipt,
-} from '../features/sales/SaleReceipt'
-
-import type {
-  Product,
-} from '../types/product'
-
-import type {
-  CreatedSale,
-  PaymentMethod,
-} from '../types/sale'
+import type { CreatedSale, PaymentMethod } from '../types/sale'
 
 type CartItem = {
   productId: number
   quantity: number
 }
 
-type NewSalePageProps = {
-  products: Product[]
-  isProductsLoading: boolean
-  productsError: string | null
-  reloadProducts: () => Promise<void>
-}
+const paymentMethods: PaymentMethod[] = ['CASH', 'GCASH', 'MAYA']
 
-const paymentMethods:
-  PaymentMethod[] = [
-    'CASH',
-    'GCASH',
-    'MAYA',
-  ]
+const pesoFormatter = new Intl.NumberFormat('en-PH', {
+  style: 'currency',
+  currency: 'PHP',
+})
 
-const pesoFormatter =
-  new Intl.NumberFormat(
-    'en-PH',
-    {
-      style: 'currency',
-      currency: 'PHP',
-    },
+export function NewSalePage(supplied: TransactionProductsProps) {
+  const { showToast } = useToast()
+
+  const [cart, setCart] = useState<CartItem[]>([])
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null)
+
+  const [completedSale, setCompletedSale] = useState<CreatedSale | null>(null)
+
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const catalog = useTransactionCatalog(
+    supplied,
+    cart.map((item) => item.productId),
+  )
+  const { products, isProductsLoading, productsError, reloadProducts } = catalog
+  const setSearch = (search: string) => catalog.updateQuery({ search })
+
+  const productsById = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
   )
 
-export function NewSalePage({
-  products,
-  isProductsLoading,
-  productsError,
-  reloadProducts,
-}: NewSalePageProps) {
-  const {
-    showToast,
-  } = useToast()
+  const cartProductIds = useMemo(
+    () => new Set(cart.map((item) => item.productId)),
+    [cart],
+  )
 
-  const [
-    search,
-    setSearch,
-  ] = useState('')
+  const cartEstimate = useMemo(
+    () =>
+      cart.reduce((total, item) => {
+        const product = productsById.get(item.productId)
 
-  const [
-    cart,
-    setCart,
-  ] =
-    useState<CartItem[]>(
-      [],
-    )
-
-  const [
-    paymentMethod,
-    setPaymentMethod,
-  ] =
-    useState<PaymentMethod | null>(
-      null,
-    )
-
-  const [
-    completedSale,
-    setCompletedSale,
-  ] =
-    useState<CreatedSale | null>(
-      null,
-    )
-
-  const [
-    submissionError,
-    setSubmissionError,
-  ] =
-    useState<string | null>(
-      null,
-    )
-
-  const [
-    isSubmitting,
-    setIsSubmitting,
-  ] = useState(false)
-
-  const productsById =
-    useMemo(
-      () =>
-        new Map(
-          products.map(
-            (product) => [
-              product.id,
-              product,
-            ],
-          ),
-        ),
-      [products],
-    )
-
-  const cartProductIds =
-    useMemo(
-      () =>
-        new Set(
-          cart.map(
-            (item) =>
-              item.productId,
-          ),
-        ),
-      [cart],
-    )
-
-  const filteredProducts =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase()
-
-      return products.filter(
-        (product) => {
-          if (
-            !product.active
-          ) {
-            return false
-          }
-
-          if (!query) {
-            return true
-          }
-
-          return (
-            product.name
-              .toLowerCase()
-              .includes(query) ||
-            product.sku
-              .toLowerCase()
-              .includes(query)
-          )
-        },
-      )
-    }, [
-      products,
-      search,
-    ])
-
-  /*
-   * Checkout estimate only.
-   *
-   * Never sent to the API.
-   * The backend recalculates the
-   * authoritative sale total.
-   */
-  const cartEstimate =
-    useMemo(
-      () =>
-        cart.reduce(
-          (
-            total,
-            item,
-          ) => {
-            const product =
-              productsById.get(
-                item.productId,
-              )
-
-            if (!product) {
-              return total
-            }
-
-            return (
-              total +
-              Number(
-                product.sellingPrice,
-              ) *
-                item.quantity
-            )
-          },
-          0,
-        ),
-      [
-        cart,
-        productsById,
-      ],
-    )
-
-  const cartHasInvalidStock =
-    cart.some(
-      (item) => {
-        const product =
-          productsById.get(
-            item.productId,
-          )
-
-        if (
-          !product ||
-          !product.active
-        ) {
-          return true
+        if (!product) {
+          return total
         }
 
-        return (
-          item.quantity < 1 ||
-          item.quantity >
-            product.currentStock
-        )
-      },
+        return total + Number(product.sellingPrice) * item.quantity
+      }, 0),
+    [cart, productsById],
+  )
+
+  const cartHasInvalidStock = cart.some((item) => {
+    const product = productsById.get(item.productId)
+
+    if (!product || !product.active) {
+      return true
+    }
+
+    return (
+      !Number.isInteger(item.quantity) ||
+      item.quantity < 1 ||
+      item.quantity > product.currentStock
     )
+  })
 
   const canSubmit =
     cart.length > 0 &&
     paymentMethod !== null &&
     !cartHasInvalidStock &&
     !isSubmitting &&
-    !isProductsLoading
+    !isProductsLoading &&
+    !productsError
 
   function clearError() {
-    setSubmissionError(
-      null,
-    )
+    setSubmissionError(null)
   }
 
-  function handleAddProduct(
-    productId: number,
-  ) {
-    const product =
-      productsById.get(
-        productId,
-      )
+  function handleAddProduct(productId: number) {
+    catalog.retainProduct(productId)
+    const product = productsById.get(productId)
 
-    if (
-      !product ||
-      !product.active ||
-      product.currentStock <=
-        0
-    ) {
+    if (!product || !product.active || product.currentStock <= 0) {
       return
     }
 
-    setCart(
-      (current) => {
-        const alreadyExists =
-          current.some(
-            (item) =>
-              item.productId ===
-              productId,
-          )
+    setCart((current) => {
+      const alreadyExists = current.some((item) => item.productId === productId)
 
-        if (alreadyExists) {
-          return current
-        }
+      if (alreadyExists) {
+        return current
+      }
 
-        return [
-          ...current,
-          {
-            productId,
-            quantity: 1,
-          },
-        ]
-      },
+      return [
+        ...current,
+        {
+          productId,
+          quantity: 1,
+        },
+      ]
+    })
+
+    clearError()
+  }
+
+  function handleDecrease(productId: number) {
+    setCart((current) =>
+      current.map((item) =>
+        item.productId === productId
+          ? {
+              ...item,
+
+              quantity: Math.max(1, item.quantity - 1),
+            }
+          : item,
+      ),
     )
 
     clearError()
   }
 
-  function handleDecrease(
-    productId: number,
-  ) {
-    setCart(
-      (current) =>
-        current.map(
-          (item) =>
-            item.productId ===
-            productId
-              ? {
-                  ...item,
-
-                  quantity:
-                    Math.max(
-                      1,
-                      item.quantity -
-                        1,
-                    ),
-                }
-              : item,
-        ),
-    )
-
-    clearError()
-  }
-
-  function handleIncrease(
-    productId: number,
-  ) {
-    const product =
-      productsById.get(
-        productId,
-      )
+  function handleIncrease(productId: number) {
+    const product = productsById.get(productId)
 
     if (!product) {
       return
     }
 
-    setCart(
-      (current) =>
-        current.map(
-          (item) => {
-            if (
-              item.productId !==
-              productId
-            ) {
-              return item
-            }
+    setCart((current) =>
+      current.map((item) => {
+        if (item.productId !== productId) {
+          return item
+        }
 
-            if (
-              item.quantity >=
-              product.currentStock
-            ) {
-              return item
-            }
+        if (item.quantity >= product.currentStock) {
+          return item
+        }
 
-            return {
-              ...item,
+        return {
+          ...item,
 
-              quantity:
-                item.quantity +
-                1,
-            }
-          },
-        ),
+          quantity: item.quantity + 1,
+        }
+      }),
     )
 
     clearError()
   }
 
-  function handleRemove(
-    productId: number,
-  ) {
-    setCart(
-      (current) =>
-        current.filter(
-          (item) =>
-            item.productId !==
-            productId,
-        ),
-    )
+  function handleRemove(productId: number) {
+    setCart((current) => current.filter((item) => item.productId !== productId))
 
     clearError()
   }
@@ -395,27 +186,19 @@ export function NewSalePage({
       return
     }
 
-    if (
-      cart.length === 0
-    ) {
-      setSubmissionError(
-        'Add at least one product before recording the sale.',
-      )
+    if (cart.length === 0) {
+      setSubmissionError('Add at least one product before recording the sale.')
 
       return
     }
 
     if (!paymentMethod) {
-      setSubmissionError(
-        'Choose a payment method before recording the sale.',
-      )
+      setSubmissionError('Choose a payment method before recording the sale.')
 
       return
     }
 
-    if (
-      cartHasInvalidStock
-    ) {
+    if (cartHasInvalidStock) {
       setSubmissionError(
         'One or more quantities exceed the currently available stock. Review the cart before continuing.',
       )
@@ -423,39 +206,27 @@ export function NewSalePage({
       return
     }
 
-    setSubmissionError(
-      null,
-    )
+    setSubmissionError(null)
 
-    setIsSubmitting(
-      true,
-    )
+    setIsSubmitting(true)
 
     try {
-      const sale =
-        await createSale({
-          paymentMethod,
+      const sale = await createSale({
+        paymentMethod,
 
-          items:
-            cart.map(
-              (item) => ({
-                productId:
-                  item.productId,
+        items: cart.map((item) => ({
+          productId: item.productId,
 
-                quantity:
-                  item.quantity,
-              }),
-            ),
-        })
+          quantity: item.quantity,
+        })),
+      })
 
       /*
        * Preserve the authoritative
        * server response for receipt
        * display and printing.
        */
-      setCompletedSale(
-        sale,
-      )
+      setCompletedSale(sale)
 
       setCart([])
       setPaymentMethod(null)
@@ -464,388 +235,164 @@ export function NewSalePage({
       await reloadProducts()
 
       showToast({
-        variant:
-          'success',
+        variant: 'success',
 
-        message:
-          'Sale recorded successfully.',
+        message: 'Sale recorded successfully.',
       })
     } catch (error) {
-      if (
-        error instanceof
-        ApiError
-      ) {
-        setSubmissionError(
-          error.message,
-        )
+      if (error instanceof ApiError) {
+        setSubmissionError(error.message)
 
-        if (
-          error.status === 400
-        ) {
+        if (error.status === 400) {
           await reloadProducts()
         }
 
         return
       }
 
-      setSubmissionError(
-        'Unable to record the sale. Please try again.',
-      )
+      setSubmissionError('Unable to record the sale. Please try again.')
     } finally {
-      setIsSubmitting(
-        false,
-      )
+      setIsSubmitting(false)
     }
   }
-
-  const hasSearch =
-    search.trim().length > 0
 
   return (
     <PageContainer>
       <PageHeader
         title="New Sale"
-        description="Add products, review the order, choose payment, then record the sale."
+        description="Build the order, review quantities, and record payment."
       />
-
       {completedSale && (
-        <SaleReceipt
-          sale={
-            completedSale
-          }
-          onDismiss={() =>
-            setCompletedSale(
-              null,
-            )
-          }
-        />
+        <SaleReceipt sale={completedSale} onDismiss={() => setCompletedSale(null)} />
       )}
-
-      {submissionError && (
-        <div
-          role="alert"
-          className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm leading-6 text-secondary-foreground"
-        >
-          {submissionError}
-        </div>
-      )}
-
-      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.85fr)]">
-        <Card className="min-w-0 p-4 sm:p-5">
-          <div>
-            <p className="text-caption font-medium text-muted-foreground">
-              Step 1
-            </p>
-
-            <h2 className="mt-1 text-section font-semibold text-foreground">
-              Find products
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose active
-              products that are
-              currently in stock.
-            </p>
-          </div>
-
-          <label
-            htmlFor="sale-product-search"
-            className="sr-only"
+      <TransactionWorkspace
+        busy={isSubmitting}
+        count={cart.length}
+        setup={
+          <fieldset
+            className="workflow-setup rounded-lg border border-border"
+            disabled={isSubmitting}
           >
-            Search products
-          </label>
-
-          <input
-            id="sale-product-search"
-            type="search"
-            value={search}
-            onChange={(
-              event,
-            ) =>
-              setSearch(
-                event.target.value,
-              )
-            }
-            placeholder="Search name or SKU"
-            className="mt-5 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
-          />
-
-          <div className="mt-5">
-            {isProductsLoading &&
-              products.length ===
-                0 && (
-                <LoadingState label="Loading products..." />
-              )}
-
-            {productsError && (
-              <ErrorState
-                title="Unable to load products"
-                message={
-                  productsError
-                }
-                onRetry={() =>
-                  void reloadProducts()
-                }
-              />
-            )}
-
-            {!isProductsLoading &&
-              !productsError &&
-              filteredProducts
-                .length ===
-                0 && (
-                <EmptyState
-                  title={
-                    hasSearch
-                      ? 'No products found'
-                      : 'No products available'
-                  }
-                  description={
-                    hasSearch
-                      ? 'Try another product name or SKU.'
-                      : 'There are no active products available for sale.'
-                  }
-                />
-              )}
-
-            {!productsError &&
-              filteredProducts
-                .length > 0 && (
-                <div className="space-y-3">
-                  {filteredProducts.map(
-                    (
-                      product,
-                    ) => (
-                      <AvailableProductCard
-                        key={
-                          product.id
-                        }
-                        product={
-                          product
-                        }
-                        isInCart={cartProductIds.has(
-                          product.id,
-                        )}
-                        onAdd={
-                          handleAddProduct
-                        }
-                      />
-                    ),
-                  )}
-                </div>
-              )}
-
-            {isProductsLoading &&
-              products.length >
-                0 && (
-                <p
-                  role="status"
-                  className="mt-3 text-xs text-muted-foreground"
+            <legend className="px-2 font-semibold">Payment method</legend>
+            <div className="flex flex-wrap gap-2">
+              {paymentMethods.map((method) => (
+                <Button
+                  key={method}
+                  variant={paymentMethod === method ? 'primary' : 'secondary'}
+                  aria-pressed={paymentMethod === method}
+                  onClick={() => {
+                    setPaymentMethod(method)
+                    clearError()
+                  }}
                 >
-                  Refreshing stock...
-                </p>
-              )}
-          </div>
-        </Card>
-
-        <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
-          <Card className="p-4 sm:p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-caption font-medium text-muted-foreground">
-                  Step 2
-                </p>
-
-                <h2 className="mt-1 text-section font-semibold text-foreground">
-                  Review cart
-                </h2>
-              </div>
-
-              <span className="text-sm tabular-nums text-muted-foreground">
-                {cart.length}{' '}
-                {cart.length ===
-                1
-                  ? 'item'
-                  : 'items'}
-              </span>
+                  {method}
+                </Button>
+              ))}
             </div>
-
-            {cart.length ===
-            0 ? (
-              <div className="mt-5 rounded-lg border border-dashed border-border px-4 py-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Add products from
-                  the list to begin
-                  this sale.
+            <p className="text-ui text-secondary-foreground">
+              Choose how the customer will pay. The receipt uses the final server total.
+            </p>
+          </fieldset>
+        }
+        browser={
+          <ProductBrowser
+            catalog={catalog}
+            selectedIds={cartProductIds}
+            onAdd={handleAddProduct}
+            mode="sale"
+          />
+        }
+        items={
+          <SelectedItems
+            items={cart}
+            renderItem={(item) => {
+              const product = productsById.get(item.productId)
+              return product ? (
+                <SaleCartItem
+                  key={item.productId}
+                  product={product}
+                  quantity={item.quantity}
+                  onDecrease={() => handleDecrease(item.productId)}
+                  onIncrease={() => handleIncrease(item.productId)}
+                  onQuantityChange={(quantity) => {
+                    setCart((current) =>
+                      current.map((i) =>
+                        i.productId === item.productId ? { ...i, quantity } : i,
+                      ),
+                    )
+                    clearError()
+                  }}
+                  onRemove={() => handleRemove(item.productId)}
+                />
+              ) : (
+                <p key={item.productId} role="alert">
+                  Product #{item.productId} is unavailable.{' '}
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleRemove(item.productId)}
+                  >
+                    Remove
+                  </Button>
                 </p>
-              </div>
-            ) : (
-              <div className="mt-5 space-y-3">
-                {cart.map(
-                  (item) => {
-                    const product =
-                      productsById.get(
-                        item.productId,
-                      )
-
-                    if (!product) {
-                      return null
-                    }
-
-                    return (
-                      <SaleCartItem
-                        key={
-                          item.productId
-                        }
-                        product={
-                          product
-                        }
-                        quantity={
-                          item.quantity
-                        }
-                        onDecrease={() =>
-                          handleDecrease(
-                            item.productId,
-                          )
-                        }
-                        onIncrease={() =>
-                          handleIncrease(
-                            item.productId,
-                          )
-                        }
-                        onRemove={() =>
-                          handleRemove(
-                            item.productId,
-                          )
-                        }
-                      />
-                    )
-                  },
-                )}
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-4 sm:p-5">
-            <fieldset>
-              <legend>
-                <span className="text-caption font-medium text-muted-foreground">
-                  Step 3
-                </span>
-
-                <span className="mt-1 block text-section font-semibold text-foreground">
-                  Payment method
-                </span>
-              </legend>
-
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {paymentMethods.map(
-                  (method) => {
-                    const selected =
-                      paymentMethod ===
-                      method
-
-                    return (
-                      <button
-                        key={
-                          method
-                        }
-                        type="button"
-                        aria-pressed={
-                          selected
-                        }
-                        onClick={() => {
-                          setPaymentMethod(
-                            method,
-                          )
-
-                          clearError()
-                        }}
-                        className={[
-                          'min-h-11 rounded-lg border px-2 text-sm font-medium transition-colors',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          selected
-                            ? 'border-primary bg-accent text-accent-foreground'
-                            : 'border-border bg-card text-secondary-foreground hover:bg-secondary',
-                        ].join(
-                          ' ',
-                        )}
-                      >
-                        {method}
-                      </button>
-                    )
-                  },
-                )}
-              </div>
-            </fieldset>
-          </Card>
-
-          <Card className="p-4 sm:p-5">
-            <div>
-              <p className="text-caption font-medium text-muted-foreground">
-                Step 4
-              </p>
-
-              <div className="mt-1 flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="text-section font-semibold text-foreground">
-                    Review total
-                  </h2>
-
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                    Cart estimate only.
-                    The server
-                    recalculates the
-                    final sale total
-                    when recorded.
+              )
+            }}
+          />
+        }
+        summary={
+          <TransactionSummary
+            title="Sale summary"
+            count={cart.length}
+            quantity={cart.reduce((n, i) => n + i.quantity, 0)}
+            total={pesoFormatter.format(cartEstimate)}
+            issues={
+              <>
+                {productsError && (
+                  <p role="alert" className="text-destructive">
+                    {productsError}
                   </p>
-                </div>
-
-                <p className="shrink-0 text-metric-primary font-semibold tabular-nums text-foreground">
-                  {pesoFormatter.format(
-                    cartEstimate,
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {cartHasInvalidStock && (
-              <div
-                role="alert"
-                className="mt-4 rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
-              >
-                One or more cart
-                quantities exceed
-                the latest displayed
-                stock.
-              </div>
-            )}
-
-            <div className="mt-5 border-t border-border pt-5">
-              <p className="text-caption font-medium text-muted-foreground">
-                Step 5
-              </p>
-
+                )}
+                {submissionError && (
+                  <p role="alert" className="text-destructive">
+                    {submissionError}
+                  </p>
+                )}
+                {cartHasInvalidStock ? (
+                  <p role="alert" className="text-destructive">
+                    Review quantities in Selected items. Stock must be available.
+                  </p>
+                ) : !paymentMethod ? (
+                  'Choose a payment method to continue.'
+                ) : cart.length === 0 ? (
+                  'Add products to start the sale.'
+                ) : (
+                  'Ready to record. The server verifies stock and calculates the final total.'
+                )}
+              </>
+            }
+            action={
               <Button
-                className="mt-2 min-h-14 w-full text-base"
-                disabled={
-                  !canSubmit
-                }
-                loading={
-                  isSubmitting
-                }
-                onClick={() =>
-                  void handleSubmit()
-                }
+                className="w-full"
+                disabled={!canSubmit}
+                loading={isSubmitting}
+                onClick={() => void handleSubmit()}
               >
-                {isSubmitting
-                  ? 'Recording sale...'
-                  : 'Record Sale'}
+                {isSubmitting ? 'Recording sale...' : 'Record Sale'}
               </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+            }
+          >
+            <dl className="summary-facts">
+              <div>
+                <dt>Payment</dt>
+                <dd>{paymentMethod ?? 'Not selected'}</dd>
+              </div>
+            </dl>
+            <p className="summary-help">
+              Cart prices are estimates. The completed receipt preserves the server
+              response.
+            </p>
+          </TransactionSummary>
+        }
+      />
     </PageContainer>
   )
 }

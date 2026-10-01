@@ -71,6 +71,8 @@ model Product {
   stockAdjustments  StockAdjustment[]
   stockMovements    StockMovement[]
 
+  @@index([active, name, id])
+  @@index([active, sku, id])
   @@map("products")
 }
 
@@ -128,6 +130,7 @@ model Sale {
   saleItems      SaleItem[]
 
   @@index([createdAt])
+  @@index([createdAt, id])
   @@map("sales")
 }
 
@@ -180,6 +183,8 @@ model StockMovement {
   stockAdjustment  StockAdjustment?  @relation(fields: [stockAdjustmentId], references: [id], onDelete: Restrict)
 
   @@index([productId, createdAt])
+  @@index([createdAt, id])
+  @@index([type, createdAt, id])
   @@map("stock_movements")
 }
 
@@ -195,5 +200,7 @@ model AuditLog {
   actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
 
   @@index([createdAt])
+  @@index([createdAt, id])
+  @@index([action, createdAt, id])
   @@map("audit_logs")
 }

@@ -162,6 +162,7 @@ function ShellLayout({
   const {
     inspectorOpen,
     setInspectorOpen,
+    setSummaryTarget,
   } =
     useWorkspaceInspector()
 
@@ -231,6 +232,8 @@ function ShellLayout({
   const pageLabel =
     currentPage?.label ??
     'Workspace'
+
+  const isTransaction = ['/sales/new', '/receiving', '/adjustments'].includes(location.pathname)
 
   const isOwner =
     user.role ===
@@ -401,40 +404,37 @@ function ShellLayout({
               New Sale
             </Link>
 
-            <Button
-              variant="ghost"
-              aria-label="Open workspace details"
-              aria-haspopup="dialog"
-              onClick={() =>
-                setInspectorOpen(
-                  true,
-                )
-              }
-              className="size-11 p-0 xl:hidden"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                className="size-5"
+            {!isTransaction && (
+              <Button
+                variant="ghost"
+                aria-label="Open workspace details"
+                aria-haspopup="dialog"
+                onClick={() => setInspectorOpen(true)}
+                className="size-11 p-0 xl:hidden"
               >
-                <rect
-                  x="4"
-                  y="4"
-                  width="16"
-                  height="16"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-
-                <path
-                  d="M14 4v16"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-              </svg>
-            </Button>
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="size-5"
+                >
+                  <rect
+                    x="4"
+                    y="4"
+                    width="16"
+                    height="16"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                  <path
+                    d="M14 4v16"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+              </Button>
+            )}
 
             <Button
               variant="ghost"
@@ -539,9 +539,9 @@ function ShellLayout({
 
           <aside
             className="shell-inspector"
-            aria-label="Workspace details"
+            aria-label={isTransaction ? 'Transaction summary panel' : 'Workspace details'}
           >
-            {inspector}
+            {isTransaction ? <div className="min-h-0 flex-1 bg-surface-tint" ref={setSummaryTarget} /> : inspector}
           </aside>
         </div>
       </div>
@@ -581,21 +581,17 @@ function ShellLayout({
         </div>
       </PanelSheet>
 
-      <PanelSheet
-        open={
-          inspectorOpen
-        }
-        title="Workspace details"
-        side="right"
-        collapseAt={
-          1280
-        }
-        onClose={
-          closeInspector
-        }
-      >
-        {inspector}
-      </PanelSheet>
+      {!isTransaction && (
+        <PanelSheet
+          open={inspectorOpen}
+          title="Workspace details"
+          side="right"
+          collapseAt={1280}
+          onClose={closeInspector}
+        >
+          {inspector}
+        </PanelSheet>
+      )}
 
       <ConfirmationDialog
         open={

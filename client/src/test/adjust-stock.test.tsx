@@ -122,11 +122,10 @@ describe(
         renderPage()
 
         await user.click(
-          screen.getByRole(
+          await screen.findByRole(
             'button',
             {
-              name:
-                /bath soap/i,
+              name: /bath soap/i,
             },
           ),
         )
@@ -207,11 +206,10 @@ describe(
         )
 
         await user.click(
-          screen.getByRole(
+          await screen.findByRole(
             'button',
             {
-              name:
-                /bath soap/i,
+              name: /bath soap/i,
             },
           ),
         )
@@ -315,3 +313,25 @@ describe(
     )
   },
 )
+it('validates direct quantities and preserves the reduction confirmation', async () => {
+  const user = userEvent.setup()
+  mocks.createStockAdjustment.mockResolvedValue({ id: 73 })
+  renderPage()
+  await user.click(await screen.findByRole('button', { name: /bath soap/i }))
+  await user.type(screen.getByLabelText('Reason'), 'Count correction')
+  await user.click(screen.getByRole('button', { name: 'Selected items (1)' }))
+  const quantity = screen.getByLabelText('adjustment quantity')
+  await user.clear(quantity)
+  await user.type(quantity, '11')
+  await user.click(screen.getByRole('button', { name: 'Remove Stock' }))
+  expect(quantity).toHaveValue(1)
+  await user.clear(quantity)
+  await user.type(quantity, '11')
+  expect(screen.getByRole('button', { name: 'Record Adjustment' })).toBeDisabled()
+  await user.clear(quantity)
+  await user.type(quantity, '4')
+  await user.click(screen.getByRole('button', { name: 'Record Adjustment' }))
+  expect(mocks.createStockAdjustment).not.toHaveBeenCalled()
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Record adjustment' }))
+  await waitFor(() => expect(mocks.createStockAdjustment).toHaveBeenCalledWith({ productId: 31, quantityDelta: -4, reason: 'Count correction' }))
+})
