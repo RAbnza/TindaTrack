@@ -1,12 +1,14 @@
 import {
-  createContext,
   useCallback,
   useEffect,
   useState,
   type ReactNode,
 } from 'react'
 
-import { login as loginRequest } from '../api/auth.api'
+import {
+  login as loginRequest,
+} from '../api/auth.api'
+
 import {
   AUTH_SESSION_CLEARED_EVENT,
   clearStoredAuthSession,
@@ -14,20 +16,14 @@ import {
   storeAuthSession,
 } from './auth-storage'
 
+import {
+  AuthContext,
+} from './auth-context'
+
 import type {
   AuthUser,
   LoginRequest,
 } from '../types/auth'
-
-type AuthContextValue = {
-  user: AuthUser | null
-  isAuthenticated: boolean
-  login: (credentials: LoginRequest) => Promise<void>
-  logout: () => void
-}
-
-export const AuthContext =
-  createContext<AuthContextValue | null>(null)
 
 type AuthProviderProps = {
   children: ReactNode
@@ -36,8 +32,13 @@ type AuthProviderProps = {
 export function AuthProvider({
   children,
 }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(
-    () => getStoredAuthSession()?.user ?? null,
+  const [
+    user,
+    setUser,
+  ] = useState<AuthUser | null>(
+    () =>
+      getStoredAuthSession()
+        ?.user ?? null,
   )
 
   useEffect(() => {
@@ -59,9 +60,13 @@ export function AuthProvider({
   }, [])
 
   const login = useCallback(
-    async (credentials: LoginRequest) => {
+    async (
+      credentials: LoginRequest,
+    ) => {
       const session =
-        await loginRequest(credentials)
+        await loginRequest(
+          credentials,
+        )
 
       storeAuthSession(session)
       setUser(session.user)
@@ -69,16 +74,20 @@ export function AuthProvider({
     [],
   )
 
-  const logout = useCallback(() => {
-    clearStoredAuthSession()
-    setUser(null)
-  }, [])
+  const logout = useCallback(
+    () => {
+      clearStoredAuthSession()
+      setUser(null)
+    },
+    [],
+  )
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: user !== null,
+        isAuthenticated:
+          user !== null,
         login,
         logout,
       }}

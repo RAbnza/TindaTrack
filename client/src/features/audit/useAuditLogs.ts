@@ -16,6 +16,30 @@ import type {
   AuditLog,
 } from '../../types/audit-log'
 
+function getAuditErrorMessage(
+  error: unknown,
+): string {
+  if (
+    error instanceof ApiError
+  ) {
+    if (
+      error.status === 401
+    ) {
+      return 'Your session has expired. Please sign in again.'
+    }
+
+    if (
+      error.status === 403
+    ) {
+      return 'You do not have permission to view audit history.'
+    }
+
+    return error.message
+  }
+
+  return 'Unable to load audit history. Please try again.'
+}
+
 export function useAuditLogs() {
   const [
     logs,
@@ -34,7 +58,7 @@ export function useAuditLogs() {
     null,
   )
 
-  const loadAuditLogs =
+  const reload =
     useCallback(async () => {
       setIsLoading(true)
       setError(null)
@@ -47,38 +71,10 @@ export function useAuditLogs() {
       } catch (error) {
         setLogs([])
 
-        if (
-          error instanceof ApiError
-        ) {
-          if (
-            error.status === 401
-          ) {
-            setError(
-              'Your session has expired. Please sign in again.',
-            )
-
-            return
-          }
-
-          if (
-            error.status === 403
-          ) {
-            setError(
-              'You do not have permission to view audit history.',
-            )
-
-            return
-          }
-
-          setError(
-            error.message,
-          )
-
-          return
-        }
-
         setError(
-          'Unable to load audit history. Please try again.',
+          getAuditErrorMessage(
+            error,
+          ),
         )
       } finally {
         setIsLoading(false)
@@ -86,13 +82,48 @@ export function useAuditLogs() {
     }, [])
 
   useEffect(() => {
-    void loadAuditLogs()
-  }, [loadAuditLogs])
+    let cancelled = false
+
+    async function loadInitialAuditLogs() {
+      try {
+        const result =
+          await getAuditLogs()
+
+        if (cancelled) {
+          return
+        }
+
+        setLogs(result)
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setLogs([])
+
+        setError(
+          getAuditErrorMessage(
+            error,
+          ),
+        )
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadInitialAuditLogs()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return {
     logs,
     isLoading,
     error,
-    reload: loadAuditLogs,
+    reload,
   }
 }

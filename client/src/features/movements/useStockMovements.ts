@@ -16,6 +16,30 @@ import type {
   StockMovement,
 } from '../../types/stock-movement'
 
+function getMovementsErrorMessage(
+  error: unknown,
+): string {
+  if (
+    error instanceof ApiError
+  ) {
+    if (
+      error.status === 401
+    ) {
+      return 'Your session has expired. Please sign in again.'
+    }
+
+    if (
+      error.status === 403
+    ) {
+      return 'You do not have permission to view stock movement history.'
+    }
+
+    return error.message
+  }
+
+  return 'Unable to load stock movement history. Please try again.'
+}
+
 export function useStockMovements() {
   const [
     movements,
@@ -35,7 +59,7 @@ export function useStockMovements() {
     null,
   )
 
-  const loadMovements =
+  const reload =
     useCallback(async () => {
       setIsLoading(true)
       setError(null)
@@ -48,38 +72,10 @@ export function useStockMovements() {
       } catch (error) {
         setMovements([])
 
-        if (
-          error instanceof ApiError
-        ) {
-          if (
-            error.status === 401
-          ) {
-            setError(
-              'Your session has expired. Please sign in again.',
-            )
-
-            return
-          }
-
-          if (
-            error.status === 403
-          ) {
-            setError(
-              'You do not have permission to view stock movement history.',
-            )
-
-            return
-          }
-
-          setError(
-            error.message,
-          )
-
-          return
-        }
-
         setError(
-          'Unable to load stock movement history. Please try again.',
+          getMovementsErrorMessage(
+            error,
+          ),
         )
       } finally {
         setIsLoading(false)
@@ -87,13 +83,48 @@ export function useStockMovements() {
     }, [])
 
   useEffect(() => {
-    void loadMovements()
-  }, [loadMovements])
+    let cancelled = false
+
+    async function loadInitialMovements() {
+      try {
+        const result =
+          await getStockMovements()
+
+        if (cancelled) {
+          return
+        }
+
+        setMovements(result)
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setMovements([])
+
+        setError(
+          getMovementsErrorMessage(
+            error,
+          ),
+        )
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadInitialMovements()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return {
     movements,
     isLoading,
     error,
-    reload: loadMovements,
+    reload,
   }
 }

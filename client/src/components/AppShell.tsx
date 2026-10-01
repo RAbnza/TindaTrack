@@ -1,32 +1,21 @@
-import type {
-  ReactNode,
-} from 'react'
+import {
+  NavLink,
+} from 'react-router-dom'
 
 import {
   useAuth,
 } from '../auth/useAuth'
 
-export type AppView =
-  | 'inventory'
-  | 'sale'
-  | 'receiving'
-  | 'adjustment'
-  | 'reports'
-  | 'movements'
-  | 'audit'
+import type {
+  ReactNode,
+} from 'react'
 
 type AppShellProps = {
   children: ReactNode
-  activeView: AppView
-  onNavigate: (
-    view: AppView,
-  ) => void
 }
 
 export function AppShell({
   children,
-  activeView,
-  onNavigate,
 }: AppShellProps) {
   const {
     user,
@@ -40,11 +29,11 @@ export function AppShell({
   const isOwner =
     user.role === 'OWNER'
 
-  function navButtonClass(
+  function navLinkClass(
     isActive: boolean,
   ) {
     return [
-      'min-h-11 shrink-0 rounded-xl px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+      'flex min-h-11 shrink-0 items-center rounded-xl px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
       isActive
         ? 'bg-emerald-700 text-white'
         : 'bg-white text-slate-700 hover:bg-slate-100',
@@ -82,156 +71,103 @@ export function AppShell({
           aria-label="Main navigation"
           className="mx-auto flex w-full max-w-2xl gap-2 overflow-x-auto px-4 pb-3"
         >
-          <button
-            type="button"
-            aria-current={
-              activeView ===
-              'inventory'
-                ? 'page'
-                : undefined
-            }
-            onClick={() =>
-              onNavigate(
-                'inventory',
+          <NavLink
+            to="/inventory"
+            className={({
+              isActive,
+            }) =>
+              navLinkClass(
+                isActive,
               )
             }
-            className={navButtonClass(
-              activeView ===
-                'inventory',
-            )}
           >
             Inventory
-          </button>
+          </NavLink>
 
-          <button
-            type="button"
-            aria-current={
-              activeView === 'sale'
-                ? 'page'
-                : undefined
-            }
-            onClick={() =>
-              onNavigate('sale')
-            }
-            className={navButtonClass(
-              activeView ===
-                'sale',
-            )}
-          >
-            New Sale
-          </button>
-
-          <button
-            type="button"
-            aria-current={
-              activeView ===
-              'receiving'
-                ? 'page'
-                : undefined
-            }
-            onClick={() =>
-              onNavigate(
-                'receiving',
+          <NavLink
+            to="/sales/new"
+            className={({
+              isActive,
+            }) =>
+              navLinkClass(
+                isActive,
               )
             }
-            className={navButtonClass(
-              activeView ===
-                'receiving',
-            )}
+          >
+            New Sale
+          </NavLink>
+
+          <NavLink
+            to="/receiving"
+            className={({
+              isActive,
+            }) =>
+              navLinkClass(
+                isActive,
+              )
+            }
           >
             Receive Stock
-          </button>
+          </NavLink>
 
           {isOwner && (
-            <button
-              type="button"
-              aria-current={
-                activeView ===
-                'adjustment'
-                  ? 'page'
-                  : undefined
-              }
-              onClick={() =>
-                onNavigate(
-                  'adjustment',
+            <NavLink
+              to="/adjustments"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
                 )
               }
-              className={navButtonClass(
-                activeView ===
-                  'adjustment',
-              )}
             >
               Adjust Stock
-            </button>
+            </NavLink>
           )}
 
           {isOwner && (
-            <button
-              type="button"
-              aria-current={
-                activeView ===
-                'reports'
-                  ? 'page'
-                  : undefined
-              }
-              onClick={() =>
-                onNavigate(
-                  'reports',
+            <NavLink
+              to="/reports"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
                 )
               }
-              className={navButtonClass(
-                activeView ===
-                  'reports',
-              )}
             >
               Reports
-            </button>
+            </NavLink>
           )}
 
           {isOwner && (
-            <button
-              type="button"
-              aria-current={
-                activeView ===
-                'movements'
-                  ? 'page'
-                  : undefined
-              }
-              onClick={() =>
-                onNavigate(
-                  'movements',
+            <NavLink
+              to="/movements"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
                 )
               }
-              className={navButtonClass(
-                activeView ===
-                  'movements',
-              )}
             >
               Movements
-            </button>
+            </NavLink>
           )}
 
           {isOwner && (
-            <button
-              type="button"
-              aria-current={
-                activeView ===
-                'audit'
-                  ? 'page'
-                  : undefined
-              }
-              onClick={() =>
-                onNavigate(
-                  'audit',
+            <NavLink
+              to="/audit"
+              className={({
+                isActive,
+              }) =>
+                navLinkClass(
+                  isActive,
                 )
               }
-              className={navButtonClass(
-                activeView ===
-                  'audit',
-              )}
             >
               Audit
-            </button>
+            </NavLink>
           )}
         </nav>
       </header>

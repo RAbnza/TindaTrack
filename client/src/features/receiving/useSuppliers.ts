@@ -16,6 +16,25 @@ import type {
   Supplier,
 } from '../../types/supplier'
 
+function getSuppliersErrorMessage(
+  error: unknown,
+): string {
+  if (
+    error instanceof ApiError &&
+    error.status === 401
+  ) {
+    return 'Your session has expired. Please sign in again.'
+  }
+
+  if (
+    error instanceof ApiError
+  ) {
+    return error.message
+  }
+
+  return 'Unable to load suppliers. Please try again.'
+}
+
 export function useSuppliers() {
   const [
     suppliers,
@@ -34,7 +53,7 @@ export function useSuppliers() {
     null,
   )
 
-  const loadSuppliers =
+  const reload =
     useCallback(async () => {
       setIsLoading(true)
       setError(null)
@@ -45,29 +64,10 @@ export function useSuppliers() {
 
         setSuppliers(result)
       } catch (error) {
-        if (
-          error instanceof ApiError &&
-          error.status === 401
-        ) {
-          setError(
-            'Your session has expired. Please sign in again.',
-          )
-
-          return
-        }
-
-        if (
-          error instanceof ApiError
-        ) {
-          setError(
-            error.message,
-          )
-
-          return
-        }
-
         setError(
-          'Unable to load suppliers. Please try again.',
+          getSuppliersErrorMessage(
+            error,
+          ),
         )
       } finally {
         setIsLoading(false)
@@ -75,13 +75,46 @@ export function useSuppliers() {
     }, [])
 
   useEffect(() => {
-    void loadSuppliers()
-  }, [loadSuppliers])
+    let cancelled = false
+
+    async function loadInitialSuppliers() {
+      try {
+        const result =
+          await getSuppliers()
+
+        if (cancelled) {
+          return
+        }
+
+        setSuppliers(result)
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        setError(
+          getSuppliersErrorMessage(
+            error,
+          ),
+        )
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void loadInitialSuppliers()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return {
     suppliers,
     isLoading,
     error,
-    reload: loadSuppliers,
+    reload,
   }
 }
