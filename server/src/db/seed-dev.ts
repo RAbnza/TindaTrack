@@ -116,23 +116,23 @@ async function seedDevelopmentDatabase(): Promise<void> {
     );
   }
 
-  const databaseName =
+    const databaseName =
     new URL(
-      databaseUrl,
+        databaseUrl,
     ).pathname.replace(
-      /^\//,
-      "",
+        /^\//,
+        "",
     );
 
-  if (
-    databaseName.endsWith(
-      "_test",
+    if (
+    !databaseName.endsWith(
+        "_dev",
     )
-  ) {
+    ) {
     throw new Error(
-      `Refusing to seed test database "${databaseName}" with development seed data.`,
+        `Refusing to seed non-development database "${databaseName}".`,
     );
-  }
+    }
 
   console.log(
     `Seeding development database "${databaseName}"...`,
