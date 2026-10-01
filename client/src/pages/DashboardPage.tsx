@@ -42,7 +42,7 @@ function MetricCard({
     ].join(' ')}>
       <h2 className="text-sm font-medium text-secondary-foreground">{label}</h2>
       <p className={[
-        'mt-3 break-words font-semibold tracking-tight tabular-nums',
+        'mt-3 wrap-break-words font-semibold tracking-tight tabular-nums',
         primary ? 'text-metric-primary' : 'text-metric',
         valueColor,
       ].join(' ')}>{value}</p>
@@ -115,7 +115,7 @@ export function DashboardPage() {
   return (
     <PageContainer>
       {pageHeader}
-      <p className="mt-4 break-words text-sm text-muted-foreground">
+      <p className="mt-4 wrap-break-words text-sm text-muted-foreground">
         {getGreeting()}{user ? ', ' + user.name : ''}.
         {' '}Here's how your store is doing today.
       </p>
@@ -203,7 +203,7 @@ export function DashboardPage() {
                       >
                         <span className="flex flex-wrap items-start justify-between gap-3">
                           <span className="min-w-0 flex-1 basis-36">
-                            <span className="block break-words text-sm font-medium">{product.name}</span>
+                            <span className="block wrap-break-words text-sm font-medium">{product.name}</span>
                             <span className="mt-1 block break-all text-caption text-muted-foreground">SKU: {product.sku}</span>
                           </span>
                           <Badge variant={outOfStock ? 'danger' : 'warning'}>

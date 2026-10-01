@@ -833,7 +833,7 @@ export function AdjustStockPage({
                     Reason
                   </p>
 
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-secondary-foreground">
+                  <p className="mt-1 whitespace-pre-wrap wrap-break-words text-sm text-secondary-foreground">
                     {trimmedReason ||
                       'No reason entered yet.'}
                   </p>

@@ -10,7 +10,7 @@ type AuthPageLayoutProps = {
 export function AuthPageLayout({ children }: AuthPageLayoutProps) {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-8 text-foreground sm:py-12">
-      <div className="w-full max-w-[440px]">
+      <div className="w-full max-w-110">
         <div className="mb-7 flex items-center justify-center gap-3">
           <BrandMark />
           <div>

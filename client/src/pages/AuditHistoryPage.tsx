@@ -290,7 +290,7 @@ function MetadataRow({
         {label}
       </dt>
 
-      <dd className="break-words text-sm font-medium text-secondary-foreground sm:text-right">
+      <dd className="wrap-break-words text-sm font-medium text-secondary-foreground sm:text-right">
         {children}
       </dd>
     </div>

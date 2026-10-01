@@ -587,7 +587,7 @@ export function SupplierManagementPage() {
                           }
                         </h2>
 
-                        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-secondary-foreground">
+                        <p className="mt-2 whitespace-pre-wrap wrap-break-words text-sm leading-6 text-secondary-foreground">
                           {supplier.contactDetails ??
                             'No contact details'}
                         </p>

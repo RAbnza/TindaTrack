@@ -826,7 +826,7 @@ export function ReceiveStockPage({
                   Reference
                 </dt>
 
-                <dd className="max-w-[60%] break-words text-right text-secondary-foreground">
+                <dd className="max-w-[60%] wrap-break-words text-right text-secondary-foreground">
                   {referenceNo.trim() ||
                     'None'}
                 </dd>
