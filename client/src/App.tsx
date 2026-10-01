@@ -20,6 +20,10 @@ import {
 } from './pages/AdjustStockPage'
 
 import {
+  DailySalesPage,
+} from './pages/DailySalesPage'
+
+import {
   InventoryPage,
 } from './pages/InventoryPage'
 
@@ -64,12 +68,19 @@ function AuthenticatedApp() {
     /*
      * UI guard only.
      *
-     * The API's OWNER-only RBAC remains
-     * the actual security boundary.
+     * Backend RBAC remains the actual
+     * authorization boundary.
      */
+    const ownerOnlyViews:
+      AppView[] = [
+        'adjustment',
+        'reports',
+      ]
+
     if (
-      view ===
-        'adjustment' &&
+      ownerOnlyViews.includes(
+        view,
+      ) &&
       !isOwner
     ) {
       return
@@ -146,6 +157,12 @@ function AuthenticatedApp() {
               reload
             }
           />
+        )}
+
+      {activeView ===
+        'reports' &&
+        isOwner && (
+          <DailySalesPage />
         )}
     </AppShell>
   )

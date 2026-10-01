@@ -11,6 +11,7 @@ export type AppView =
   | 'sale'
   | 'receiving'
   | 'adjustment'
+  | 'reports'
 
 type AppShellProps = {
   children: ReactNode
@@ -163,25 +164,37 @@ export function AppShell({
           )}
 
           {isOwner && (
-            <>
-              <button
-                type="button"
-                disabled
-                title="Reports will be added in a later slice."
-                className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Reports
-              </button>
+            <button
+              type="button"
+              aria-current={
+                activeView ===
+                'reports'
+                  ? 'page'
+                  : undefined
+              }
+              onClick={() =>
+                onNavigate(
+                  'reports',
+                )
+              }
+              className={navButtonClass(
+                activeView ===
+                  'reports',
+              )}
+            >
+              Reports
+            </button>
+          )}
 
-              <button
-                type="button"
-                disabled
-                title="Audit history will be added in a later slice."
-                className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Audit
-              </button>
-            </>
+          {isOwner && (
+            <button
+              type="button"
+              disabled
+              title="Audit history will be added in a later slice."
+              className="min-h-11 shrink-0 rounded-xl px-4 text-sm font-medium text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Audit
+            </button>
           )}
         </nav>
       </header>
