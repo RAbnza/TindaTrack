@@ -29,7 +29,11 @@ export class SaleValidationError extends Error {
   }
 }
 
-function validateItems(input: RecordSaleInput): void {
+const MAX_TRANSACTION_ATTEMPTS = 3;
+
+function validateItems(
+  input: RecordSaleInput,
+): void {
   if (input.items.length === 0) {
     throw new SaleValidationError(
       "A sale must contain at least one item.",
@@ -58,142 +62,267 @@ function validateItems(input: RecordSaleInput): void {
   }
 }
 
+function isRetryableTransactionError(
+  error: unknown,
+): boolean {
+  return (
+    error instanceof
+      Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2034"
+  );
+}
+
+async function executeSaleTransaction(
+  input: RecordSaleInput,
+) {
+  return prisma.$transaction(
+    async (tx) => {
+      const user = await findSaleUserById(
+        tx,
+        input.recordedBy,
+      );
+
+      if (!user) {
+        throw new SaleValidationError(
+          `User ${input.recordedBy} does not exist.`,
+        );
+      }
+
+      if (!user.active) {
+        throw new SaleValidationError(
+          `User ${input.recordedBy} is inactive.`,
+        );
+      }
+
+      /*
+       * Deterministic product order.
+       *
+       * This matters more as concurrent multi-product
+       * transactions become common.
+       */
+      const orderedItems = [
+        ...input.items,
+      ].sort(
+        (a, b) =>
+          a.productId - b.productId,
+      );
+
+      const productIds = orderedItems.map(
+        (item) => item.productId,
+      );
+
+      const products =
+        await findSaleProductsByIds(
+          tx,
+          productIds,
+        );
+
+      if (
+        products.length !==
+        productIds.length
+      ) {
+        const foundProductIds = new Set(
+          products.map(
+            (product) => product.id,
+          ),
+        );
+
+        const missingProductIds =
+          productIds.filter(
+            (productId) =>
+              !foundProductIds.has(
+                productId,
+              ),
+          );
+
+        throw new SaleValidationError(
+          `Products do not exist: ${missingProductIds.join(", ")}`,
+        );
+      }
+
+      const inactiveProducts =
+        products.filter(
+          (product) => !product.active,
+        );
+
+      if (
+        inactiveProducts.length > 0
+      ) {
+        throw new SaleValidationError(
+          `Inactive products cannot be sold: ${inactiveProducts
+            .map(
+              (product) => product.id,
+            )
+            .join(", ")}`,
+        );
+      }
+
+      const productsById = new Map(
+        products.map((product) => [
+          product.id,
+          product,
+        ]),
+      );
+
+      const pricedItems =
+        orderedItems.map((item) => {
+          const product =
+            productsById.get(
+              item.productId,
+            );
+
+          if (!product) {
+            throw new SaleValidationError(
+              `Product ${item.productId} does not exist.`,
+            );
+          }
+
+          const unitPrice =
+            product.sellingPrice;
+
+          const lineTotal =
+            unitPrice.mul(
+              item.quantity,
+            );
+
+          return {
+            productId:
+              item.productId,
+            quantity: item.quantity,
+            unitPrice,
+            lineTotal,
+          };
+        });
+
+      let totalAmount =
+        new Prisma.Decimal(0);
+
+      for (const item of pricedItems) {
+        totalAmount =
+          totalAmount.add(
+            item.lineTotal,
+          );
+      }
+
+      /*
+       * All stock reads use the same Serializable
+       * transaction client.
+       */
+      for (const item of pricedItems) {
+        const currentStock =
+          await getCurrentStockWithClient(
+            tx,
+            item.productId,
+          );
+
+        if (
+          currentStock <
+          item.quantity
+        ) {
+          throw new SaleValidationError(
+            `Insufficient stock for product ${item.productId}. Current stock: ${currentStock}, requested quantity: ${item.quantity}.`,
+          );
+        }
+      }
+
+      const sale = await createSale(
+        tx,
+        {
+          recordedBy:
+            input.recordedBy,
+          paymentMethod:
+            input.paymentMethod,
+          totalAmount,
+        },
+      );
+
+      for (
+        const item of pricedItems
+      ) {
+        const saleItem =
+          await createSaleItem(
+            tx,
+            {
+              saleId: sale.id,
+              productId:
+                item.productId,
+              quantity:
+                item.quantity,
+              unitPrice:
+                item.unitPrice,
+              lineTotal:
+                item.lineTotal,
+            },
+          );
+
+        await createSaleStockMovement(
+          tx,
+          {
+            productId:
+              item.productId,
+
+            quantityDelta:
+              -item.quantity,
+
+            saleItemId:
+              saleItem.id,
+
+            actorId:
+              input.recordedBy,
+          },
+        );
+      }
+
+      return sale;
+    },
+    {
+      isolationLevel:
+        Prisma.TransactionIsolationLevel
+          .Serializable,
+    },
+  );
+}
+
 export async function recordSale(
   input: RecordSaleInput,
 ) {
   validateItems(input);
 
-  return prisma.$transaction(async (tx) => {
-    const user = await findSaleUserById(
-      tx,
-      input.recordedBy,
-    );
-
-    if (!user) {
-      throw new SaleValidationError(
-        `User ${input.recordedBy} does not exist.`,
+  for (
+    let attempt = 1;
+    attempt <= MAX_TRANSACTION_ATTEMPTS;
+    attempt += 1
+  ) {
+    try {
+      return await executeSaleTransaction(
+        input,
       );
-    }
-
-    if (!user.active) {
-      throw new SaleValidationError(
-        `User ${input.recordedBy} is inactive.`,
-      );
-    }
-
-    const productIds = input.items.map(
-      (item) => item.productId,
-    );
-
-    const products = await findSaleProductsByIds(
-      tx,
-      productIds,
-    );
-
-    if (products.length !== productIds.length) {
-      const foundProductIds = new Set(
-        products.map((product) => product.id),
-      );
-
-      const missingProductIds = productIds.filter(
-        (productId) => !foundProductIds.has(productId),
-      );
-
-      throw new SaleValidationError(
-        `Products do not exist: ${missingProductIds.join(", ")}`,
-      );
-    }
-
-    const inactiveProducts = products.filter(
-      (product) => !product.active,
-    );
-
-    if (inactiveProducts.length > 0) {
-      throw new SaleValidationError(
-        `Inactive products cannot be sold: ${inactiveProducts
-          .map((product) => product.id)
-          .join(", ")}`,
-      );
-    }
-
-    const productsById = new Map(
-      products.map((product) => [
-        product.id,
-        product,
-      ]),
-    );
-
-    const pricedItems = input.items.map((item) => {
-      const product = productsById.get(item.productId);
-
-      if (!product) {
-        throw new SaleValidationError(
-          `Product ${item.productId} does not exist.`,
+    } catch (error) {
+      const shouldRetry =
+        isRetryableTransactionError(
+          error,
         );
+
+      const attemptsRemain =
+        attempt <
+        MAX_TRANSACTION_ATTEMPTS;
+
+      if (
+        shouldRetry &&
+        attemptsRemain
+      ) {
+        continue;
       }
 
-      const unitPrice = product.sellingPrice;
-
-      const lineTotal = unitPrice.mul(
-        item.quantity,
-      );
-
-      return {
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice,
-        lineTotal,
-      };
-    });
-
-    let totalAmount = new Prisma.Decimal(0);
-
-    for (const item of pricedItems) {
-      totalAmount = totalAmount.add(
-        item.lineTotal,
-      );
+      throw error;
     }
+  }
 
-    for (const item of pricedItems) {
-      const currentStock =
-        await getCurrentStockWithClient(
-          tx,
-          item.productId,
-        );
-
-      if (currentStock < item.quantity) {
-        throw new SaleValidationError(
-          `Insufficient stock for product ${item.productId}. Current stock: ${currentStock}, requested quantity: ${item.quantity}.`,
-        );
-      }
-    }
-
-    const sale = await createSale(tx, {
-      recordedBy: input.recordedBy,
-      paymentMethod: input.paymentMethod,
-      totalAmount,
-    });
-
-    for (const item of pricedItems) {
-      const saleItem = await createSaleItem(
-        tx,
-        {
-          saleId: sale.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          lineTotal: item.lineTotal,
-        },
-      );
-
-      await createSaleStockMovement(tx, {
-        productId: item.productId,
-        quantityDelta: -item.quantity,
-        saleItemId: saleItem.id,
-        actorId: input.recordedBy,
-      });
-    }
-
-    return sale;
-  });
+  /*
+   * The loop either returns or throws.
+   * This exists only to satisfy control-flow reasoning.
+   */
+  throw new Error(
+    "Sale transaction retry loop exited unexpectedly.",
+  );
 }

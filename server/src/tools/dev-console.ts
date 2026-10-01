@@ -253,6 +253,20 @@ async function verificationMenu(): Promise<void> {
       },
       {
         key: "4",
+        title: "Sale concurrency verification",
+        description:
+          "Starts two sales concurrently for the final unit and verifies exactly one succeeds without creating negative stock.",
+        run: async () => {
+          await chooseVerificationDatabase(
+            "Sale Concurrency Verification",
+            "service:sale-concurrency-check",
+            "service:sale-concurrency-check:test",
+          );
+        },
+        pauseAfter: false,
+      },
+      {
+        key: "5",
         title: "Inventory read-model verification",
         description:
           "Checks that current stock and low-stock status are derived from StockMovement records.",
@@ -261,7 +275,7 @@ async function verificationMenu(): Promise<void> {
         },
       },
       {
-        key: "5",
+        key: "6",
         title: "Database connection check",
         description:
           "Performs a simple development database connection/query check.",

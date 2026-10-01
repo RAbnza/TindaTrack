@@ -25,11 +25,16 @@
     "service:sale-check": "tsx src/services/check-sale.ts",
     "service:sale-check:test": "tsx src/db/run-with-test-env.ts ../services/check-sale.ts",
 
+    "service:sale-concurrency-check": "tsx src/services/check-sale-concurrency.ts",
+    "service:sale-concurrency-check:test": "tsx src/db/run-with-test-env.ts ../services/check-sale-concurrency.ts",
+
     "repo:inventory-check": "tsx src/repositories/check-inventory-read-model.ts",
 
     "db:test:reset": "tsx src/db/reset-test.ts",
     "db:test:seed": "tsx src/db/seed-test.ts",
     "db:test:reseed": "npm run db:test:reset && npm run db:test:seed"
+    
+    
   },
   "keywords": [],
   "author": "",
