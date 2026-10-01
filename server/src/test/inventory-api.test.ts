@@ -836,6 +836,59 @@ describe(
         await prisma.stockMovement.count(),
       ).toBe(0);
     });
+
+    it("rejects caller-supplied receivedBy because identity is not part of the request body", async () => {
+      const {
+        user,
+        token,
+        supplier,
+        product,
+      } = await createBaseFixtures();
+
+      const receiptCountBefore =
+        await prisma.stockReceipt.count();
+
+      const receiptItemCountBefore =
+        await prisma.stockReceiptItem.count();
+
+      const movementCountBefore =
+        await prisma.stockMovement.count();
+
+      await request(app)
+        .post("/api/stock-receipts")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send({
+          supplierId: supplier.id,
+
+          // Must be rejected, even though it
+          // matches the authenticated user.
+          receivedBy: user.id,
+
+          items: [
+            {
+              productId: product.id,
+              quantity: 5,
+              unitCost: "10.00",
+            },
+          ],
+        })
+        .expect(400);
+
+      expect(
+        await prisma.stockReceipt.count(),
+      ).toBe(receiptCountBefore);
+
+      expect(
+        await prisma.stockReceiptItem.count(),
+      ).toBe(receiptItemCountBefore);
+
+      expect(
+        await prisma.stockMovement.count(),
+      ).toBe(movementCountBefore);
+    });
   },
 );
 
@@ -1285,6 +1338,56 @@ describe(
       ).toBe(
         stockBefore,
       );
+    });
+
+    it("rejects caller-supplied adjustedBy because identity is not part of the request body", async () => {
+      const {
+        user,
+        token,
+        product,
+      } = await createBaseFixtures();
+
+      const adjustmentCountBefore =
+        await prisma.stockAdjustment.count();
+
+      const movementCountBefore =
+        await prisma.stockMovement.count();
+
+      const stockBefore =
+        await getCurrentStock(
+          product.id,
+        );
+
+      await request(app)
+        .post("/api/adjustments")
+        .set(
+          "Authorization",
+          `Bearer ${token}`,
+        )
+        .send({
+          productId: product.id,
+          quantityDelta: 5,
+          reason:
+            "Caller should not provide actor",
+
+          // Must not be accepted from HTTP input.
+          adjustedBy: user.id,
+        })
+        .expect(400);
+
+      expect(
+        await prisma.stockAdjustment.count(),
+      ).toBe(adjustmentCountBefore);
+
+      expect(
+        await prisma.stockMovement.count(),
+      ).toBe(movementCountBefore);
+
+      expect(
+        await getCurrentStock(
+          product.id,
+        ),
+      ).toBe(stockBefore);
     });
   },
 );

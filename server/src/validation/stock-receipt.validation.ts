@@ -8,43 +8,78 @@ const decimalStringSchema = z
     "unitCost must be a non-negative decimal string with at most 2 decimal places.",
   );
 
-const stockReceiptItemSchema = z.object({
-  productId: z.number().int().positive(),
-  quantity: z.number().int().positive(),
-  unitCost: decimalStringSchema,
-});
+const stockReceiptItemSchema = z
+  .object({
+    productId: z
+      .number()
+      .int()
+      .positive(),
+
+    quantity: z
+      .number()
+      .int()
+      .positive(),
+
+    unitCost: decimalStringSchema,
+  })
+  .strict();
 
 export const createStockReceiptSchema = z
   .object({
-    supplierId: z.number().int().positive(),
+    supplierId: z
+      .number()
+      .int()
+      .positive(),
 
     referenceNo: z
       .string()
       .trim()
-      .min(1, "referenceNo must not be empty.")
+      .min(
+        1,
+        "referenceNo must not be empty.",
+      )
       .nullable()
       .optional(),
 
     items: z
       .array(stockReceiptItemSchema)
-      .min(1, "A stock receipt must contain at least one item."),
+      .min(
+        1,
+        "A stock receipt must contain at least one item.",
+      ),
   })
+  .strict()
   .superRefine((data, ctx) => {
-    const seenProductIds = new Set<number>();
+    const seenProductIds =
+      new Set<number>();
 
-    data.items.forEach((item, index) => {
-      if (seenProductIds.has(item.productId)) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["items", index, "productId"],
-          message: `Duplicate productId: ${item.productId}.`,
-        });
-      }
+    data.items.forEach(
+      (item, index) => {
+        if (
+          seenProductIds.has(
+            item.productId,
+          )
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: [
+              "items",
+              index,
+              "productId",
+            ],
+            message:
+              `Duplicate productId: ${item.productId}.`,
+          });
+        }
 
-      seenProductIds.add(item.productId);
-    });
+        seenProductIds.add(
+          item.productId,
+        );
+      },
+    );
   });
 
-export type CreateStockReceiptBody = z.infer<
-  typeof createStockReceiptSchema
->;
+export type CreateStockReceiptBody =
+  z.infer<
+    typeof createStockReceiptSchema
+  >;
