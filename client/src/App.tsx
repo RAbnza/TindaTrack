@@ -20,6 +20,10 @@ import {
 } from './pages/AdjustStockPage'
 
 import {
+  AuditHistoryPage,
+} from './pages/AuditHistoryPage'
+
+import {
   DailySalesPage,
 } from './pages/DailySalesPage'
 
@@ -80,6 +84,7 @@ function AuthenticatedApp() {
         'adjustment',
         'reports',
         'movements',
+        'audit',
       ]
 
     if (
@@ -174,6 +179,12 @@ function AuthenticatedApp() {
         'movements' &&
         isOwner && (
           <StockMovementsPage />
+        )}
+
+      {activeView ===
+        'audit' &&
+        isOwner && (
+          <AuditHistoryPage />
         )}
     </AppShell>
   )
