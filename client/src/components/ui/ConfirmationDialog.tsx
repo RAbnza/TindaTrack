@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useId,
   useRef,
   type MouseEvent,
 } from 'react'
@@ -50,6 +51,12 @@ export function ConfirmationDialog({
       null,
     )
 
+  const titleId =
+    useId()
+
+  const descriptionId =
+    useId()
+
   useEffect(() => {
     const dialog =
       dialogRef.current
@@ -86,14 +93,6 @@ export function ConfirmationDialog({
     event:
       MouseEvent<HTMLDialogElement>,
   ) {
-    /*
-     * With native <dialog>, a click on
-     * the backdrop targets the dialog
-     * element itself.
-     *
-     * Clicks inside the panel target
-     * descendants instead.
-     */
     if (
       event.target ===
         event.currentTarget &&
@@ -106,19 +105,18 @@ export function ConfirmationDialog({
   return (
     <dialog
       ref={dialogRef}
+      aria-labelledby={
+        titleId
+      }
+      aria-describedby={
+        descriptionId
+      }
       onClick={
         handleBackdropClick
       }
       onCancel={(
         event,
       ) => {
-        /*
-         * Escape triggers the native
-         * dialog cancel event.
-         *
-         * Keep React as the source of
-         * truth for the open state.
-         */
         event.preventDefault()
 
         if (!loading) {
@@ -128,11 +126,19 @@ export function ConfirmationDialog({
       className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-black/30"
     >
       <div className="p-5 sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+        <h2
+          id={titleId}
+          className="text-lg font-semibold tracking-tight text-foreground"
+        >
           {title}
         </h2>
 
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+        <p
+          id={
+            descriptionId
+          }
+          className="mt-2 text-sm leading-6 text-muted-foreground"
+        >
           {description}
         </p>
 

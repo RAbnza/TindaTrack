@@ -15,6 +15,11 @@ import {
 } from '../auth/useAuth'
 
 import {
+  getVisibleNavigation,
+  type NavigationIcon,
+} from '../config/navigation'
+
+import {
   Button,
 } from './ui/Button'
 
@@ -22,132 +27,13 @@ import {
   ConfirmationDialog,
 } from './ui/ConfirmationDialog'
 
+import type {
+  UserRole,
+} from '../types/auth'
+
 type AppShellProps = {
   children: ReactNode
 }
-
-type NavigationIcon =
-  | 'dashboard'
-  | 'inventory'
-  | 'sale'
-  | 'receiving'
-  | 'adjustment'
-  | 'products'
-  | 'suppliers'
-  | 'staff'
-  | 'reports'
-  | 'movements'
-  | 'audit'
-
-type NavigationItem = {
-  label: string
-  to: string
-  icon: NavigationIcon
-  ownerOnly?: boolean
-}
-
-type NavigationSection = {
-  label?: string
-  items: NavigationItem[]
-}
-
-const navigationSections:
-  NavigationSection[] = [
-    {
-      items: [
-        {
-          label: 'Dashboard',
-          to: '/dashboard',
-          icon: 'dashboard',
-        },
-      ],
-    },
-
-    {
-      label: 'Operations',
-
-      items: [
-        {
-          label: 'Inventory',
-          to: '/inventory',
-          icon: 'inventory',
-        },
-
-        {
-          label: 'New Sale',
-          to: '/sales/new',
-          icon: 'sale',
-        },
-
-        {
-          label: 'Receive Stock',
-          to: '/receiving',
-          icon: 'receiving',
-        },
-
-        {
-          label: 'Adjust Stock',
-          to: '/adjustments',
-          icon: 'adjustment',
-          ownerOnly: true,
-        },
-      ],
-    },
-
-    {
-      label: 'Management',
-
-      items: [
-        {
-          label: 'Products',
-          to: '/products',
-          icon: 'products',
-          ownerOnly: true,
-        },
-
-        {
-          label: 'Suppliers',
-          to: '/suppliers',
-          icon: 'suppliers',
-          ownerOnly: true,
-        },
-
-        {
-          label: 'Staff',
-          to: '/staff',
-          icon: 'staff',
-          ownerOnly: true,
-        },
-      ],
-    },
-
-    {
-      label: 'Insights',
-
-      items: [
-        {
-          label: 'Reports',
-          to: '/reports',
-          icon: 'reports',
-          ownerOnly: true,
-        },
-
-        {
-          label: 'Movements',
-          to: '/movements',
-          icon: 'movements',
-          ownerOnly: true,
-        },
-
-        {
-          label: 'Audit',
-          to: '/audit',
-          icon: 'audit',
-          ownerOnly: true,
-        },
-      ],
-    },
-  ]
 
 function BrandMark() {
   return (
@@ -155,7 +41,11 @@ function BrandMark() {
       aria-hidden="true"
       className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_2px_4px_rgba(53,68,119,0.16)]"
     >
-      <svg viewBox="0 0 24 24" fill="none" className="size-6">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        className="size-6"
+      >
         <path
           d="m4 8 8-4 8 4-8 4-8-4Zm0 0v8l8 4 8-4V8M12 12v8M8 6l8 4"
           stroke="currentColor"
@@ -180,10 +70,13 @@ function NavigationIcon({
     fill: 'none',
     stroke: 'currentColor',
     strokeWidth: 1.7,
+
     strokeLinecap:
       'round' as const,
+
     strokeLinejoin:
       'round' as const,
+
     'aria-hidden':
       true as const,
   }
@@ -258,6 +151,7 @@ function NavigationIcon({
         <svg {...commonProps}>
           <path d="M4 7h10" />
           <path d="M18 7h2" />
+
           <circle
             cx="16"
             cy="7"
@@ -266,6 +160,7 @@ function NavigationIcon({
 
           <path d="M4 17h2" />
           <path d="M10 17h10" />
+
           <circle
             cx="8"
             cy="17"
@@ -349,121 +244,104 @@ function NavigationIcon({
 }
 
 type NavigationProps = {
-  isOwner: boolean
+  role: UserRole
   onNavigate?: () => void
 }
 
 function Navigation({
-  isOwner,
+  role,
   onNavigate,
 }: NavigationProps) {
+  const visibleSections =
+    getVisibleNavigation(
+      role,
+    )
+
   return (
     <nav
       aria-label="Main navigation"
       className="space-y-5"
     >
-      {navigationSections.map(
-        (
-          section,
-          sectionIndex,
-        ) => {
-          const visibleItems =
-            section.items.filter(
-              (item) =>
-                !item.ownerOnly ||
-                isOwner,
-            )
+      {visibleSections.map(
+        (section) => (
+          <section
+            key={
+              section.label
+            }
+          >
+            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {section.label}
+            </p>
 
-          if (
-            visibleItems.length ===
-            0
-          ) {
-            return null
-          }
-
-          return (
-            <section
-              key={
-                section.label ??
-                sectionIndex
-              }
-            >
-              {section.label && (
-                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                  {section.label}
-                </p>
-              )}
-
-              <div className="space-y-1">
-                {visibleItems.map(
-                  (item) => (
-                    <NavLink
-                      key={
-                        item.to
-                      }
-                      to={
-                        item.to
-                      }
-                      onClick={
-                        onNavigate
-                      }
-                      className={({
-                        isActive,
-                      }) =>
-                        [
-                          'group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium',
-                          'transition-colors duration-150 motion-reduce:transition-none',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                          isActive
-                            ? [
-                                'bg-accent/70 text-accent-foreground',
-                                'before:absolute before:left-0 before:top-1/2',
-                                'before:h-4 before:w-[3px] before:-translate-y-1/2',
-                                'before:rounded-full before:bg-primary',
-                              ].join(
-                                ' ',
-                              )
-                            : 'text-secondary-foreground hover:bg-secondary/70 hover:text-foreground',
-                        ].join(
-                          ' ',
-                        )
-                      }
-                    >
-                      {({
-                        isActive,
-                      }) => (
-                        <>
-                          <span
-                            className={[
-                              'flex size-5 shrink-0 items-center justify-center transition-colors motion-reduce:transition-none',
-                              isActive
-                                ? 'text-primary'
-                                : 'text-muted-foreground group-hover:text-secondary-foreground',
+            <div className="space-y-1">
+              {section.items.map(
+                (item) => (
+                  <NavLink
+                    key={
+                      item.to
+                    }
+                    to={
+                      item.to
+                    }
+                    onClick={
+                      onNavigate
+                    }
+                    className={({
+                      isActive,
+                    }) =>
+                      [
+                        'group relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-[13px] font-medium',
+                        'transition-colors duration-150 motion-reduce:transition-none',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        isActive
+                          ? [
+                              'bg-accent/70 text-accent-foreground',
+                              'before:absolute before:left-0 before:top-1/2',
+                              'before:h-4 before:w-[3px] before:-translate-y-1/2',
+                              'before:rounded-full before:bg-primary',
                             ].join(
                               ' ',
-                            )}
-                          >
-                            <NavigationIcon
-                              name={
-                                item.icon
-                              }
-                            />
-                          </span>
-
-                          <span className="truncate">
-                            {
-                              item.label
+                            )
+                          : 'text-secondary-foreground hover:bg-secondary/70 hover:text-foreground',
+                      ].join(
+                        ' ',
+                      )
+                    }
+                  >
+                    {({
+                      isActive,
+                    }) => (
+                      <>
+                        <span
+                          className={[
+                            'flex size-5 shrink-0 items-center justify-center transition-colors motion-reduce:transition-none',
+                            isActive
+                              ? 'text-primary'
+                              : 'text-muted-foreground group-hover:text-secondary-foreground',
+                          ].join(
+                            ' ',
+                          )}
+                        >
+                          <NavigationIcon
+                            name={
+                              item.icon
                             }
-                          </span>
-                        </>
-                      )}
-                    </NavLink>
-                  ),
-                )}
-              </div>
-            </section>
-          )
-        },
+                          />
+                        </span>
+
+                        <span className="truncate">
+                          {
+                            item.label
+                          }
+                        </span>
+                      </>
+                    )}
+                  </NavLink>
+                ),
+              )}
+            </div>
+          </section>
+        ),
       )}
     </nav>
   )
@@ -500,21 +378,12 @@ export function AppShell({
       null,
     )
 
-  const isOwner =
-    user?.role === 'OWNER'
-
-  /*
-   * Route changes collapse the mobile
-   * navigation automatically.
-   */
   useEffect(() => {
-    setMobileMenuOpen(false)
+    setMobileMenuOpen(
+      false,
+    )
   }, [location.pathname])
 
-  /*
-   * Prevent the application underneath
-   * the mobile drawer from scrolling.
-   */
   useEffect(() => {
     if (
       !mobileMenuOpen
@@ -535,9 +404,6 @@ export function AppShell({
     }
   }, [mobileMenuOpen])
 
-  /*
-   * Escape closes the mobile drawer.
-   */
   useEffect(() => {
     if (
       !mobileMenuOpen
@@ -578,10 +444,6 @@ export function AppShell({
     }
   }, [mobileMenuOpen])
 
-  /*
-   * Give keyboard users an obvious
-   * starting point when the drawer opens.
-   */
   useEffect(() => {
     if (
       mobileMenuOpen
@@ -599,20 +461,44 @@ export function AppShell({
     return null
   }
 
-  function closeMobileMenu() {
-    setMobileMenuOpen(false)
-  }
+  const role =
+    user.role
 
-  function handleSignOut() {
-    setMobileMenuOpen(false)
-    setSignOutOpen(false)
-    logout()
-  }
+  const isOwner =
+    role === 'OWNER'
 
-  function openSignOutDialog() {
-    setMobileMenuOpen(false)
-    setSignOutOpen(true)
-  }
+  const visibleNavigation =
+    getVisibleNavigation(
+      role,
+    )
+
+  const currentSection =
+    visibleNavigation.find(
+      (section) =>
+        section.items.some(
+          (item) =>
+            location.pathname ===
+              item.to ||
+            location.pathname.startsWith(
+              `${item.to}/`,
+            ),
+        ),
+    )
+
+  const currentPage =
+    currentSection?.items.find(
+      (item) =>
+        location.pathname ===
+          item.to ||
+        location.pathname.startsWith(
+          `${item.to}/`,
+        ),
+    )
+
+  const workspaceLabel =
+    isOwner
+      ? 'Owner workspace'
+      : 'Staff workspace'
 
   const userInitial =
     user.name
@@ -620,19 +506,33 @@ export function AppShell({
       .charAt(0)
       .toUpperCase()
 
-  // Display the current route without adding another navigation control.
-  const currentSection = navigationSections.find((section) =>
-    section.items.some((item) =>
-      (!item.ownerOnly || isOwner) &&
-      (location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
-    ),
-  )
+  function closeMobileMenu() {
+    setMobileMenuOpen(
+      false,
+    )
+  }
 
-  const currentPage = currentSection?.items.find((item) =>
-    location.pathname === item.to || location.pathname.startsWith(`${item.to}/`),
-  )
+  function handleSignOut() {
+    setMobileMenuOpen(
+      false,
+    )
 
-  const workspaceLabel = isOwner ? 'Owner workspace' : 'Staff workspace'
+    setSignOutOpen(
+      false,
+    )
+
+    logout()
+  }
+
+  function openSignOutDialog() {
+    setMobileMenuOpen(
+      false,
+    )
+
+    setSignOutOpen(
+      true,
+    )
+  }
 
   return (
     <div className="min-h-dvh bg-[#f6f7f9] text-foreground">
@@ -659,12 +559,20 @@ export function AppShell({
 
         <div className="mx-4 mb-1 mt-4 flex items-center gap-3 rounded-lg border border-border/60 bg-secondary/30 px-3 py-3">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-card text-primary">
-            <NavigationIcon name="suppliers" />
+            <NavigationIcon
+              name="suppliers"
+            />
           </span>
+
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-secondary-foreground">Store workspace</p>
+            <p className="text-xs font-semibold text-secondary-foreground">
+              Store workspace
+            </p>
+
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {isOwner ? 'Owner access' : 'Staff access'}
+              {isOwner
+                ? 'Owner access'
+                : 'Staff access'}
             </p>
           </div>
         </div>
@@ -672,8 +580,8 @@ export function AppShell({
         {/* Navigation */}
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
           <Navigation
-            isOwner={
-              isOwner
+            role={
+              role
             }
           />
         </div>
@@ -683,7 +591,9 @@ export function AppShell({
           <div>
             <div className="flex items-center gap-3">
               <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-secondary text-xs font-semibold text-secondary-foreground">
-                {userInitial}
+                {
+                  userInitial
+                }
               </div>
 
               <div className="min-w-0 flex-1">
@@ -746,7 +656,9 @@ export function AppShell({
               </p>
 
               <p className="truncate text-xs text-muted-foreground">
-                {currentPage?.label ?? workspaceLabel}
+                {currentPage
+                  ?.label ??
+                  workspaceLabel}
               </p>
             </div>
           </div>
@@ -852,8 +764,8 @@ export function AppShell({
             {/* Drawer navigation */}
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
               <Navigation
-                isOwner={
-                  isOwner
+                role={
+                  role
                 }
                 onNavigate={
                   closeMobileMenu
@@ -866,12 +778,16 @@ export function AppShell({
               <div>
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 bg-secondary text-xs font-semibold text-secondary-foreground">
-                    {userInitial}
+                    {
+                      userInitial
+                    }
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">
-                      {user.name}
+                      {
+                        user.name
+                      }
                     </p>
 
                     <p className="mt-0.5 text-xs text-muted-foreground">
@@ -924,26 +840,52 @@ export function AppShell({
         <header className="hidden min-h-[76px] items-center justify-between gap-4 border-b border-border/60 bg-card px-6 md:flex lg:px-8">
           <div className="flex min-w-0 items-center gap-3 text-[13px]">
             <span className="shrink-0 text-muted-foreground">
-              {currentSection?.label ?? 'Workspace'}
+              {currentSection
+                ?.label ??
+                'Workspace'}
             </span>
-            <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" className="size-4 shrink-0 text-muted-foreground/60">
-              <path d="m8 6 4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 20 20"
+              fill="none"
+              className="size-4 shrink-0 text-muted-foreground/60"
+            >
+              <path
+                d="m8 6 4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
+
             <span className="truncate font-medium text-foreground">
-              {currentPage?.label ?? 'TindaTrack'}
+              {currentPage
+                ?.label ??
+                'TindaTrack'}
             </span>
           </div>
 
           <div className="flex shrink-0 items-center gap-4">
             <span className="rounded-md border border-border/60 bg-secondary/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-              {workspaceLabel}
+              {
+                workspaceLabel
+              }
             </span>
+
             <div className="flex items-center gap-2.5 border-l border-border/60 pl-4">
               <span className="hidden max-w-40 truncate text-xs font-medium text-secondary-foreground lg:block">
                 {user.name}
               </span>
-              <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-accent-foreground">
-                {userInitial}
+
+              <span
+                aria-hidden="true"
+                className="flex size-8 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-accent-foreground"
+              >
+                {
+                  userInitial
+                }
               </span>
             </div>
           </div>
