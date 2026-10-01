@@ -26,7 +26,7 @@ No Kubernetes, microservices, or container orchestration are required for the cu
 ## Live Deployment
 
 Frontend:
-https://tindatrack.pages.dev/setup
+https://tindatrack.pages.dev/
 
 Backend health:
 https://tindatrack-production-1d8a.up.railway.app/health
