@@ -12,6 +12,21 @@ import {
 } from '../api/stock-receipts.api'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  useToast,
+} from '../components/ui'
+
+import {
   AvailableProductCard,
 } from '../features/receiving/AvailableProductCard'
 
@@ -26,10 +41,6 @@ import {
 import type {
   Product,
 } from '../types/product'
-
-import type {
-  CreatedStockReceipt,
-} from '../types/stock-receipt'
 
 type ReceiptItem = {
   productId: number
@@ -82,6 +93,10 @@ export function ReceiveStockPage({
     reload: reloadSuppliers,
   } = useSuppliers()
 
+  const {
+    showToast,
+  } = useToast()
+
   const [
     supplierId,
     setSupplierId,
@@ -114,30 +129,23 @@ export function ReceiveStockPage({
   )
 
   const [
-    completedReceipt,
-    setCompletedReceipt,
-  ] =
-    useState<CreatedStockReceipt | null>(
-      null,
-    )
-
-  const [
     isSubmitting,
     setIsSubmitting,
   ] = useState(false)
 
-  const productsById = useMemo(
-    () =>
-      new Map(
-        products.map(
-          (product) => [
-            product.id,
-            product,
-          ],
+  const productsById =
+    useMemo(
+      () =>
+        new Map(
+          products.map(
+            (product) => [
+              product.id,
+              product,
+            ],
+          ),
         ),
-      ),
-    [products],
-  )
+      [products],
+    )
 
   const receiptProductIds =
     useMemo(
@@ -151,9 +159,23 @@ export function ReceiveStockPage({
       [receiptItems],
     )
 
+  const selectedSupplier =
+    useMemo(
+      () =>
+        suppliers.find(
+          (supplier) =>
+            supplier.id ===
+            supplierId,
+        ) ?? null,
+      [
+        suppliers,
+        supplierId,
+      ],
+    )
+
   const filteredProducts =
     useMemo(() => {
-      const normalizedSearch =
+      const query =
         search
           .trim()
           .toLowerCase()
@@ -164,28 +186,24 @@ export function ReceiveStockPage({
             return false
           }
 
-          if (
-            normalizedSearch
-              .length === 0
-          ) {
+          if (!query) {
             return true
           }
 
           return (
             product.name
               .toLowerCase()
-              .includes(
-                normalizedSearch,
-              ) ||
+              .includes(query) ||
             product.sku
               .toLowerCase()
-              .includes(
-                normalizedSearch,
-              )
+              .includes(query)
           )
         },
       )
-    }, [products, search])
+    }, [
+      products,
+      search,
+    ])
 
   const hasInvalidUnitCost =
     receiptItems.some(
@@ -203,9 +221,8 @@ export function ReceiveStockPage({
     !isProductsLoading &&
     !isSuppliersLoading
 
-  function clearFeedback() {
+  function clearError() {
     setSubmissionError(null)
-    setCompletedReceipt(null)
   }
 
   function handleAddProduct(
@@ -224,20 +241,19 @@ export function ReceiveStockPage({
     }
 
     setReceiptItems(
-      (currentItems) => {
-        const alreadyExists =
-          currentItems.some(
+      (current) => {
+        if (
+          current.some(
             (item) =>
               item.productId ===
               productId,
           )
-
-        if (alreadyExists) {
-          return currentItems
+        ) {
+          return current
         }
 
         return [
-          ...currentItems,
+          ...current,
           {
             productId,
             quantity: 1,
@@ -247,64 +263,56 @@ export function ReceiveStockPage({
       },
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleDecrease(
     productId: number,
   ) {
     setReceiptItems(
-      (currentItems) =>
-        currentItems.map(
-          (item) => {
-            if (
-              item.productId !==
-              productId
-            ) {
-              return item
-            }
+      (current) =>
+        current.map(
+          (item) =>
+            item.productId ===
+            productId
+              ? {
+                  ...item,
 
-            return {
-              ...item,
-              quantity:
-                Math.max(
-                  1,
-                  item.quantity -
-                    1,
-                ),
-            }
-          },
+                  quantity:
+                    Math.max(
+                      1,
+                      item.quantity -
+                        1,
+                    ),
+                }
+              : item,
         ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleIncrease(
     productId: number,
   ) {
     setReceiptItems(
-      (currentItems) =>
-        currentItems.map(
-          (item) => {
-            if (
-              item.productId !==
-              productId
-            ) {
-              return item
-            }
+      (current) =>
+        current.map(
+          (item) =>
+            item.productId ===
+            productId
+              ? {
+                  ...item,
 
-            return {
-              ...item,
-              quantity:
-                item.quantity +
-                1,
-            }
-          },
+                  quantity:
+                    item.quantity +
+                    1,
+                }
+              : item,
         ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleUnitCostChange(
@@ -312,36 +320,35 @@ export function ReceiveStockPage({
     value: string,
   ) {
     setReceiptItems(
-      (currentItems) =>
-        currentItems.map(
+      (current) =>
+        current.map(
           (item) =>
             item.productId ===
             productId
               ? {
                   ...item,
-                  unitCost:
-                    value,
+                  unitCost: value,
                 }
               : item,
         ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleRemove(
     productId: number,
   ) {
     setReceiptItems(
-      (currentItems) =>
-        currentItems.filter(
+      (current) =>
+        current.filter(
           (item) =>
             item.productId !==
             productId,
         ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   async function handleSubmit() {
@@ -376,71 +383,57 @@ export function ReceiveStockPage({
     }
 
     setSubmissionError(null)
-    setCompletedReceipt(null)
     setIsSubmitting(true)
 
     try {
-      const trimmedReferenceNo =
+      const trimmedReference =
         referenceNo.trim()
 
-      const receipt =
-        await createStockReceipt(
-          {
-            supplierId,
+      await createStockReceipt({
+        supplierId,
 
-            referenceNo:
-              trimmedReferenceNo
-                ? trimmedReferenceNo
-                : null,
+        referenceNo:
+          trimmedReference
+            ? trimmedReference
+            : null,
 
-            items:
-              receiptItems.map(
-                (item) => ({
-                  productId:
-                    item.productId,
+        items:
+          receiptItems.map(
+            (item) => ({
+              productId:
+                item.productId,
 
-                  quantity:
-                    item.quantity,
+              quantity:
+                item.quantity,
 
-                  /*
-                   * Keep unitCost as
-                   * a decimal string.
-                   */
-                  unitCost:
-                    item.unitCost.trim(),
-                }),
-              ),
-          },
-        )
+              unitCost:
+                item.unitCost.trim(),
+            }),
+          ),
+      })
 
-      setCompletedReceipt(
-        receipt,
-      )
-
-      /*
-       * Only clear the form after
-       * the server confirms success.
-       */
       setSupplierId(null)
       setReferenceNo('')
       setSearch('')
       setReceiptItems([])
 
       await reloadProducts()
+
+      showToast({
+        variant:
+          'success',
+
+        message:
+          'Stock receipt recorded.',
+      })
     } catch (error) {
       /*
-       * Deliberately preserve:
-       *
-       * supplier
-       * reference number
-       * items
-       * quantities
-       * unit costs
-       *
-       * when submission fails.
+       * Preserve supplier, reference
+       * number and line items on failure.
        */
       if (
-        error instanceof ApiError
+        error instanceof
+        ApiError
       ) {
         setSubmissionError(
           error.message,
@@ -457,350 +450,467 @@ export function ReceiveStockPage({
     }
   }
 
+  const hasSearch =
+    search.trim().length > 0
+
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Receive Stock
-        </h1>
-
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Record products received
-          from a supplier.
-        </p>
-      </div>
-
-      {completedReceipt && (
-        <section
-          role="status"
-          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4"
-        >
-          <p className="font-semibold text-secondary-foreground">
-            Stock receipt recorded
-          </p>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            Receipt #
-            {completedReceipt.id}
-          </p>
-
-          {completedReceipt.referenceNo && (
-            <p className="mt-1 text-sm text-secondary-foreground">
-              Reference:{' '}
-              {
-                completedReceipt.referenceNo
-              }
-            </p>
-          )}
-        </section>
-      )}
+    <PageContainer>
+      <PageHeader
+        title="Receive Stock"
+        description="Record inventory received from an active supplier."
+      />
 
       {submissionError && (
         <div
           role="alert"
-          className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm text-secondary-foreground"
+          className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm leading-6 text-secondary-foreground"
         >
           {submissionError}
         </div>
       )}
 
-      <section className="mt-6 space-y-5">
+      <Card className="mt-6 p-4 sm:p-5">
         <div>
-          <label
-            htmlFor="supplier"
-            className="mb-2 block text-sm font-medium text-secondary-foreground"
-          >
-            Supplier
-          </label>
+          <p className="text-caption font-medium text-muted-foreground">
+            Step 1
+          </p>
 
-          <select
-            id="supplier"
-            value={
-              supplierId ?? ''
-            }
-            disabled={
-              isSuppliersLoading
-            }
-            onChange={(event) => {
-              const value =
-                event.target.value
-
-              setSupplierId(
-                value
-                  ? Number(value)
-                  : null,
-              )
-
-              clearFeedback()
-            }}
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:bg-secondary"
-          >
-            <option value="">
-              {isSuppliersLoading
-                ? 'Loading suppliers...'
-                : 'Choose supplier'}
-            </option>
-
-            {suppliers.map(
-              (supplier) => (
-                <option
-                  key={
-                    supplier.id
-                  }
-                  value={
-                    supplier.id
-                  }
-                >
-                  {
-                    supplier.name
-                  }
-                </option>
-              ),
-            )}
-          </select>
-
-          {suppliersError && (
-            <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-3">
-              <p className="text-sm text-secondary-foreground">
-                {suppliersError}
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void reloadSuppliers()
-                }
-                className="mt-2 min-h-10 rounded-lg bg-destructive px-3 text-sm font-medium text-primary-foreground"
-              >
-                Try again
-              </button>
-            </div>
-          )}
-
-          {!isSuppliersLoading &&
-            !suppliersError &&
-            suppliers.length ===
-              0 && (
-              <p className="mt-2 text-sm text-warning">
-                No active suppliers
-                are available.
-              </p>
-            )}
+          <h2 className="mt-1 text-section font-semibold text-foreground">
+            Receipt details
+          </h2>
         </div>
 
-        <div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="supplier"
+              className="mb-2 block text-sm font-medium text-secondary-foreground"
+            >
+              Supplier
+            </label>
+
+            <select
+              id="supplier"
+              value={
+                supplierId ?? ''
+              }
+              disabled={
+                isSuppliersLoading
+              }
+              onChange={(
+                event,
+              ) => {
+                const value =
+                  event.target
+                    .value
+
+                setSupplierId(
+                  value
+                    ? Number(
+                        value,
+                      )
+                    : null,
+                )
+
+                clearError()
+              }}
+              className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:bg-secondary"
+            >
+              <option value="">
+                {isSuppliersLoading
+                  ? 'Loading suppliers...'
+                  : 'Choose supplier'}
+              </option>
+
+              {suppliers.map(
+                (supplier) => (
+                  <option
+                    key={
+                      supplier.id
+                    }
+                    value={
+                      supplier.id
+                    }
+                  >
+                    {
+                      supplier.name
+                    }
+                  </option>
+                ),
+              )}
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="reference-no"
+              className="mb-2 block text-sm font-medium text-secondary-foreground"
+            >
+              Reference number
+            </label>
+
+            <input
+              id="reference-no"
+              type="text"
+              value={
+                referenceNo
+              }
+              onChange={(
+                event,
+              ) => {
+                setReferenceNo(
+                  event.target
+                    .value,
+                )
+
+                clearError()
+              }}
+              placeholder="Invoice / DR number (optional)"
+              className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+            />
+          </div>
+        </div>
+
+        {suppliersError && (
+          <div className="mt-5">
+            <ErrorState
+              title="Unable to load suppliers"
+              message={
+                suppliersError
+              }
+              onRetry={() =>
+                void reloadSuppliers()
+              }
+            />
+          </div>
+        )}
+
+        {!isSuppliersLoading &&
+          !suppliersError &&
+          suppliers.length ===
+            0 && (
+            <div className="mt-5 rounded-lg border border-warning/20 bg-warning-soft p-3">
+              <p className="text-sm text-secondary-foreground">
+                No active
+                suppliers are
+                currently
+                available.
+              </p>
+            </div>
+          )}
+      </Card>
+
+      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(20rem,0.9fr)]">
+        {/* Products */}
+        <Card className="min-w-0 p-4 sm:p-5">
+          <div>
+            <p className="text-caption font-medium text-muted-foreground">
+              Step 2
+            </p>
+
+            <h2 className="mt-1 text-section font-semibold text-foreground">
+              Add products
+            </h2>
+          </div>
+
           <label
-            htmlFor="reference-no"
-            className="mb-2 block text-sm font-medium text-secondary-foreground"
+            htmlFor="receive-product-search"
+            className="sr-only"
           >
-            Reference no.
+            Search products
           </label>
 
           <input
-            id="reference-no"
-            type="text"
-            value={referenceNo}
-            onChange={(event) => {
-              setReferenceNo(
+            id="receive-product-search"
+            type="search"
+            value={search}
+            onChange={(
+              event,
+            ) =>
+              setSearch(
                 event.target.value,
               )
-
-              clearFeedback()
-            }}
-            placeholder="Invoice / DR number (optional)"
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+            }
+            placeholder="Search name or SKU"
+            className="mt-5 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
-        </div>
-      </section>
 
-      <section className="mt-7">
-        <label
-          htmlFor="receive-product-search"
-          className="sr-only"
-        >
-          Search products
-        </label>
-
-        <input
-          id="receive-product-search"
-          type="search"
-          value={search}
-          onChange={(event) =>
-            setSearch(
-              event.target.value,
-            )
-          }
-          placeholder="Search products..."
-          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-        />
-      </section>
-
-      <section className="mt-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Available products
-          </h2>
-
-          {isProductsLoading && (
-            <span className="text-sm text-muted-foreground">
-              Refreshing...
-            </span>
-          )}
-        </div>
-
-        {productsError && (
-          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {productsError}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                void reloadProducts()
-              }
-              className="mt-3 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
-          </div>
-        )}
-
-        {!productsError &&
-          !isProductsLoading &&
-          filteredProducts.length ===
-            0 && (
-            <div className="py-8 text-center text-sm text-secondary-foreground">
-              No products found.
-            </div>
-          )}
-
-        {!productsError &&
-          filteredProducts.length >
-            0 && (
-            <div className="mt-3 space-y-3">
-              {filteredProducts.map(
-                (product) => (
-                  <AvailableProductCard
-                    key={
-                      product.id
-                    }
-                    product={
-                      product
-                    }
-                    isInReceipt={receiptProductIds.has(
-                      product.id,
-                    )}
-                    onAdd={
-                      handleAddProduct
-                    }
-                  />
-                ),
+          <div className="mt-5">
+            {isProductsLoading &&
+              products.length ===
+                0 && (
+                <LoadingState label="Loading products..." />
               )}
+
+            {productsError && (
+              <ErrorState
+                title="Unable to load products"
+                message={
+                  productsError
+                }
+                onRetry={() =>
+                  void reloadProducts()
+                }
+              />
+            )}
+
+            {!isProductsLoading &&
+              !productsError &&
+              filteredProducts
+                .length ===
+                0 && (
+                <EmptyState
+                  title={
+                    hasSearch
+                      ? 'No products found'
+                      : 'No products available'
+                  }
+                  description={
+                    hasSearch
+                      ? 'Try another product name or SKU.'
+                      : 'There are no active products available to receive.'
+                  }
+                />
+              )}
+
+            {!productsError &&
+              filteredProducts
+                .length > 0 && (
+                <div className="space-y-3">
+                  {filteredProducts.map(
+                    (
+                      product,
+                    ) => (
+                      <AvailableProductCard
+                        key={
+                          product.id
+                        }
+                        product={
+                          product
+                        }
+                        isInReceipt={receiptProductIds.has(
+                          product.id,
+                        )}
+                        onAdd={
+                          handleAddProduct
+                        }
+                      />
+                    ),
+                  )}
+                </div>
+              )}
+          </div>
+        </Card>
+
+        {/* Receipt */}
+        <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-caption font-medium text-muted-foreground">
+                  Step 3
+                </p>
+
+                <h2 className="mt-1 text-section font-semibold text-foreground">
+                  Receipt items
+                </h2>
+              </div>
+
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {
+                  receiptItems.length
+                }{' '}
+                {receiptItems.length ===
+                1
+                  ? 'item'
+                  : 'items'}
+              </span>
+            </div>
+
+            {receiptItems.length ===
+            0 ? (
+              <div className="mt-5 rounded-lg border border-dashed border-border px-4 py-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Add products to
+                  build this stock
+                  receipt.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {receiptItems.map(
+                  (item) => {
+                    const product =
+                      productsById.get(
+                        item.productId,
+                      )
+
+                    if (!product) {
+                      return null
+                    }
+
+                    return (
+                      <ReceiptItemCard
+                        key={
+                          item.productId
+                        }
+                        product={
+                          product
+                        }
+                        quantity={
+                          item.quantity
+                        }
+                        unitCost={
+                          item.unitCost
+                        }
+                        unitCostError={getUnitCostError(
+                          item.unitCost,
+                        )}
+                        onDecrease={() =>
+                          handleDecrease(
+                            item.productId,
+                          )
+                        }
+                        onIncrease={() =>
+                          handleIncrease(
+                            item.productId,
+                          )
+                        }
+                        onUnitCostChange={(
+                          value,
+                        ) =>
+                          handleUnitCostChange(
+                            item.productId,
+                            value,
+                          )
+                        }
+                        onRemove={() =>
+                          handleRemove(
+                            item.productId,
+                          )
+                        }
+                      />
+                    )
+                  },
+                )}
+              </div>
+            )}
+          </Card>
+
+          <Card className="p-4 sm:p-5">
+            <div>
+              <p className="text-caption font-medium text-muted-foreground">
+                Step 4
+              </p>
+
+              <h2 className="mt-1 text-section font-semibold text-foreground">
+                Review receipt
+              </h2>
+            </div>
+
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Supplier
+                </dt>
+
+                <dd className="text-right font-medium text-foreground">
+                  {selectedSupplier
+                    ?.name ??
+                    'Not selected'}
+                </dd>
+              </div>
+
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Reference
+                </dt>
+
+                <dd className="max-w-[60%] break-words text-right text-secondary-foreground">
+                  {referenceNo.trim() ||
+                    'None'}
+                </dd>
+              </div>
+
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Products
+                </dt>
+
+                <dd className="font-medium tabular-nums text-foreground">
+                  {
+                    receiptItems.length
+                  }
+                </dd>
+              </div>
+
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Total units
+                </dt>
+
+                <dd className="font-medium tabular-nums text-foreground">
+                  {receiptItems.reduce(
+                    (
+                      total,
+                      item,
+                    ) =>
+                      total +
+                      item.quantity,
+                    0,
+                  )}
+                </dd>
+              </div>
+            </dl>
+
+            {hasInvalidUnitCost && (
+              <div
+                role="alert"
+                className="mt-4 rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
+              >
+                Correct the unit
+                cost for each
+                receipt item before
+                recording.
+              </div>
+            )}
+
+            <div className="mt-5 border-t border-border pt-5">
+              <p className="text-caption font-medium text-muted-foreground">
+                Step 5
+              </p>
+
+              <Button
+                className="mt-2 min-h-14 w-full text-base"
+                disabled={
+                  !canSubmit
+                }
+                loading={
+                  isSubmitting
+                }
+                onClick={() =>
+                  void handleSubmit()
+                }
+              >
+                {isSubmitting
+                  ? 'Recording receipt...'
+                  : 'Record Receipt'}
+              </Button>
+            </div>
+          </Card>
+
+          {selectedSupplier && (
+            <div className="flex">
+              <Badge variant="info">
+                Receiving from{' '}
+                {
+                  selectedSupplier.name
+                }
+              </Badge>
             </div>
           )}
-      </section>
-
-      <section className="mt-8 border-t border-border pt-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Receipt items
-          </h2>
-
-          <span className="text-sm text-muted-foreground">
-            {receiptItems.length}{' '}
-            {receiptItems.length ===
-            1
-              ? 'item'
-              : 'items'}
-          </span>
         </div>
-
-        {receiptItems.length ===
-        0 ? (
-          <div className="mt-3 rounded-lg border border-dashed border-input bg-card px-4 py-8 text-center">
-            <p className="text-sm text-secondary-foreground">
-              No products added yet.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-3 space-y-3">
-            {receiptItems.map(
-              (item) => {
-                const product =
-                  productsById.get(
-                    item.productId,
-                  )
-
-                if (!product) {
-                  return null
-                }
-
-                return (
-                  <ReceiptItemCard
-                    key={
-                      item.productId
-                    }
-                    product={
-                      product
-                    }
-                    quantity={
-                      item.quantity
-                    }
-                    unitCost={
-                      item.unitCost
-                    }
-                    unitCostError={getUnitCostError(
-                      item.unitCost,
-                    )}
-                    onDecrease={() =>
-                      handleDecrease(
-                        item.productId,
-                      )
-                    }
-                    onIncrease={() =>
-                      handleIncrease(
-                        item.productId,
-                      )
-                    }
-                    onUnitCostChange={(
-                      value,
-                    ) =>
-                      handleUnitCostChange(
-                        item.productId,
-                        value,
-                      )
-                    }
-                    onRemove={() =>
-                      handleRemove(
-                        item.productId,
-                      )
-                    }
-                  />
-                )
-              },
-            )}
-          </div>
-        )}
-      </section>
-
-      <section className="mt-8 border-t border-border pt-6">
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={() =>
-            void handleSubmit()
-          }
-          className="min-h-14 w-full rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
-        >
-          {isSubmitting
-            ? 'Recording receipt...'
-            : 'Record Stock Receipt'}
-        </button>
-      </section>
-    </main>
+      </div>
+    </PageContainer>
   )
 }

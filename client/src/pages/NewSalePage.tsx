@@ -3,15 +3,41 @@ import {
   useState,
 } from 'react'
 
-import { ApiError } from '../api/api'
-import { createSale } from '../api/sales.api'
+import {
+  ApiError,
+} from '../api/api'
 
-import { AvailableProductCard } from '../features/sales/AvailableProductCard'
-import { SaleCartItem } from '../features/sales/SaleCartItem'
+import {
+  createSale,
+} from '../api/sales.api'
 
-import type { Product } from '../types/product'
+import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  useToast,
+} from '../components/ui'
+
+import {
+  AvailableProductCard,
+} from '../features/sales/AvailableProductCard'
+
+import {
+  SaleCartItem,
+} from '../features/sales/SaleCartItem'
+
 import type {
-  CreatedSale,
+  Product,
+} from '../types/product'
+
+import type {
   PaymentMethod,
 } from '../types/sale'
 
@@ -27,19 +53,21 @@ type NewSalePageProps = {
   reloadProducts: () => Promise<void>
 }
 
-const paymentMethods: PaymentMethod[] = [
-  'CASH',
-  'GCASH',
-  'MAYA',
-]
+const paymentMethods:
+  PaymentMethod[] = [
+    'CASH',
+    'GCASH',
+    'MAYA',
+  ]
 
-const pesoFormatter = new Intl.NumberFormat(
-  'en-PH',
-  {
-    style: 'currency',
-    currency: 'PHP',
-  },
-)
+const pesoFormatter =
+  new Intl.NumberFormat(
+    'en-PH',
+    {
+      style: 'currency',
+      currency: 'PHP',
+    },
+  )
 
 export function NewSalePage({
   products,
@@ -47,99 +75,136 @@ export function NewSalePage({
   productsError,
   reloadProducts,
 }: NewSalePageProps) {
-  const [search, setSearch] = useState('')
+  const {
+    showToast,
+  } = useToast()
 
-  const [cart, setCart] = useState<CartItem[]>(
-    [],
-  )
+  const [
+    search,
+    setSearch,
+  ] = useState('')
+
+  const [
+    cart,
+    setCart,
+  ] = useState<CartItem[]>([])
 
   const [
     paymentMethod,
     setPaymentMethod,
-  ] = useState<PaymentMethod | null>(null)
+  ] =
+    useState<PaymentMethod | null>(
+      null,
+    )
 
   const [
     submissionError,
     setSubmissionError,
-  ] = useState<string | null>(null)
-
-  const [
-    completedSale,
-    setCompletedSale,
-  ] = useState<CreatedSale | null>(null)
+  ] = useState<string | null>(
+    null,
+  )
 
   const [
     isSubmitting,
     setIsSubmitting,
   ] = useState(false)
 
-  const productsById = useMemo(
-    () =>
-      new Map(
-        products.map((product) => [
-          product.id,
-          product,
-        ]),
-      ),
-    [products],
-  )
-
-  const cartProductIds = useMemo(
-    () =>
-      new Set(
-        cart.map(
-          (item) => item.productId,
+  const productsById =
+    useMemo(
+      () =>
+        new Map(
+          products.map(
+            (product) => [
+              product.id,
+              product,
+            ],
+          ),
         ),
-      ),
-    [cart],
-  )
-
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = search
-      .trim()
-      .toLowerCase()
-
-    return products.filter((product) => {
-      if (!product.active) {
-        return false
-      }
-
-      if (normalizedSearch.length === 0) {
-        return true
-      }
-
-      return (
-        product.name
-          .toLowerCase()
-          .includes(normalizedSearch) ||
-        product.sku
-          .toLowerCase()
-          .includes(normalizedSearch)
-      )
-    })
-  }, [products, search])
-
-  const displayedTotal = useMemo(() => {
-    return cart.reduce(
-      (total, item) => {
-        const product =
-          productsById.get(
-            item.productId,
-          )
-
-        if (!product) {
-          return total
-        }
-
-        return (
-          total +
-          Number(product.sellingPrice) *
-            item.quantity
-        )
-      },
-      0,
+      [products],
     )
-  }, [cart, productsById])
+
+  const cartProductIds =
+    useMemo(
+      () =>
+        new Set(
+          cart.map(
+            (item) =>
+              item.productId,
+          ),
+        ),
+      [cart],
+    )
+
+  const filteredProducts =
+    useMemo(() => {
+      const query =
+        search
+          .trim()
+          .toLowerCase()
+
+      return products.filter(
+        (product) => {
+          if (!product.active) {
+            return false
+          }
+
+          if (!query) {
+            return true
+          }
+
+          return (
+            product.name
+              .toLowerCase()
+              .includes(query) ||
+            product.sku
+              .toLowerCase()
+              .includes(query)
+          )
+        },
+      )
+    }, [
+      products,
+      search,
+    ])
+
+  /*
+   * This is only a live cart estimate.
+   *
+   * It is never sent to the API and is
+   * never treated as authoritative.
+   */
+  const cartEstimate =
+    useMemo(
+      () =>
+        cart.reduce(
+          (
+            total,
+            item,
+          ) => {
+            const product =
+              productsById.get(
+                item.productId,
+              )
+
+            if (!product) {
+              return total
+            }
+
+            return (
+              total +
+              Number(
+                product.sellingPrice,
+              ) *
+                item.quantity
+            )
+          },
+          0,
+        ),
+      [
+        cart,
+        productsById,
+      ],
+    )
 
   const cartHasInvalidStock =
     cart.some((item) => {
@@ -148,7 +213,10 @@ export function NewSalePage({
           item.productId,
         )
 
-      if (!product || !product.active) {
+      if (
+        !product ||
+        !product.active
+      ) {
         return true
       }
 
@@ -166,16 +234,17 @@ export function NewSalePage({
     !isSubmitting &&
     !isProductsLoading
 
-  function clearFeedback() {
+  function clearError() {
     setSubmissionError(null)
-    setCompletedSale(null)
   }
 
   function handleAddProduct(
     productId: number,
   ) {
     const product =
-      productsById.get(productId)
+      productsById.get(
+        productId,
+      )
 
     if (
       !product ||
@@ -185,111 +254,115 @@ export function NewSalePage({
       return
     }
 
-    setCart((currentCart) => {
-      const alreadyExists =
-        currentCart.some(
-          (item) =>
-            item.productId ===
+    setCart(
+      (current) => {
+        const alreadyExists =
+          current.some(
+            (item) =>
+              item.productId ===
+              productId,
+          )
+
+        if (alreadyExists) {
+          return current
+        }
+
+        return [
+          ...current,
+          {
             productId,
-        )
+            quantity: 1,
+          },
+        ]
+      },
+    )
 
-      if (alreadyExists) {
-        return currentCart
-      }
-
-      return [
-        ...currentCart,
-        {
-          productId,
-          quantity: 1,
-        },
-      ]
-    })
-
-    clearFeedback()
+    clearError()
   }
 
   function handleDecrease(
     productId: number,
   ) {
-    setCart((currentCart) =>
-      currentCart.map((item) => {
-        if (
-          item.productId !==
-          productId
-        ) {
-          return item
-        }
+    setCart(
+      (current) =>
+        current.map(
+          (item) =>
+            item.productId ===
+            productId
+              ? {
+                  ...item,
 
-        return {
-          ...item,
-          quantity: Math.max(
-            1,
-            item.quantity - 1,
-          ),
-        }
-      }),
+                  quantity:
+                    Math.max(
+                      1,
+                      item.quantity -
+                        1,
+                    ),
+                }
+              : item,
+        ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleIncrease(
     productId: number,
   ) {
     const product =
-      productsById.get(productId)
+      productsById.get(
+        productId,
+      )
 
     if (!product) {
       return
     }
 
-    setCart((currentCart) =>
-      currentCart.map((item) => {
-        if (
-          item.productId !==
-          productId
-        ) {
-          return item
-        }
+    setCart(
+      (current) =>
+        current.map(
+          (item) => {
+            if (
+              item.productId !==
+              productId
+            ) {
+              return item
+            }
 
-        if (
-          item.quantity >=
-          product.currentStock
-        ) {
-          return item
-        }
+            if (
+              item.quantity >=
+              product.currentStock
+            ) {
+              return item
+            }
 
-        return {
-          ...item,
-          quantity:
-            item.quantity + 1,
-        }
-      }),
+            return {
+              ...item,
+
+              quantity:
+                item.quantity +
+                1,
+            }
+          },
+        ),
     )
 
-    clearFeedback()
+    clearError()
   }
 
   function handleRemove(
     productId: number,
   ) {
-    setCart((currentCart) =>
-      currentCart.filter(
-        (item) =>
-          item.productId !==
-          productId,
-      ),
+    setCart(
+      (current) =>
+        current.filter(
+          (item) =>
+            item.productId !==
+            productId,
+        ),
     )
 
-    clearFeedback()
-  }
-
-  function handlePaymentMethodChange(
-    method: PaymentMethod,
-  ) {
-    setPaymentMethod(method)
-    clearFeedback()
+    clearError()
   }
 
   async function handleSubmit() {
@@ -299,7 +372,7 @@ export function NewSalePage({
 
     if (cart.length === 0) {
       setSubmissionError(
-        'Add at least one product before completing the sale.',
+        'Add at least one product before recording the sale.',
       )
 
       return
@@ -307,7 +380,7 @@ export function NewSalePage({
 
     if (!paymentMethod) {
       setSubmissionError(
-        'Choose a payment method before completing the sale.',
+        'Choose a payment method before recording the sale.',
       )
 
       return
@@ -315,55 +388,71 @@ export function NewSalePage({
 
     if (cartHasInvalidStock) {
       setSubmissionError(
-        'One or more cart quantities exceed the currently displayed stock. Adjust the cart before continuing.',
+        'One or more quantities exceed the currently available stock. Review the cart before continuing.',
       )
 
       return
     }
 
     setSubmissionError(null)
-    setCompletedSale(null)
     setIsSubmitting(true)
 
     try {
-      const sale =
-        await createSale({
-          paymentMethod,
-          items: cart.map(
+      /*
+       * No client total is submitted.
+       *
+       * The server determines prices,
+       * validates stock, calculates the
+       * final total, creates the sale and
+       * writes stock movements atomically.
+       */
+      await createSale({
+        paymentMethod,
+
+        items:
+          cart.map(
             (item) => ({
               productId:
                 item.productId,
+
               quantity:
                 item.quantity,
             }),
           ),
-        })
-
-      /*
-       * Only the server response is treated
-       * as the completed sale result.
-       */
-      setCompletedSale(sale)
+      })
 
       setCart([])
       setPaymentMethod(null)
       setSearch('')
 
       await reloadProducts()
+
+      showToast({
+        variant:
+          'success',
+
+        message:
+          'Sale recorded successfully.',
+      })
     } catch (error) {
-      if (error instanceof ApiError) {
+      if (
+        error instanceof
+        ApiError
+      ) {
         setSubmissionError(
           error.message,
         )
 
         /*
-         * A 400 may mean stock changed
-         * since products were loaded.
+         * Stock may have changed on
+         * another device.
          *
-         * Keep the cart intact, but reload
-         * authoritative stock information.
+         * Preserve the cart but refresh
+         * the authoritative read model.
          */
-        if (error.status === 400) {
+        if (
+          error.status === 400
+        ) {
           await reloadProducts()
         }
 
@@ -371,302 +460,349 @@ export function NewSalePage({
       }
 
       setSubmissionError(
-        'Unable to complete the sale. Please try again.',
+        'Unable to record the sale. Please try again.',
       )
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const hasSearch =
+    search.trim().length > 0
+
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          New Sale
-        </h1>
-
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Add products, choose payment,
-          then complete the sale.
-        </p>
-      </div>
-
-      {completedSale && (
-        <section
-          role="status"
-          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4"
-        >
-          <p className="font-semibold text-secondary-foreground">
-            Sale completed
-          </p>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            Sale #{completedSale.id}
-          </p>
-
-          <p className="mt-3 text-sm text-secondary-foreground">
-            Authoritative total
-          </p>
-
-          <p className="mt-1 text-2xl font-semibold text-secondary-foreground">
-            {pesoFormatter.format(
-              Number(
-                completedSale.totalAmount,
-              ),
-            )}
-          </p>
-
-          <p className="mt-1 text-sm text-secondary-foreground">
-            Paid with{' '}
-            {completedSale.paymentMethod}
-          </p>
-        </section>
-      )}
+    <PageContainer>
+      <PageHeader
+        title="New Sale"
+        description="Add products, review the order, choose payment, then record the sale."
+      />
 
       {submissionError && (
         <div
           role="alert"
-          className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm text-secondary-foreground"
+          className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm leading-6 text-secondary-foreground"
         >
           {submissionError}
         </div>
       )}
 
-      <section className="mt-6">
-        <label
-          htmlFor="sale-product-search"
-          className="sr-only"
-        >
-          Search products
-        </label>
-
-        <input
-          id="sale-product-search"
-          type="search"
-          value={search}
-          onChange={(event) =>
-            setSearch(
-              event.target.value,
-            )
-          }
-          placeholder="Search products..."
-          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
-        />
-      </section>
-
-      <section className="mt-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Available products
-          </h2>
-
-          {isProductsLoading && (
-            <span className="text-sm text-muted-foreground">
-              Refreshing...
-            </span>
-          )}
-        </div>
-
-        {productsError && (
-          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {productsError}
+      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.85fr)]">
+        {/* Products */}
+        <Card className="min-w-0 p-4 sm:p-5">
+          <div>
+            <p className="text-caption font-medium text-muted-foreground">
+              Step 1
             </p>
 
-            <button
-              type="button"
-              onClick={() =>
-                void reloadProducts()
-              }
-              className="mt-3 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
+            <h2 className="mt-1 text-section font-semibold text-foreground">
+              Find products
+            </h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose active
+              products that are
+              currently in stock.
+            </p>
           </div>
-        )}
 
-        {!productsError &&
-          filteredProducts.length ===
-            0 &&
-          !isProductsLoading && (
-            <div className="py-8 text-center">
-              <p className="text-sm text-secondary-foreground">
-                No products found.
-              </p>
-            </div>
-          )}
+          <label
+            htmlFor="sale-product-search"
+            className="sr-only"
+          >
+            Search products
+          </label>
 
-        {!productsError &&
-          filteredProducts.length >
-            0 && (
-            <div className="mt-3 space-y-3">
-              {filteredProducts.map(
-                (product) => (
-                  <AvailableProductCard
-                    key={product.id}
-                    product={product}
-                    isInCart={cartProductIds.has(
-                      product.id,
-                    )}
-                    onAdd={
-                      handleAddProduct
-                    }
-                  />
-                ),
+          <input
+            id="sale-product-search"
+            type="search"
+            value={search}
+            onChange={(
+              event,
+            ) =>
+              setSearch(
+                event.target.value,
+              )
+            }
+            placeholder="Search name or SKU"
+            className="mt-5 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
+          />
+
+          <div className="mt-5">
+            {isProductsLoading &&
+              products.length ===
+                0 && (
+                <LoadingState label="Loading products..." />
               )}
-            </div>
-          )}
-      </section>
 
-      <section className="mt-8 border-t border-border pt-6">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Current sale
-          </h2>
+            {productsError && (
+              <ErrorState
+                title="Unable to load products"
+                message={
+                  productsError
+                }
+                onRetry={() =>
+                  void reloadProducts()
+                }
+              />
+            )}
 
-          <span className="text-sm text-muted-foreground">
-            {cart.length}{' '}
-            {cart.length === 1
-              ? 'item'
-              : 'items'}
-          </span>
-        </div>
-
-        {cart.length === 0 ? (
-          <div className="mt-3 rounded-lg border border-dashed border-input bg-card px-4 py-8 text-center">
-            <p className="text-sm text-secondary-foreground">
-              No products added yet.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-3 space-y-3">
-            {cart.map((item) => {
-              const product =
-                productsById.get(
-                  item.productId,
-                )
-
-              if (!product) {
-                return null
-              }
-
-              return (
-                <SaleCartItem
-                  key={item.productId}
-                  product={product}
-                  quantity={
-                    item.quantity
+            {!isProductsLoading &&
+              !productsError &&
+              filteredProducts
+                .length ===
+                0 && (
+                <EmptyState
+                  title={
+                    hasSearch
+                      ? 'No products found'
+                      : 'No products available'
                   }
-                  onDecrease={() =>
-                    handleDecrease(
-                      item.productId,
-                    )
-                  }
-                  onIncrease={() =>
-                    handleIncrease(
-                      item.productId,
-                    )
-                  }
-                  onRemove={() =>
-                    handleRemove(
-                      item.productId,
-                    )
+                  description={
+                    hasSearch
+                      ? 'Try another product name or SKU.'
+                      : 'There are no active products available for sale.'
                   }
                 />
-              )
-            })}
+              )}
+
+            {!productsError &&
+              filteredProducts
+                .length > 0 && (
+                <div className="space-y-3">
+                  {filteredProducts.map(
+                    (
+                      product,
+                    ) => (
+                      <AvailableProductCard
+                        key={
+                          product.id
+                        }
+                        product={
+                          product
+                        }
+                        isInCart={cartProductIds.has(
+                          product.id,
+                        )}
+                        onAdd={
+                          handleAddProduct
+                        }
+                      />
+                    ),
+                  )}
+                </div>
+              )}
+
+            {isProductsLoading &&
+              products.length >
+                0 && (
+                <p
+                  role="status"
+                  className="mt-3 text-xs text-muted-foreground"
+                >
+                  Refreshing stock...
+                </p>
+              )}
           </div>
-        )}
-      </section>
+        </Card>
 
-      <section className="mt-8 border-t border-border pt-6">
-        <fieldset>
-          <legend className="text-lg font-semibold text-foreground">
-            Payment
-          </legend>
+        {/* Checkout */}
+        <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <Card className="p-4 sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-caption font-medium text-muted-foreground">
+                  Step 2
+                </p>
 
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {paymentMethods.map(
-              (method) => {
-                const isSelected =
-                  paymentMethod ===
-                  method
+                <h2 className="mt-1 text-section font-semibold text-foreground">
+                  Review cart
+                </h2>
+              </div>
 
-                return (
-                  <button
-                    key={method}
-                    type="button"
-                    aria-pressed={
-                      isSelected
-                    }
-                    onClick={() =>
-                      handlePaymentMethodChange(
-                        method,
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {cart.length}{' '}
+                {cart.length ===
+                1
+                  ? 'item'
+                  : 'items'}
+              </span>
+            </div>
+
+            {cart.length === 0 ? (
+              <div className="mt-5 rounded-lg border border-dashed border-border px-4 py-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Add products from
+                  the list to begin
+                  this sale.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {cart.map(
+                  (item) => {
+                    const product =
+                      productsById.get(
+                        item.productId,
                       )
+
+                    if (!product) {
+                      return null
                     }
-                    className={[
-                      'min-h-12 rounded-lg border px-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
-                      isSelected
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-input bg-card text-secondary-foreground',
-                    ].join(' ')}
-                  >
-                    {method}
-                  </button>
-                )
-              },
+
+                    return (
+                      <SaleCartItem
+                        key={
+                          item.productId
+                        }
+                        product={
+                          product
+                        }
+                        quantity={
+                          item.quantity
+                        }
+                        onDecrease={() =>
+                          handleDecrease(
+                            item.productId,
+                          )
+                        }
+                        onIncrease={() =>
+                          handleIncrease(
+                            item.productId,
+                          )
+                        }
+                        onRemove={() =>
+                          handleRemove(
+                            item.productId,
+                          )
+                        }
+                      />
+                    )
+                  },
+                )}
+              </div>
             )}
-          </div>
-        </fieldset>
-      </section>
+          </Card>
 
-      <section className="mt-8 border-t border-border pt-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-secondary-foreground">
-              Displayed total
-            </p>
+          <Card className="p-4 sm:p-5">
+            <fieldset>
+              <legend>
+                <span className="text-caption font-medium text-muted-foreground">
+                  Step 3
+                </span>
 
-            <p className="mt-1 text-xs text-muted-foreground">
-              Final total is calculated
-              by the server.
-            </p>
-          </div>
+                <span className="mt-1 block text-section font-semibold text-foreground">
+                  Payment method
+                </span>
+              </legend>
 
-          <p className="text-3xl font-semibold tabular-nums text-foreground">
-            {pesoFormatter.format(
-              displayedTotal,
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {paymentMethods.map(
+                  (method) => {
+                    const selected =
+                      paymentMethod ===
+                      method
+
+                    return (
+                      <button
+                        key={
+                          method
+                        }
+                        type="button"
+                        aria-pressed={
+                          selected
+                        }
+                        onClick={() => {
+                          setPaymentMethod(
+                            method,
+                          )
+
+                          clearError()
+                        }}
+                        className={[
+                          'min-h-11 rounded-lg border px-2 text-sm font-medium transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          selected
+                            ? 'border-primary bg-accent text-accent-foreground'
+                            : 'border-border bg-card text-secondary-foreground hover:bg-secondary',
+                        ].join(
+                          ' ',
+                        )}
+                      >
+                        {method}
+                      </button>
+                    )
+                  },
+                )}
+              </div>
+            </fieldset>
+          </Card>
+
+          <Card className="p-4 sm:p-5">
+            <div>
+              <p className="text-caption font-medium text-muted-foreground">
+                Step 4
+              </p>
+
+              <div className="mt-1 flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-section font-semibold text-foreground">
+                    Review total
+                  </h2>
+
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                    Cart estimate only.
+                    The server
+                    recalculates the
+                    final sale total
+                    when recorded.
+                  </p>
+                </div>
+
+                <p className="shrink-0 text-metric-primary font-semibold tabular-nums text-foreground">
+                  {pesoFormatter.format(
+                    cartEstimate,
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {cartHasInvalidStock && (
+              <div
+                role="alert"
+                className="mt-4 rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
+              >
+                One or more cart
+                quantities exceed
+                the latest displayed
+                stock.
+              </div>
             )}
-          </p>
+
+            <div className="mt-5 border-t border-border pt-5">
+              <p className="text-caption font-medium text-muted-foreground">
+                Step 5
+              </p>
+
+              <Button
+                className="mt-2 min-h-14 w-full text-base"
+                disabled={
+                  !canSubmit
+                }
+                loading={
+                  isSubmitting
+                }
+                onClick={() =>
+                  void handleSubmit()
+                }
+              >
+                {isSubmitting
+                  ? 'Recording sale...'
+                  : 'Record Sale'}
+              </Button>
+            </div>
+          </Card>
         </div>
-
-        {cartHasInvalidStock && (
-          <p
-            role="alert"
-            className="mt-4 text-sm font-medium text-destructive"
-          >
-            Adjust items that exceed
-            current stock before
-            completing the sale.
-          </p>
-        )}
-
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={() =>
-            void handleSubmit()
-          }
-          className="mt-5 min-h-14 w-full rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
-        >
-          {isSubmitting
-            ? 'Completing sale...'
-            : 'Complete sale'}
-        </button>
-      </section>
-    </main>
+      </div>
+    </PageContainer>
   )
 }
