@@ -31,7 +31,6 @@ export async function findSalesInRange(
           product: {
             select: {
               id: true,
-              sku: true,
               name: true,
             },
           },

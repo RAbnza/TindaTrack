@@ -33,6 +33,10 @@ import {
   SaleCartItem,
 } from '../features/sales/SaleCartItem'
 
+import {
+  SaleReceipt,
+} from '../features/sales/SaleReceipt'
+
 import type {
   Product,
 } from '../types/product'
@@ -70,28 +74,6 @@ const pesoFormatter =
     },
   )
 
-function formatSaleDateTime(
-  value: string,
-): string {
-  return new Intl.DateTimeFormat(
-    'en-PH',
-    {
-      timeZone:
-        'Asia/Manila',
-
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    },
-  ).format(
-    new Date(value),
-  )
-}
-
 export function NewSalePage({
   products,
   isProductsLoading,
@@ -110,9 +92,10 @@ export function NewSalePage({
   const [
     cart,
     setCart,
-  ] = useState<CartItem[]>(
-    [],
-  )
+  ] =
+    useState<CartItem[]>(
+      [],
+    )
 
   const [
     paymentMethod,
@@ -133,9 +116,10 @@ export function NewSalePage({
   const [
     submissionError,
     setSubmissionError,
-  ] = useState<string | null>(
-    null,
-  )
+  ] =
+    useState<string | null>(
+      null,
+    )
 
   const [
     isSubmitting,
@@ -177,7 +161,9 @@ export function NewSalePage({
 
       return products.filter(
         (product) => {
-          if (!product.active) {
+          if (
+            !product.active
+          ) {
             return false
           }
 
@@ -201,11 +187,11 @@ export function NewSalePage({
     ])
 
   /*
-   * This is only a checkout estimate.
+   * Checkout estimate only.
    *
-   * It is never submitted to the API.
-   * The backend recalculates the real
-   * transaction total from Product prices.
+   * Never sent to the API.
+   * The backend recalculates the
+   * authoritative sale total.
    */
   const cartEstimate =
     useMemo(
@@ -287,7 +273,8 @@ export function NewSalePage({
     if (
       !product ||
       !product.active ||
-      product.currentStock <= 0
+      product.currentStock <=
+        0
     ) {
       return
     }
@@ -445,10 +432,6 @@ export function NewSalePage({
     )
 
     try {
-      /*
-       * No client total, unit price or
-       * line total is submitted.
-       */
       const sale =
         await createSale({
           paymentMethod,
@@ -467,16 +450,13 @@ export function NewSalePage({
 
       /*
        * Preserve the authoritative
-       * server response for printing.
+       * server response for receipt
+       * display and printing.
        */
       setCompletedSale(
         sale,
       )
 
-      /*
-       * Reset the checkout only after
-       * the transaction succeeds.
-       */
       setCart([])
       setPaymentMethod(null)
       setSearch('')
@@ -499,10 +479,6 @@ export function NewSalePage({
           error.message,
         )
 
-        /*
-         * A 400 can mean stock changed
-         * on another device.
-         */
         if (
           error.status === 400
         ) {
@@ -533,169 +509,16 @@ export function NewSalePage({
       />
 
       {completedSale && (
-        <Card className="print-document mt-6 overflow-hidden">
-          <div className="no-print flex flex-col gap-3 border-b border-success/20 bg-success-soft p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="font-semibold text-foreground">
-                Sale recorded
-              </p>
-
-              <p className="mt-1 text-sm text-secondary-foreground">
-                Sale #
-                {
-                  completedSale.id
-                }{' '}
-                is ready to print.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  window.print()
-                }
-              >
-                Print receipt
-              </Button>
-
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setCompletedSale(
-                    null,
-                  )
-                }
-              >
-                Dismiss
-              </Button>
-            </div>
-          </div>
-
-          <div className="receipt-print-body p-5 sm:p-6">
-            <header className="text-center">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                TindaTrack
-              </h2>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Sale Receipt
-              </p>
-            </header>
-
-            <dl className="mt-6 space-y-2 border-y border-border py-4 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  Transaction
-                </dt>
-
-                <dd className="font-medium text-foreground">
-                  #
-                  {
-                    completedSale.id
-                  }
-                </dd>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  Date & time
-                </dt>
-
-                <dd className="text-right font-medium text-foreground">
-                  {formatSaleDateTime(
-                    completedSale.createdAt,
-                  )}
-                </dd>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  Recorded by
-                </dt>
-
-                <dd className="text-right font-medium text-foreground">
-                  {
-                    completedSale.recordedByName
-                  }
-                </dd>
-              </div>
-
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  Payment
-                </dt>
-
-                <dd className="font-medium text-foreground">
-                  {
-                    completedSale.paymentMethod
-                  }
-                </dd>
-              </div>
-            </dl>
-
-            <section className="mt-5">
-              <h3 className="text-sm font-semibold text-foreground">
-                Items
-              </h3>
-
-              <div className="mt-3 divide-y divide-border">
-                {completedSale.items.map(
-                  (item) => (
-                    <div
-                      key={
-                        item.productId
-                      }
-                      className="flex items-start justify-between gap-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium text-foreground">
-                          {
-                            item.productName
-                          }
-                        </p>
-
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {
-                            item.quantity
-                          }{' '}
-                          ×{' '}
-                          {pesoFormatter.format(
-                            Number(
-                              item.unitPrice,
-                            ),
-                          )}
-                        </p>
-                      </div>
-
-                      <p className="shrink-0 font-medium tabular-nums text-foreground">
-                        {pesoFormatter.format(
-                          Number(
-                            item.lineTotal,
-                          ),
-                        )}
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
-            </section>
-
-            <div className="mt-5 flex items-end justify-between gap-4 border-t border-border pt-4">
-              <p className="font-semibold text-foreground">
-                Total
-              </p>
-
-              <p className="text-xl font-semibold tabular-nums text-foreground">
-                {pesoFormatter.format(
-                  Number(
-                    completedSale.totalAmount,
-                  ),
-                )}
-              </p>
-            </div>
-          </div>
-        </Card>
+        <SaleReceipt
+          sale={
+            completedSale
+          }
+          onDismiss={() =>
+            setCompletedSale(
+              null,
+            )
+          }
+        />
       )}
 
       {submissionError && (

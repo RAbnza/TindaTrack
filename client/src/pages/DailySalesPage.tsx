@@ -26,19 +26,21 @@ function getLocalDateInputValue(): string {
   const year =
     now.getFullYear()
 
-  const month = String(
-    now.getMonth() + 1,
-  ).padStart(
-    2,
-    '0',
-  )
+  const month =
+    String(
+      now.getMonth() + 1,
+    ).padStart(
+      2,
+      '0',
+    )
 
-  const day = String(
-    now.getDate(),
-  ).padStart(
-    2,
-    '0',
-  )
+  const day =
+    String(
+      now.getDate(),
+    ).padStart(
+      2,
+      '0',
+    )
 
   return `${year}-${month}-${day}`
 }
@@ -169,10 +171,6 @@ function downloadCsv(
       )
       .join('\r\n')
 
-  /*
-   * UTF-8 BOM improves compatibility
-   * with spreadsheet applications.
-   */
   const blob =
     new Blob(
       [
@@ -243,7 +241,6 @@ export function DailySalesPage() {
         'payment_method',
         'recorded_by',
         'product',
-        'sku',
         'quantity',
         'unit_price',
         'line_total',
@@ -263,8 +260,8 @@ export function DailySalesPage() {
           sale.id,
 
           /*
-           * Preserve the backend timestamp
-           * in machine-readable ISO form.
+           * Preserve the server-returned
+           * timestamp in ISO form.
            */
           sale.createdAt,
 
@@ -274,13 +271,12 @@ export function DailySalesPage() {
             .name,
 
           item.productName,
-          item.productSku,
 
           item.quantity,
 
           /*
-           * These monetary values all
-           * originate from the backend.
+           * Historical money values are
+           * taken directly from the API.
            */
           item.unitPrice,
           item.lineTotal,
@@ -469,7 +465,8 @@ export function DailySalesPage() {
                         .length
                     }{' '}
                     {report.sales
-                      .length === 1
+                      .length ===
+                    1
                       ? 'sale'
                       : 'sales'}
                   </span>
@@ -597,10 +594,6 @@ export function DailySalesPage() {
                                       </p>
 
                                       <p className="mt-1 text-xs text-muted-foreground">
-                                        {
-                                          item.productSku
-                                        }{' '}
-                                        ·{' '}
                                         {
                                           item.quantity
                                         }{' '}

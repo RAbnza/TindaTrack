@@ -5,7 +5,6 @@ import type {
 export type DailySalesReportItem = {
   productId: number
   productName: string
-  productSku: string
   quantity: number
   unitPrice: string
   lineTotal: string
@@ -14,7 +13,9 @@ export type DailySalesReportItem = {
 export type DailySalesReportSale = {
   id: number
   createdAt: string
-  paymentMethod: PaymentMethod
+
+  paymentMethod:
+    PaymentMethod
 
   recordedBy: {
     id: number
@@ -22,12 +23,16 @@ export type DailySalesReportSale = {
   }
 
   totalAmount: string
-  items: DailySalesReportItem[]
+
+  items:
+    DailySalesReportItem[]
 }
 
 export type DailySalesReport = {
   date: string
   saleCount: number
   totalSalesAmount: string
-  sales: DailySalesReportSale[]
+
+  sales:
+    DailySalesReportSale[]
 }
