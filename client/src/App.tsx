@@ -22,8 +22,14 @@ import {
   AppShell,
 } from './components/AppShell'
 
-import { AuthPageLayout } from './components/layout/AuthPageLayout'
-import { ErrorState, LoadingState } from './components/ui'
+import {
+  AuthPageLayout,
+} from './components/layout/AuthPageLayout'
+
+import {
+  ErrorState,
+  LoadingState,
+} from './components/ui'
 
 import {
   useProducts,
@@ -52,6 +58,10 @@ import {
 import {
   InventoryPage,
 } from './pages/InventoryPage'
+
+import {
+  LandingPage,
+} from './pages/LandingPage'
 
 import {
   LoginPage,
@@ -107,7 +117,10 @@ function SetupStatusState({
   error,
   onRetry,
 }: SetupStatusStateProps) {
-  if (!isLoading && !error) {
+  if (
+    !isLoading &&
+    !error
+  ) {
     return null
   }
 
@@ -118,8 +131,13 @@ function SetupStatusState({
       ) : (
         <ErrorState
           title="Unable to check setup status"
-          message={error ?? 'Unable to check setup status.'}
-          onRetry={() => void onRetry()}
+          message={
+            error ??
+            'Unable to check setup status.'
+          }
+          onRetry={() =>
+            void onRetry()
+          }
         />
       )}
     </AuthPageLayout>
@@ -148,11 +166,19 @@ function RootRoute() {
           isLoading
         }
         error={error}
-        onRetry={reload}
+        onRetry={
+          reload
+        }
       />
     )
   }
 
+  /*
+   * Fresh installation:
+   * the first OWNER must be
+   * created before any public
+   * landing/login flow is used.
+   */
   if (setupRequired) {
     return (
       <Navigate
@@ -162,15 +188,28 @@ function RootRoute() {
     )
   }
 
+  /*
+   * Configured store + active
+   * local auth session:
+   * go directly to operations.
+   */
+  if (isAuthenticated) {
+    return (
+      <Navigate
+        to="/dashboard"
+        replace
+      />
+    )
+  }
+
+  /*
+   * Configured store + logged out:
+   * show the public portfolio
+   * entry point instead of forcing
+   * the visitor to /login.
+   */
   return (
-    <Navigate
-      to={
-        isAuthenticated
-          ? '/dashboard'
-          : '/login'
-      }
-      replace
-    />
+    <LandingPage />
   )
 }
 
@@ -196,7 +235,9 @@ function LoginRoute() {
           isLoading
         }
         error={error}
-        onRetry={reload}
+        onRetry={
+          reload
+        }
       />
     )
   }
@@ -219,7 +260,9 @@ function LoginRoute() {
     )
   }
 
-  return <LoginPage />
+  return (
+    <LoginPage />
+  )
 }
 
 function SetupRoute() {
@@ -244,7 +287,9 @@ function SetupRoute() {
           isLoading
         }
         error={error}
-        onRetry={reload}
+        onRetry={
+          reload
+        }
       />
     )
   }
@@ -255,14 +300,16 @@ function SetupRoute() {
         to={
           isAuthenticated
             ? '/dashboard'
-            : '/login'
+            : '/'
         }
         replace
       />
     )
   }
 
-  return <SetupPage />
+  return (
+    <SetupPage />
+  )
 }
 
 function AuthenticatedLayout() {
@@ -284,7 +331,9 @@ function AuthenticatedLayout() {
   return (
     <AppShell>
       <Outlet
-        context={context}
+        context={
+          context
+        }
       />
     </AppShell>
   )
@@ -301,8 +350,12 @@ function InventoryRoute() {
 
   return (
     <InventoryPage
-      products={products}
-      isLoading={isLoading}
+      products={
+        products
+      }
+      isLoading={
+        isLoading
+      }
       error={error}
       reload={reload}
     />
@@ -320,8 +373,12 @@ function ProductManagementRoute() {
 
   return (
     <ProductManagementPage
-      products={products}
-      isLoading={isLoading}
+      products={
+        products
+      }
+      isLoading={
+        isLoading
+      }
       error={error}
       reload={reload}
     />
@@ -339,12 +396,18 @@ function NewSaleRoute() {
 
   return (
     <NewSalePage
-      products={products}
+      products={
+        products
+      }
       isProductsLoading={
         isLoading
       }
-      productsError={error}
-      reloadProducts={reload}
+      productsError={
+        error
+      }
+      reloadProducts={
+        reload
+      }
     />
   )
 }
@@ -360,12 +423,18 @@ function ReceivingRoute() {
 
   return (
     <ReceiveStockPage
-      products={products}
+      products={
+        products
+      }
       isProductsLoading={
         isLoading
       }
-      productsError={error}
-      reloadProducts={reload}
+      productsError={
+        error
+      }
+      reloadProducts={
+        reload
+      }
     />
   )
 }
@@ -381,12 +450,18 @@ function AdjustmentRoute() {
 
   return (
     <AdjustStockPage
-      products={products}
+      products={
+        products
+      }
       isProductsLoading={
         isLoading
       }
-      productsError={error}
-      reloadProducts={reload}
+      productsError={
+        error
+      }
+      reloadProducts={
+        reload
+      }
     />
   )
 }
