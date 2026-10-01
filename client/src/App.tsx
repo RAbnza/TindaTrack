@@ -22,6 +22,9 @@ import {
   AppShell,
 } from './components/AppShell'
 
+import { AuthPageLayout } from './components/layout/AuthPageLayout'
+import { ErrorState, LoadingState } from './components/ui'
+
 import {
   useProducts,
 } from './features/inventory/useProducts'
@@ -104,47 +107,23 @@ function SetupStatusState({
   error,
   onRetry,
 }: SetupStatusStateProps) {
-  if (isLoading) {
-    return (
-      <main className="min-h-dvh bg-slate-50 px-4 py-8">
-        <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-sm items-center justify-center">
-          <p className="text-sm text-slate-600">
-            Checking setup
-            status...
-          </p>
-        </div>
-      </main>
-    )
+  if (!isLoading && !error) {
+    return null
   }
 
-  if (error) {
-    return (
-      <main className="min-h-dvh bg-slate-50 px-4 py-8">
-        <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-sm items-center">
-          <div className="w-full rounded-2xl border border-red-200 bg-red-50 p-4">
-            <p
-              role="alert"
-              className="text-sm text-red-800"
-            >
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                void onRetry()
-              }
-              className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
-  return null
+  return (
+    <AuthPageLayout>
+      {isLoading ? (
+        <LoadingState label="Checking setup status..." />
+      ) : (
+        <ErrorState
+          title="Unable to check setup status"
+          message={error ?? 'Unable to check setup status.'}
+          onRetry={() => void onRetry()}
+        />
+      )}
+    </AuthPageLayout>
+  )
 }
 
 function RootRoute() {
