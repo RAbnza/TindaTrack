@@ -1,4 +1,9 @@
 import {
+  useState,
+  type ReactNode,
+} from 'react'
+
+import {
   NavLink,
 } from 'react-router-dom'
 
@@ -6,9 +11,13 @@ import {
   useAuth,
 } from '../auth/useAuth'
 
-import type {
-  ReactNode,
-} from 'react'
+import {
+  Button,
+} from './ui/Button'
+
+import {
+  ConfirmationDialog,
+} from './ui/ConfirmationDialog'
 
 type AppShellProps = {
   children: ReactNode
@@ -21,6 +30,11 @@ export function AppShell({
     user,
     logout,
   } = useAuth()
+
+  const [
+    signOutOpen,
+    setSignOutOpen,
+  ] = useState(false)
 
   if (!user) {
     return null
@@ -38,6 +52,11 @@ export function AppShell({
         ? 'bg-emerald-700 text-white'
         : 'bg-white text-slate-700 hover:bg-slate-100',
     ].join(' ')
+  }
+
+  function handleSignOut() {
+    setSignOutOpen(false)
+    logout()
   }
 
   return (
@@ -58,13 +77,16 @@ export function AppShell({
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={logout}
-            className="min-h-11 shrink-0 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+          <Button
+            variant="secondary"
+            onClick={() =>
+              setSignOutOpen(
+                true,
+              )
+            }
           >
             Sign out
-          </button>
+          </Button>
         </div>
 
         <nav
@@ -231,6 +253,25 @@ export function AppShell({
       </header>
 
       {children}
+
+      <ConfirmationDialog
+        open={
+          signOutOpen
+        }
+        title="Sign out?"
+        description="You will need to sign in again to continue."
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={
+          handleSignOut
+        }
+        onCancel={() =>
+          setSignOutOpen(
+            false,
+          )
+        }
+      />
     </div>
   )
 }

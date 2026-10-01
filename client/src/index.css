@@ -1,15 +1,94 @@
 @import "tailwindcss";
 
-html {
-  background: #f8fafc;
+:root {
+  --background: #f8f7fa;
+  --foreground: #1b1b1f;
+
+  --card: #ffffff;
+  --card-foreground: #1b1b1f;
+
+  --popover: #ffffff;
+  --popover-foreground: #1b1b1f;
+
+  --primary: #5367a6;
+  --primary-hover: #43558f;
+  --primary-foreground: #ffffff;
+
+  --secondary: #f1f0f4;
+  --secondary-foreground: #303038;
+
+  --muted: #ecebf0;
+  --muted-foreground: #74737c;
+
+  --accent: #e8ebf7;
+  --accent-foreground: #354477;
+
+  --destructive: #b84a4a;
+  --destructive-foreground: #ffffff;
+  --destructive-soft: #f8e3e3;
+
+  --border: #dddce3;
+  --input: #cbcad2;
+  --ring: #6679b7;
+
+  --success: #3e7c59;
+  --success-soft: #e4f1e8;
+
+  --warning: #a96c16;
+  --warning-soft: #faecd6;
+
+  --info: #3f6f9f;
+  --info-soft: #e3edf6;
+
+  --disabled-foreground: #9a99a2;
+
+  --radius: 0.75rem;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100dvh;
-  font-family:
-    Inter,
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --color-disabled-foreground: var(--disabled-foreground);
+
+  --font-sans:
+    "Inter",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -18,7 +97,38 @@ body {
     sans-serif;
 }
 
+html {
+  background: var(--background);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100dvh;
+
+  background: var(--background);
+  color: var(--foreground);
+
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
+}
+
+::placeholder {
+  color: var(--disabled-foreground);
 }

@@ -16,6 +16,10 @@ import {
   AuthProvider,
 } from './auth/AuthContext'
 
+import {
+  ToastProvider,
+} from './components/ui/ToastProvider'
+
 import './index.css'
 
 createRoot(
@@ -26,7 +30,9 @@ createRoot(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
