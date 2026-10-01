@@ -4,6 +4,20 @@ import {
 } from 'react'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from '../components/ui'
+
+import {
   useStockMovements,
 } from '../features/movements/useStockMovements'
 
@@ -22,15 +36,15 @@ const filters: Array<{
   },
   {
     value: 'RECEIPT',
-    label: 'Receipt',
+    label: 'Receipts',
   },
   {
     value: 'SALE',
-    label: 'Sale',
+    label: 'Sales',
   },
   {
     value: 'ADJUSTMENT',
-    label: 'Adjustment',
+    label: 'Adjustments',
   },
 ]
 
@@ -40,10 +54,13 @@ function formatMovementDate(
   return new Intl.DateTimeFormat(
     'en-PH',
     {
-      timeZone: 'Asia/Manila',
+      timeZone:
+        'Asia/Manila',
+
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -93,15 +110,35 @@ function getSourceLabel(
 
     case 'RECEIPT':
       return movement.source
-        .stockReceiptItemId !== null
+        .stockReceiptItemId !==
+        null
         ? `Stock Receipt Item #${movement.source.stockReceiptItemId}`
         : 'Stock Receipt Item'
 
     case 'ADJUSTMENT':
       return movement.source
-        .stockAdjustmentId !== null
+        .stockAdjustmentId !==
+        null
         ? `Stock Adjustment #${movement.source.stockAdjustmentId}`
         : 'Stock Adjustment'
+  }
+}
+
+function getMovementLabel(
+  movement: StockMovement,
+): string {
+  switch (movement.type) {
+    case 'RECEIPT':
+      return 'Stock received'
+
+    case 'SALE':
+      return 'Sale'
+
+    case 'ADJUSTMENT_IN':
+      return 'Adjustment in'
+
+    case 'ADJUSTMENT_OUT':
+      return 'Adjustment out'
   }
 }
 
@@ -109,7 +146,8 @@ function isPositiveMovement(
   movement: StockMovement,
 ): boolean {
   return (
-    movement.type === 'RECEIPT' ||
+    movement.type ===
+      'RECEIPT' ||
     movement.type ===
       'ADJUSTMENT_IN'
   )
@@ -149,193 +187,189 @@ export function StockMovementsPage() {
               filter,
             ),
         ),
-      [movements, filter],
+      [
+        movements,
+        filter,
+      ],
     )
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Stock Movements
-        </h1>
+    <PageContainer>
+      <PageHeader
+        title="Stock Movements"
+        description="Trace when inventory changed, why it changed, and who recorded the action."
+      />
 
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Review why inventory
-          quantities changed.
-        </p>
-      </div>
-
-      <section className="mt-6">
+      <Card className="mt-6 p-3">
         <div
-          className="flex gap-2 overflow-x-auto pb-1"
           aria-label="Movement filters"
+          className="flex gap-2 overflow-x-auto pb-1"
         >
           {filters.map(
             (option) => {
-              const isSelected =
+              const selected =
                 filter ===
                 option.value
 
               return (
-                <button
+                <Button
                   key={
                     option.value
                   }
-                  type="button"
-                  aria-pressed={
-                    isSelected
+                  variant={
+                    selected
+                      ? 'primary'
+                      : 'secondary'
                   }
+                  aria-pressed={
+                    selected
+                  }
+                  className="shrink-0"
                   onClick={() =>
                     setFilter(
                       option.value,
                     )
                   }
-                  className={[
-                    'min-h-11 shrink-0 rounded-lg border px-4 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
-                    isSelected
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input bg-card text-secondary-foreground',
-                  ].join(' ')}
                 >
                   {
                     option.label
                   }
-                </button>
+                </Button>
               )
             },
           )}
         </div>
-      </section>
+      </Card>
 
       {isLoading && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-secondary-foreground">
-            Loading stock
-            movements...
-          </p>
+        <div className="mt-6">
+          <LoadingState label="Loading stock movements..." />
         </div>
       )}
 
       {!isLoading &&
         error && (
-          <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
+          <div className="mt-6">
+            <ErrorState
+              title="Unable to load stock movements"
+              message={
+                error
+              }
+              onRetry={() =>
                 void reload()
               }
-              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
+            />
           </div>
         )}
 
       {!isLoading &&
         !error &&
-        movements.length === 0 && (
-          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No stock movements
-            </p>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Inventory movement
-              history is empty.
-            </p>
-          </section>
+        movements.length ===
+          0 && (
+          <div className="mt-6">
+            <EmptyState
+              title="No stock movements"
+              description="Inventory movement history is currently empty."
+            />
+          </div>
         )}
 
       {!isLoading &&
         !error &&
         movements.length > 0 &&
-        filteredMovements.length ===
+        filteredMovements
+          .length ===
           0 && (
-          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No matching movements
-            </p>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              There are no movements
-              for this filter.
-            </p>
-          </section>
+          <div className="mt-6">
+            <EmptyState
+              title="No matching movements"
+              description="There are no stock movements for the selected filter."
+            />
+          </div>
         )}
 
       {!isLoading &&
         !error &&
-        filteredMovements.length >
-          0 && (
+        filteredMovements
+          .length > 0 && (
           <section className="mt-6">
-            <p className="text-sm text-muted-foreground">
-              {
-                filteredMovements.length
-              }{' '}
-              {filteredMovements.length ===
-              1
-                ? 'movement'
-                : 'movements'}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-caption font-medium text-muted-foreground">
+                History
+              </p>
+
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {
+                  filteredMovements.length
+                }{' '}
+                {filteredMovements
+                  .length ===
+                1
+                  ? 'movement'
+                  : 'movements'}
+              </span>
+            </div>
 
             <div className="mt-3 space-y-3">
               {filteredMovements.map(
-                (movement) => {
-                  const isPositive =
+                (
+                  movement,
+                ) => {
+                  const positive =
                     isPositiveMovement(
                       movement,
                     )
 
                   return (
-                    <article
+                    <Card
                       key={
                         movement.id
                       }
-                      className="rounded-lg border border-border bg-card p-4"
+                      className="p-4 sm:p-5"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <h2 className="truncate text-base font-semibold text-foreground">
+                          <h2 className="truncate text-sm font-semibold text-foreground">
                             {
-                              movement.product.name
+                              movement
+                                .product
+                                .name
                             }
                           </h2>
 
-                          <p className="mt-1 text-sm text-muted-foreground">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             SKU{' '}
                             {
-                              movement.product.sku
+                              movement
+                                .product
+                                .sku
                             }
                           </p>
+
+                          <div className="mt-3">
+                            <Badge
+                              variant={
+                                positive
+                                  ? 'success'
+                                  : 'danger'
+                              }
+                            >
+                              {getMovementLabel(
+                                movement,
+                              )}
+                            </Badge>
+                          </div>
                         </div>
 
                         <div className="shrink-0 text-right">
-                          <span
-                            className={[
-                              'inline-flex rounded-lg px-2.5 py-1 text-xs font-semibold',
-                              isPositive
-                                ? 'bg-success-soft text-secondary-foreground'
-                                : 'bg-destructive-soft text-secondary-foreground',
-                            ].join(
-                              ' ',
-                            )}
-                          >
-                            {
-                              movement.type
-                            }
-                          </span>
+                          <p className="text-xs text-muted-foreground">
+                            Change
+                          </p>
 
                           <p
                             className={[
-                              'mt-2 text-2xl font-semibold tabular-nums',
-                              isPositive
+                              'mt-1 text-metric font-semibold tabular-nums',
+                              positive
                                 ? 'text-success'
                                 : 'text-destructive',
                             ].join(
@@ -349,43 +383,63 @@ export function StockMovementsPage() {
                         </div>
                       </div>
 
-                      <div className="mt-5 border-t border-border/60 pt-4">
-                        <p className="text-sm text-secondary-foreground">
-                          {formatMovementDate(
-                            movement.createdAt,
-                          )}
-                        </p>
+                      <dl className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-3">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            When
+                          </dt>
 
-                        <p className="mt-1 text-sm text-secondary-foreground">
-                          {
-                            movement.actor.name
-                          }{' '}
-                          ·{' '}
-                          {movement.actor.role ===
-                          'OWNER'
-                            ? 'Owner'
-                            : 'Staff'}
-                        </p>
-                      </div>
+                          <dd className="mt-1 text-sm text-secondary-foreground">
+                            {formatMovementDate(
+                              movement.createdAt,
+                            )}
+                          </dd>
+                        </div>
 
-                      <div className="mt-4 rounded-lg bg-background p-3">
-                        <p className="text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-                          Source
-                        </p>
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            Recorded by
+                          </dt>
 
-                        <p className="mt-1 text-sm font-semibold text-secondary-foreground">
-                          {getSourceLabel(
-                            movement,
-                          )}
-                        </p>
-                      </div>
-                    </article>
+                          <dd className="mt-1">
+                            <p className="text-sm font-medium text-secondary-foreground">
+                              {
+                                movement
+                                  .actor
+                                  .name
+                              }
+                            </p>
+
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {movement
+                                .actor
+                                .role ===
+                              'OWNER'
+                                ? 'Owner'
+                                : 'Staff'}
+                            </p>
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            Source
+                          </dt>
+
+                          <dd className="mt-1 text-sm font-medium text-secondary-foreground">
+                            {getSourceLabel(
+                              movement,
+                            )}
+                          </dd>
+                        </div>
+                      </dl>
+                    </Card>
                   )
                 },
               )}
             </div>
           </section>
         )}
-    </main>
+    </PageContainer>
   )
 }

@@ -3,6 +3,19 @@ import {
 } from 'react'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from '../components/ui'
+
+import {
   useDailySales,
 } from '../features/reports/useDailySales'
 
@@ -42,8 +55,9 @@ function formatReportDate(
     Number(dayText)
 
   /*
-   * Construct a local calendar date instead
-   * of parsing "YYYY-MM-DD" through UTC.
+   * Avoid interpreting YYYY-MM-DD
+   * as UTC and shifting the calendar
+   * date for the Manila business day.
    */
   const localDate =
     new Date(
@@ -68,7 +82,9 @@ function formatSaleTime(
   return new Intl.DateTimeFormat(
     'en-PH',
     {
-      timeZone: 'Asia/Manila',
+      timeZone:
+        'Asia/Manila',
+
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -97,62 +113,58 @@ export function DailySalesPage() {
     report,
     isLoading,
     error,
-  } =
-    useDailySales(
-      selectedDate,
-    )
+  } = useDailySales(
+    selectedDate,
+  )
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Daily Sales
-        </h1>
+    <PageContainer>
+      <PageHeader
+        title="Daily Sales"
+        description="Review recorded transactions for a selected business day."
+      />
 
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Review recorded sales for
-          a selected business day.
-        </p>
-      </div>
-
-      <section className="mt-6">
+      <Card className="mt-6 p-4 sm:p-5">
         <label
           htmlFor="report-date"
           className="block text-sm font-medium text-secondary-foreground"
         >
-          Date
+          Business date
         </label>
 
         <input
           id="report-date"
           type="date"
-          value={selectedDate}
-          onChange={(event) =>
+          value={
+            selectedDate
+          }
+          onChange={(
+            event,
+          ) =>
             setSelectedDate(
-              event.target.value,
+              event.target
+                .value,
             )
           }
-          className="mt-2 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+          className="mt-2 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20 sm:max-w-xs"
         />
-      </section>
+      </Card>
 
       {isLoading && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-secondary-foreground">
-            Loading daily sales...
-          </p>
+        <div className="mt-6">
+          <LoadingState label="Loading daily sales..." />
         </div>
       )}
 
       {!isLoading &&
         error && (
-          <div
-            role="alert"
-            className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4"
-          >
-            <p className="text-sm text-secondary-foreground">
-              {error}
-            </p>
+          <div className="mt-6">
+            <ErrorState
+              title="Unable to load daily sales"
+              message={
+                error
+              }
+            />
           </div>
         )}
 
@@ -160,123 +172,199 @@ export function DailySalesPage() {
         !error &&
         report && (
           <>
-            <section className="mt-7">
-              <h2 className="text-xl font-semibold text-foreground">
-                {formatReportDate(
-                  report.date,
-                )}
-              </h2>
+            <section className="mt-6">
+              <div className="flex flex-col gap-1">
+                <p className="text-caption font-medium text-muted-foreground">
+                  Summary
+                </p>
 
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <p className="text-sm text-secondary-foreground">
-                    Sales count
-                  </p>
+                <h2 className="text-section font-semibold text-foreground">
+                  {formatReportDate(
+                    report.date,
+                  )}
+                </h2>
+              </div>
 
-                  <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
-                    {
-                      report.saleCount
-                    }
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-border bg-card p-4">
-                  <p className="text-sm text-secondary-foreground">
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Card className="p-5">
+                  <p className="text-sm text-muted-foreground">
                     Total sales
                   </p>
 
-                  <p className="mt-2 text-xl font-semibold tabular-nums text-foreground">
+                  <p className="mt-2 text-metric-primary font-semibold tabular-nums text-foreground">
                     {pesoFormatter.format(
                       Number(
                         report.totalSalesAmount,
                       ),
                     )}
                   </p>
-                </div>
+
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Server-reported
+                    business-day
+                    total
+                  </p>
+                </Card>
+
+                <Card className="p-5">
+                  <p className="text-sm text-muted-foreground">
+                    Transactions
+                  </p>
+
+                  <p className="mt-2 text-metric-primary font-semibold tabular-nums text-foreground">
+                    {
+                      report.saleCount
+                    }
+                  </p>
+
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Recorded sales
+                    for this day
+                  </p>
+                </Card>
               </div>
             </section>
 
-            {report.sales.length ===
-            0 ? (
-              <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
-                <p className="font-medium text-secondary-foreground">
-                  No sales recorded
-                </p>
+            <section className="mt-8">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-caption font-medium text-muted-foreground">
+                    Transactions
+                  </p>
 
-                <p className="mt-1 text-sm text-muted-foreground">
-                  There are no sales
-                  for this date.
-                </p>
-              </section>
-            ) : (
-              <section className="mt-8 border-t border-border pt-6">
-                <h2 className="text-lg font-semibold text-foreground">
-                  Sales
-                </h2>
+                  <h2 className="mt-1 text-section font-semibold text-foreground">
+                    Sales activity
+                  </h2>
+                </div>
 
-                <div className="mt-3 space-y-4">
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {
+                    report.sales
+                      .length
+                  }{' '}
+                  {report.sales
+                    .length === 1
+                    ? 'sale'
+                    : 'sales'}
+                </span>
+              </div>
+
+              {report.sales
+                .length ===
+              0 ? (
+                <div className="mt-4">
+                  <EmptyState
+                    title="No sales for this date"
+                    description="No sales were recorded for the selected business day."
+                  />
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
                   {report.sales.map(
                     (sale) => (
-                      <article
+                      <Card
                         key={
                           sale.id
                         }
-                        className="rounded-lg border border-border bg-card p-4"
+                        className="overflow-hidden"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold text-foreground">
-                              Sale #
-                              {
-                                sale.id
-                              }
-                            </h3>
+                        <div className="p-4 sm:p-5">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-sm font-semibold text-foreground">
+                                  Sale #
+                                  {
+                                    sale.id
+                                  }
+                                </h3>
 
-                            <p className="mt-1 text-sm text-secondary-foreground">
-                              {formatSaleTime(
-                                sale.createdAt,
+                                <Badge variant="neutral">
+                                  {
+                                    sale.paymentMethod
+                                  }
+                                </Badge>
+                              </div>
+
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {formatSaleTime(
+                                  sale.createdAt,
+                                )}
+                              </p>
+                            </div>
+
+                            <p className="shrink-0 text-lg font-semibold tabular-nums text-foreground">
+                              {pesoFormatter.format(
+                                Number(
+                                  sale.totalAmount,
+                                ),
                               )}
                             </p>
                           </div>
 
-                          <span className="rounded-lg bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-                            {
-                              sale.paymentMethod
-                            }
-                          </span>
+                          <dl className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                Recorded
+                                by
+                              </dt>
+
+                              <dd className="mt-1 text-sm font-medium text-secondary-foreground">
+                                {
+                                  sale
+                                    .recordedBy
+                                    .name
+                                }
+                              </dd>
+                            </div>
+
+                            <div>
+                              <dt className="text-xs text-muted-foreground">
+                                Item
+                                count
+                              </dt>
+
+                              <dd className="mt-1 text-sm font-medium tabular-nums text-secondary-foreground">
+                                {
+                                  sale
+                                    .items
+                                    .length
+                                }{' '}
+                                {sale
+                                  .items
+                                  .length ===
+                                1
+                                  ? 'line'
+                                  : 'lines'}
+                              </dd>
+                            </div>
+                          </dl>
                         </div>
 
-                        <p className="mt-3 text-sm text-secondary-foreground">
-                          Recorded by:{' '}
-                          <span className="font-medium text-secondary-foreground">
-                            {
-                              sale
-                                .recordedBy
-                                .name
-                            }
-                          </span>
-                        </p>
+                        <div className="border-t border-border bg-secondary/30 px-4 py-4 sm:px-5">
+                          <p className="mb-3 text-caption font-medium text-muted-foreground">
+                            Items
+                          </p>
 
-                        <div className="mt-5 divide-y divide-border/60 border-y border-border">
-                          {sale.items.map(
-                            (
-                              item,
-                            ) => (
-                              <div
-                                key={
-                                  item.productId
-                                }
-                                className="py-4"
-                              >
-                                <div className="flex items-start justify-between gap-4">
-                                  <div>
-                                    <p className="font-medium text-foreground">
+                          <div className="divide-y divide-border/70">
+                            {sale.items.map(
+                              (
+                                item,
+                              ) => (
+                                <div
+                                  key={
+                                    item.productId
+                                  }
+                                  className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-medium text-foreground">
                                       {
                                         item.productName
                                       }
                                     </p>
 
-                                    <p className="mt-1 text-sm text-secondary-foreground">
+                                    <p className="mt-1 text-xs text-muted-foreground">
                                       {
                                         item.quantity
                                       }{' '}
@@ -289,7 +377,7 @@ export function DailySalesPage() {
                                     </p>
                                   </div>
 
-                                  <p className="shrink-0 font-semibold tabular-nums text-foreground">
+                                  <p className="shrink-0 text-sm font-medium tabular-nums text-foreground">
                                     {pesoFormatter.format(
                                       Number(
                                         item.lineTotal,
@@ -297,32 +385,18 @@ export function DailySalesPage() {
                                     )}
                                   </p>
                                 </div>
-                              </div>
-                            ),
-                          )}
-                        </div>
-
-                        <div className="mt-4 flex items-center justify-between gap-4">
-                          <p className="font-semibold text-secondary-foreground">
-                            Sale total
-                          </p>
-
-                          <p className="text-lg font-semibold tabular-nums text-foreground">
-                            {pesoFormatter.format(
-                              Number(
-                                sale.totalAmount,
                               ),
                             )}
-                          </p>
+                          </div>
                         </div>
-                      </article>
+                      </Card>
                     ),
                   )}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
           </>
         )}
-    </main>
+    </PageContainer>
   )
 }

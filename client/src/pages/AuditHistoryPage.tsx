@@ -5,6 +5,20 @@ import {
 } from 'react'
 
 import {
+  PageContainer,
+} from '../components/layout/PageContainer'
+
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from '../components/ui'
+
+import {
   useAuditLogs,
 } from '../features/audit/useAuditLogs'
 
@@ -53,10 +67,13 @@ function formatAuditDate(
   return new Intl.DateTimeFormat(
     'en-PH',
     {
-      timeZone: 'Asia/Manila',
+      timeZone:
+        'Asia/Manila',
+
       year: 'numeric',
       month: 'short',
       day: 'numeric',
+
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -69,17 +86,23 @@ function formatAction(
 ): string {
   return action
     .split('_')
+    .map(
+      (part) =>
+        part.charAt(0) +
+        part
+          .slice(1)
+          .toLowerCase(),
+    )
     .join(' ')
 }
 
 function formatEntityType(
   entityType: string,
 ): string {
-  return entityType
-    .replace(
-      /([a-z])([A-Z])/g,
-      '$1 $2',
-    )
+  return entityType.replace(
+    /([a-z])([A-Z])/g,
+    '$1 $2',
+  )
 }
 
 function matchesFilter(
@@ -110,6 +133,28 @@ function matchesFilter(
   }
 }
 
+function getActionBadgeVariant(
+  action: string,
+):
+  | 'neutral'
+  | 'info'
+  | 'success'
+  | 'warning' {
+  switch (action) {
+    case 'SALE_CREATED':
+      return 'info'
+
+    case 'STOCK_RECEIPT_CREATED':
+      return 'success'
+
+    case 'STOCK_ADJUSTMENT_CREATED':
+      return 'warning'
+
+    default:
+      return 'neutral'
+  }
+}
+
 function isRecord(
   value: unknown,
 ): value is Record<
@@ -117,7 +162,8 @@ function isRecord(
   unknown
 > {
   return (
-    typeof value === 'object' &&
+    typeof value ===
+      'object' &&
     value !== null &&
     !Array.isArray(value)
   )
@@ -153,7 +199,8 @@ function isStockReceiptCreatedMetadata(
     (
       typeof value.referenceNo ===
         'string' ||
-      value.referenceNo === null
+      value.referenceNo ===
+        null
     ) &&
     typeof value.itemCount ===
       'number'
@@ -187,15 +234,20 @@ function formatUnknownValue(
   }
 
   if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    typeof value === 'boolean'
+    typeof value ===
+      'string' ||
+    typeof value ===
+      'number' ||
+    typeof value ===
+      'boolean'
   ) {
     return String(value)
   }
 
   try {
-    return JSON.stringify(value)
+    return JSON.stringify(
+      value,
+    )
   } catch {
     return 'Unavailable'
   }
@@ -204,15 +256,21 @@ function formatUnknownValue(
 function formatMetadataKey(
   key: string,
 ): string {
-  const spaced = key
-    .replace(
-      /([a-z])([A-Z])/g,
-      '$1 $2',
-    )
-    .replace(/_/g, ' ')
+  const spaced =
+    key
+      .replace(
+        /([a-z])([A-Z])/g,
+        '$1 $2',
+      )
+      .replace(
+        /_/g,
+        ' ',
+      )
 
   return (
-    spaced.charAt(0).toUpperCase() +
+    spaced
+      .charAt(0)
+      .toUpperCase() +
     spaced.slice(1)
   )
 }
@@ -227,12 +285,12 @@ function MetadataRow({
   children,
 }: MetadataRowProps) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <dt className="text-sm text-muted-foreground">
+    <div className="grid gap-1 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] sm:gap-4">
+      <dt className="text-xs text-muted-foreground">
         {label}
       </dt>
 
-      <dd className="text-right text-sm font-medium text-secondary-foreground">
+      <dd className="break-words text-sm font-medium text-secondary-foreground sm:text-right">
         {children}
       </dd>
     </div>
@@ -252,8 +310,8 @@ function AuditMetadataView({
     )
   ) {
     return (
-      <dl className="space-y-2">
-        <MetadataRow label="Payment">
+      <dl className="space-y-3">
+        <MetadataRow label="Payment method">
           {
             log.metadata
               .paymentMethod
@@ -262,7 +320,8 @@ function AuditMetadataView({
 
         <MetadataRow label="Items">
           {
-            log.metadata.itemCount
+            log.metadata
+              .itemCount
           }
         </MetadataRow>
 
@@ -286,7 +345,7 @@ function AuditMetadataView({
     )
   ) {
     return (
-      <dl className="space-y-2">
+      <dl className="space-y-3">
         <MetadataRow label="Supplier ID">
           {
             log.metadata
@@ -296,7 +355,8 @@ function AuditMetadataView({
 
         <MetadataRow label="Items">
           {
-            log.metadata.itemCount
+            log.metadata
+              .itemCount
           }
         </MetadataRow>
 
@@ -317,7 +377,7 @@ function AuditMetadataView({
     )
   ) {
     return (
-      <dl className="space-y-2">
+      <dl className="space-y-3">
         <MetadataRow label="Product ID">
           {
             log.metadata
@@ -325,17 +385,19 @@ function AuditMetadataView({
           }
         </MetadataRow>
 
-        <MetadataRow label="Change">
+        <MetadataRow label="Inventory change">
           <span
             className={
               log.metadata
-                .quantityDelta > 0
+                .quantityDelta >
+              0
                 ? 'text-success'
                 : 'text-destructive'
             }
           >
             {log.metadata
-              .quantityDelta > 0
+              .quantityDelta >
+            0
               ? '+'
               : ''}
             {
@@ -343,6 +405,13 @@ function AuditMetadataView({
                 .quantityDelta
             }
           </span>
+        </MetadataRow>
+
+        <MetadataRow label="Movement type">
+          {
+            log.metadata
+              .movementType
+          }
         </MetadataRow>
 
         <MetadataRow label="Reason">
@@ -355,10 +424,11 @@ function AuditMetadataView({
   }
 
   /*
-   * Unknown audit event fallback.
+   * Defensive fallback for future or
+   * unknown audit metadata shapes.
    *
-   * We don't assume every future action
-   * has the same metadata structure.
+   * Do not assume every event will keep
+   * one of the known schemas above.
    */
   if (
     isRecord(log.metadata)
@@ -373,15 +443,19 @@ function AuditMetadataView({
     ) {
       return (
         <p className="text-sm text-muted-foreground">
-          No additional metadata.
+          No additional
+          metadata.
         </p>
       )
     }
 
     return (
-      <dl className="space-y-2">
+      <dl className="space-y-3">
         {entries.map(
-          ([key, value]) => (
+          ([
+            key,
+            value,
+          ]) => (
             <MetadataRow
               key={key}
               label={formatMetadataKey(
@@ -431,110 +505,91 @@ export function AuditHistoryPage() {
               filter,
             ),
         ),
-      [logs, filter],
+      [
+        logs,
+        filter,
+      ],
     )
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Audit History
-        </h1>
+    <PageContainer>
+      <PageHeader
+        title="Audit History"
+        description="Review important business actions, who performed them, and the evidence recorded with each event."
+      />
 
-        <p className="mt-1 text-sm text-secondary-foreground">
-          Review important business
-          actions and who performed
-          them.
-        </p>
-      </div>
-
-      <section className="mt-6">
+      <Card className="mt-6 p-3">
         <div
           aria-label="Audit filters"
           className="flex gap-2 overflow-x-auto pb-1"
         >
           {filters.map(
             (option) => {
-              const isSelected =
+              const selected =
                 filter ===
                 option.value
 
               return (
-                <button
+                <Button
                   key={
                     option.value
                   }
-                  type="button"
-                  aria-pressed={
-                    isSelected
+                  variant={
+                    selected
+                      ? 'primary'
+                      : 'secondary'
                   }
+                  aria-pressed={
+                    selected
+                  }
+                  className="shrink-0"
                   onClick={() =>
                     setFilter(
                       option.value,
                     )
                   }
-                  className={[
-                    'min-h-11 shrink-0 rounded-lg border px-4 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
-                    isSelected
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input bg-card text-secondary-foreground',
-                  ].join(' ')}
                 >
                   {
                     option.label
                   }
-                </button>
+                </Button>
               )
             },
           )}
         </div>
-      </section>
+      </Card>
 
       {isLoading && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-secondary-foreground">
-            Loading audit
-            history...
-          </p>
+        <div className="mt-6">
+          <LoadingState label="Loading audit history..." />
         </div>
       )}
 
       {!isLoading &&
         error && (
-          <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
-            <p
-              role="alert"
-              className="text-sm text-secondary-foreground"
-            >
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
+          <div className="mt-6">
+            <ErrorState
+              title="Unable to load audit history"
+              message={
+                error
+              }
+              onRetry={() =>
                 void reload()
               }
-              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
-            >
-              Try again
-            </button>
+            />
           </div>
         )}
 
       {!isLoading &&
         !error &&
-        logs.length === 0 && (
-          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No audit history
-            </p>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              No audited business
-              actions have been
-              recorded yet.
-            </p>
-          </section>
+        logs.length ===
+          0 && (
+          <div className="mt-6">
+            <EmptyState
+              title="No audit history"
+              description="No audited business actions have been recorded yet."
+            />
+          </div>
         )}
 
       {!isLoading &&
@@ -542,16 +597,12 @@ export function AuditHistoryPage() {
         logs.length > 0 &&
         filteredLogs.length ===
           0 && (
-          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
-            <p className="font-medium text-secondary-foreground">
-              No matching audit events
-            </p>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              There are no audit
-              events for this filter.
-            </p>
-          </section>
+          <div className="mt-6">
+            <EmptyState
+              title="No matching audit events"
+              description="There are no audit events for the selected filter."
+            />
+          </div>
         )}
 
       {!isLoading &&
@@ -559,84 +610,127 @@ export function AuditHistoryPage() {
         filteredLogs.length >
           0 && (
           <section className="mt-6">
-            <p className="text-sm text-muted-foreground">
-              {
-                filteredLogs.length
-              }{' '}
-              {filteredLogs.length ===
-              1
-                ? 'event'
-                : 'events'}
-            </p>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-caption font-medium text-muted-foreground">
+                Evidence
+              </p>
+
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {
+                  filteredLogs.length
+                }{' '}
+                {filteredLogs.length ===
+                1
+                  ? 'event'
+                  : 'events'}
+              </span>
+            </div>
 
             <div className="mt-3 space-y-3">
               {filteredLogs.map(
                 (log) => (
-                  <article
-                    key={log.id}
-                    className="rounded-lg border border-border bg-card p-4"
+                  <Card
+                    key={
+                      log.id
+                    }
+                    className="overflow-hidden"
                   >
-                    <div>
-                      <h2 className="text-base font-semibold text-foreground">
-                        {formatAction(
-                          log.action,
-                        )}
-                      </h2>
+                    <div className="p-4 sm:p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-sm font-semibold text-foreground">
+                              {formatAction(
+                                log.action,
+                              )}
+                            </h2>
 
-                      <p className="mt-3 text-sm font-medium text-secondary-foreground">
-                        {
-                          log.actor
-                            .name
-                        }{' '}
-                        ·{' '}
-                        {log.actor
-                          .role ===
-                        'OWNER'
-                          ? 'Owner'
-                          : 'Staff'}
-                      </p>
+                            <Badge
+                              variant={getActionBadgeVariant(
+                                log.action,
+                              )}
+                            >
+                              {log.action ===
+                              'SALE_CREATED'
+                                ? 'Sale'
+                                : log.action ===
+                                    'STOCK_RECEIPT_CREATED'
+                                  ? 'Receipt'
+                                  : log.action ===
+                                      'STOCK_ADJUSTMENT_CREATED'
+                                    ? 'Adjustment'
+                                    : 'Event'}
+                            </Badge>
+                          </div>
 
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {formatAuditDate(
-                          log.createdAt,
-                        )}
-                      </p>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {formatAuditDate(
+                              log.createdAt,
+                            )}
+                          </p>
+                        </div>
+
+                        <Badge variant="neutral">
+                          {log.actor
+                            .role ===
+                          'OWNER'
+                            ? 'Owner'
+                            : 'Staff'}
+                        </Badge>
+                      </div>
+
+                      <dl className="mt-5 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            Actor
+                          </dt>
+
+                          <dd className="mt-1 text-sm font-medium text-secondary-foreground">
+                            {
+                              log.actor
+                                .name
+                            }
+                          </dd>
+                        </div>
+
+                        <div>
+                          <dt className="text-xs text-muted-foreground">
+                            Entity
+                          </dt>
+
+                          <dd className="mt-1 text-sm font-medium text-secondary-foreground">
+                            {log.entityType
+                              ? formatEntityType(
+                                  log.entityType,
+                                )
+                              : 'Unknown entity'}
+
+                            {log.entityId !==
+                            null
+                              ? ` #${log.entityId}`
+                              : ''}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
 
-                    <div className="mt-4 rounded-lg bg-background p-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-secondary-foreground">
-                        Entity
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold text-secondary-foreground">
-                        {log.entityType
-                          ? formatEntityType(
-                              log.entityType,
-                            )
-                          : 'Unknown entity'}
-
-                        {log.entityId !==
-                        null
-                          ? ` #${log.entityId}`
-                          : ''}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 border-t border-border/60 pt-4">
-                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        Details
+                    <div className="border-t border-border bg-secondary/30 px-4 py-4 sm:px-5">
+                      <p className="mb-3 text-caption font-medium text-muted-foreground">
+                        Metadata
                       </p>
 
                       <AuditMetadataView
-                        log={log}
+                        log={
+                          log
+                        }
                       />
                     </div>
-                  </article>
+                  </Card>
                 ),
               )}
             </div>
           </section>
         )}
-    </main>
+    </PageContainer>
   )
 }
