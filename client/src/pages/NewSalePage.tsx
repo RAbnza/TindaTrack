@@ -38,6 +38,7 @@ import type {
 } from '../types/product'
 
 import type {
+  CreatedSale,
   PaymentMethod,
 } from '../types/sale'
 
@@ -69,6 +70,28 @@ const pesoFormatter =
     },
   )
 
+function formatSaleDateTime(
+  value: string,
+): string {
+  return new Intl.DateTimeFormat(
+    'en-PH',
+    {
+      timeZone:
+        'Asia/Manila',
+
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    },
+  ).format(
+    new Date(value),
+  )
+}
+
 export function NewSalePage({
   products,
   isProductsLoading,
@@ -87,13 +110,23 @@ export function NewSalePage({
   const [
     cart,
     setCart,
-  ] = useState<CartItem[]>([])
+  ] = useState<CartItem[]>(
+    [],
+  )
 
   const [
     paymentMethod,
     setPaymentMethod,
   ] =
     useState<PaymentMethod | null>(
+      null,
+    )
+
+  const [
+    completedSale,
+    setCompletedSale,
+  ] =
+    useState<CreatedSale | null>(
       null,
     )
 
@@ -168,10 +201,11 @@ export function NewSalePage({
     ])
 
   /*
-   * This is only a live cart estimate.
+   * This is only a checkout estimate.
    *
-   * It is never sent to the API and is
-   * never treated as authoritative.
+   * It is never submitted to the API.
+   * The backend recalculates the real
+   * transaction total from Product prices.
    */
   const cartEstimate =
     useMemo(
@@ -207,25 +241,27 @@ export function NewSalePage({
     )
 
   const cartHasInvalidStock =
-    cart.some((item) => {
-      const product =
-        productsById.get(
-          item.productId,
+    cart.some(
+      (item) => {
+        const product =
+          productsById.get(
+            item.productId,
+          )
+
+        if (
+          !product ||
+          !product.active
+        ) {
+          return true
+        }
+
+        return (
+          item.quantity < 1 ||
+          item.quantity >
+            product.currentStock
         )
-
-      if (
-        !product ||
-        !product.active
-      ) {
-        return true
-      }
-
-      return (
-        item.quantity < 1 ||
-        item.quantity >
-          product.currentStock
-      )
-    })
+      },
+    )
 
   const canSubmit =
     cart.length > 0 &&
@@ -235,7 +271,9 @@ export function NewSalePage({
     !isProductsLoading
 
   function clearError() {
-    setSubmissionError(null)
+    setSubmissionError(
+      null,
+    )
   }
 
   function handleAddProduct(
@@ -370,7 +408,9 @@ export function NewSalePage({
       return
     }
 
-    if (cart.length === 0) {
+    if (
+      cart.length === 0
+    ) {
       setSubmissionError(
         'Add at least one product before recording the sale.',
       )
@@ -386,7 +426,9 @@ export function NewSalePage({
       return
     }
 
-    if (cartHasInvalidStock) {
+    if (
+      cartHasInvalidStock
+    ) {
       setSubmissionError(
         'One or more quantities exceed the currently available stock. Review the cart before continuing.',
       )
@@ -394,33 +436,47 @@ export function NewSalePage({
       return
     }
 
-    setSubmissionError(null)
-    setIsSubmitting(true)
+    setSubmissionError(
+      null,
+    )
+
+    setIsSubmitting(
+      true,
+    )
 
     try {
       /*
-       * No client total is submitted.
-       *
-       * The server determines prices,
-       * validates stock, calculates the
-       * final total, creates the sale and
-       * writes stock movements atomically.
+       * No client total, unit price or
+       * line total is submitted.
        */
-      await createSale({
-        paymentMethod,
+      const sale =
+        await createSale({
+          paymentMethod,
 
-        items:
-          cart.map(
-            (item) => ({
-              productId:
-                item.productId,
+          items:
+            cart.map(
+              (item) => ({
+                productId:
+                  item.productId,
 
-              quantity:
-                item.quantity,
-            }),
-          ),
-      })
+                quantity:
+                  item.quantity,
+              }),
+            ),
+        })
 
+      /*
+       * Preserve the authoritative
+       * server response for printing.
+       */
+      setCompletedSale(
+        sale,
+      )
+
+      /*
+       * Reset the checkout only after
+       * the transaction succeeds.
+       */
       setCart([])
       setPaymentMethod(null)
       setSearch('')
@@ -444,11 +500,8 @@ export function NewSalePage({
         )
 
         /*
-         * Stock may have changed on
-         * another device.
-         *
-         * Preserve the cart but refresh
-         * the authoritative read model.
+         * A 400 can mean stock changed
+         * on another device.
          */
         if (
           error.status === 400
@@ -463,7 +516,9 @@ export function NewSalePage({
         'Unable to record the sale. Please try again.',
       )
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(
+        false,
+      )
     }
   }
 
@@ -477,6 +532,172 @@ export function NewSalePage({
         description="Add products, review the order, choose payment, then record the sale."
       />
 
+      {completedSale && (
+        <Card className="print-document mt-6 overflow-hidden">
+          <div className="no-print flex flex-col gap-3 border-b border-success/20 bg-success-soft p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-foreground">
+                Sale recorded
+              </p>
+
+              <p className="mt-1 text-sm text-secondary-foreground">
+                Sale #
+                {
+                  completedSale.id
+                }{' '}
+                is ready to print.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  window.print()
+                }
+              >
+                Print receipt
+              </Button>
+
+              <Button
+                variant="ghost"
+                onClick={() =>
+                  setCompletedSale(
+                    null,
+                  )
+                }
+              >
+                Dismiss
+              </Button>
+            </div>
+          </div>
+
+          <div className="receipt-print-body p-5 sm:p-6">
+            <header className="text-center">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                TindaTrack
+              </h2>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sale Receipt
+              </p>
+            </header>
+
+            <dl className="mt-6 space-y-2 border-y border-border py-4 text-sm">
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Transaction
+                </dt>
+
+                <dd className="font-medium text-foreground">
+                  #
+                  {
+                    completedSale.id
+                  }
+                </dd>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Date & time
+                </dt>
+
+                <dd className="text-right font-medium text-foreground">
+                  {formatSaleDateTime(
+                    completedSale.createdAt,
+                  )}
+                </dd>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Recorded by
+                </dt>
+
+                <dd className="text-right font-medium text-foreground">
+                  {
+                    completedSale.recordedByName
+                  }
+                </dd>
+              </div>
+
+              <div className="flex justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  Payment
+                </dt>
+
+                <dd className="font-medium text-foreground">
+                  {
+                    completedSale.paymentMethod
+                  }
+                </dd>
+              </div>
+            </dl>
+
+            <section className="mt-5">
+              <h3 className="text-sm font-semibold text-foreground">
+                Items
+              </h3>
+
+              <div className="mt-3 divide-y divide-border">
+                {completedSale.items.map(
+                  (item) => (
+                    <div
+                      key={
+                        item.productId
+                      }
+                      className="flex items-start justify-between gap-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-foreground">
+                          {
+                            item.productName
+                          }
+                        </p>
+
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {
+                            item.quantity
+                          }{' '}
+                          ×{' '}
+                          {pesoFormatter.format(
+                            Number(
+                              item.unitPrice,
+                            ),
+                          )}
+                        </p>
+                      </div>
+
+                      <p className="shrink-0 font-medium tabular-nums text-foreground">
+                        {pesoFormatter.format(
+                          Number(
+                            item.lineTotal,
+                          ),
+                        )}
+                      </p>
+                    </div>
+                  ),
+                )}
+              </div>
+            </section>
+
+            <div className="mt-5 flex items-end justify-between gap-4 border-t border-border pt-4">
+              <p className="font-semibold text-foreground">
+                Total
+              </p>
+
+              <p className="text-xl font-semibold tabular-nums text-foreground">
+                {pesoFormatter.format(
+                  Number(
+                    completedSale.totalAmount,
+                  ),
+                )}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {submissionError && (
         <div
           role="alert"
@@ -487,7 +708,6 @@ export function NewSalePage({
       )}
 
       <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(19rem,0.85fr)]">
-        {/* Products */}
         <Card className="min-w-0 p-4 sm:p-5">
           <div>
             <p className="text-caption font-medium text-muted-foreground">
@@ -605,7 +825,6 @@ export function NewSalePage({
           </div>
         </Card>
 
-        {/* Checkout */}
         <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
           <Card className="p-4 sm:p-5">
             <div className="flex items-start justify-between gap-4">
@@ -628,7 +847,8 @@ export function NewSalePage({
               </span>
             </div>
 
-            {cart.length === 0 ? (
+            {cart.length ===
+            0 ? (
               <div className="mt-5 rounded-lg border border-dashed border-border px-4 py-8 text-center">
                 <p className="text-sm text-muted-foreground">
                   Add products from

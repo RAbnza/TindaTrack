@@ -5,25 +5,40 @@ import {
   type Response,
 } from "express";
 
-import { UserRole } from "../../generated/prisma/client.js";
+import {
+  UserRole,
+} from "../../generated/prisma/client.js";
 
-import { requireAuth } from "../auth/auth.middleware.js";
-import { requireRole } from "../auth/rbac.middleware.js";
+import {
+  requireAuth,
+} from "../auth/auth.middleware.js";
+
+import {
+  requireRole,
+} from "../auth/rbac.middleware.js";
+
 import {
   recordSale,
   SaleValidationError,
 } from "../services/sale.service.js";
-import { createSaleSchema } from "../validation/sale.validation.js";
 
-export const saleRouter = Router();
+import {
+  createSaleSchema,
+} from "../validation/sale.validation.js";
+
+export const saleRouter =
+  Router();
 
 saleRouter.post(
   "/",
+
   requireAuth,
+
   requireRole(
     UserRole.OWNER,
     UserRole.STAFF,
   ),
+
   async (
     req: Request,
     res: Response,
@@ -34,9 +49,13 @@ saleRouter.post(
         req.body,
       );
 
-    if (!parsedBody.success) {
+    if (
+      !parsedBody.success
+    ) {
       res.status(400).json({
-        error: "Invalid sale request.",
+        error:
+          "Invalid sale request.",
+
         details:
           parsedBody.error.flatten(),
       });
@@ -46,34 +65,65 @@ saleRouter.post(
 
     if (!req.auth) {
       res.status(401).json({
-        error: "Authentication required.",
+        error:
+          "Authentication required.",
       });
 
       return;
     }
 
     try {
-      const sale = await recordSale({
-        recordedBy:
-          req.auth.id,
+      const sale =
+        await recordSale({
+          recordedBy:
+            req.auth.id,
 
-        paymentMethod:
-          parsedBody.data.paymentMethod,
+          paymentMethod:
+            parsedBody.data
+              .paymentMethod,
 
-        items:
-          parsedBody.data.items,
-      });
+          items:
+            parsedBody.data.items,
+        });
 
       res.status(201).json({
-        id: sale.id,
+        id:
+          sale.id,
+
         recordedBy:
           sale.recordedBy,
+
+        recordedByName:
+          sale.recordedByName,
+
         paymentMethod:
           sale.paymentMethod,
+
         totalAmount:
           sale.totalAmount.toString(),
+
         createdAt:
           sale.createdAt,
+
+        items:
+          sale.items.map(
+            (item) => ({
+              productId:
+                item.productId,
+
+              productName:
+                item.productName,
+
+              quantity:
+                item.quantity,
+
+              unitPrice:
+                item.unitPrice.toString(),
+
+              lineTotal:
+                item.lineTotal.toString(),
+            }),
+          ),
       });
     } catch (error) {
       if (
@@ -81,7 +131,8 @@ saleRouter.post(
         SaleValidationError
       ) {
         res.status(400).json({
-          error: error.message,
+          error:
+            error.message,
         });
 
         return;

@@ -47,50 +47,102 @@
   --inspector-width: 17.5rem;
   --preview-width: 52rem;
   --shell-header-height: 3.5rem;
-  --surface-shadow: 0 4px 18px color-mix(in srgb, var(--foreground) 5%, transparent);
+
+  --surface-shadow:
+    0 4px 18px
+    color-mix(
+      in srgb,
+      var(--foreground) 5%,
+      transparent
+    );
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background:
+    var(--background);
 
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
+  --color-foreground:
+    var(--foreground);
 
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
+  --color-card:
+    var(--card);
 
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-foreground: var(--primary-foreground);
+  --color-card-foreground:
+    var(--card-foreground);
 
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
+  --color-popover:
+    var(--popover);
 
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-popover-foreground:
+    var(--popover-foreground);
 
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
+  --color-primary:
+    var(--primary);
 
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-destructive-soft: var(--destructive-soft);
+  --color-primary-hover:
+    var(--primary-hover);
 
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
+  --color-primary-foreground:
+    var(--primary-foreground);
 
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
+  --color-secondary:
+    var(--secondary);
 
-  --color-warning: var(--warning);
-  --color-warning-soft: var(--warning-soft);
+  --color-secondary-foreground:
+    var(--secondary-foreground);
 
-  --color-info: var(--info);
-  --color-info-soft: var(--info-soft);
+  --color-muted:
+    var(--muted);
 
-  --color-disabled-foreground: var(--disabled-foreground);
+  --color-muted-foreground:
+    var(--muted-foreground);
+
+  --color-accent:
+    var(--accent);
+
+  --color-accent-foreground:
+    var(--accent-foreground);
+
+  --color-destructive:
+    var(--destructive);
+
+  --color-destructive-foreground:
+    var(--destructive-foreground);
+
+  --color-destructive-soft:
+    var(--destructive-soft);
+
+  --color-border:
+    var(--border);
+
+  --color-input:
+    var(--input);
+
+  --color-ring:
+    var(--ring);
+
+  --color-success:
+    var(--success);
+
+  --color-success-soft:
+    var(--success-soft);
+
+  --color-warning:
+    var(--warning);
+
+  --color-warning-soft:
+    var(--warning-soft);
+
+  --color-info:
+    var(--info);
+
+  --color-info-soft:
+    var(--info-soft);
+
+  --color-disabled-foreground:
+    var(
+      --disabled-foreground
+    );
 
   --font-sans:
     ui-sans-serif,
@@ -101,31 +153,45 @@
     sans-serif;
 
   --font-weight-bold: 600;
+
   --text-ui: 0.8125rem;
   --text-ui--line-height: 1.45;
+
   --text-caption: 0.75rem;
   --text-caption--line-height: 1.5;
+
   --text-brand: 1rem;
   --text-brand--line-height: 1.4;
+
   --text-page: 1.375rem;
   --text-page--line-height: 1.35;
+
   --text-section: 1rem;
   --text-section--line-height: 1.5;
+
   --text-metric: 1.5rem;
   --text-metric--line-height: 1.25;
-  --text-metric-primary: 1.875rem;
-  --text-metric-primary--line-height: 1.25;
+
+  --text-metric-primary:
+    1.875rem;
+
+  --text-metric-primary--line-height:
+    1.25;
+
   --text-lg: 1.0625rem;
   --text-lg--line-height: 1.4;
+
   --text-2xl: 1.375rem;
   --text-2xl--line-height: 1.35;
+
   --text-4xl: 2rem;
   --text-4xl--line-height: 1.25;
 }
 
 @layer base {
   html {
-    background: var(--background);
+    background:
+      var(--background);
   }
 
   body {
@@ -133,10 +199,14 @@
     min-width: 320px;
     min-height: 100dvh;
 
-    background: var(--background);
-    color: var(--foreground);
+    background:
+      var(--background);
 
-    font-family: var(--font-sans);
+    color:
+      var(--foreground);
+
+    font-family:
+      var(--font-sans);
 
     font-size: 0.875rem;
     line-height: 1.5;
@@ -149,7 +219,9 @@
     font-family: inherit;
   }
 
-  button { font-size: inherit; }
+  button {
+    font-size: inherit;
+  }
 
   input,
   textarea,
@@ -159,93 +231,584 @@
   }
 
   @media (min-width: 768px) {
-    input, textarea, select { font-size: 0.875rem; }
+    input,
+    textarea,
+    select {
+      font-size: 0.875rem;
+    }
   }
 
   ::placeholder {
-    color: var(--disabled-foreground);
+    color:
+      var(
+        --disabled-foreground
+      );
   }
 }
 
 @layer components {
-  .application-root { min-height: 100dvh; background: var(--background); }
+  .application-root {
+    min-height: 100dvh;
+    background:
+      var(--background);
+  }
+
   .app-shell {
     display: grid;
-    grid-template-rows: var(--shell-header-height) minmax(0, 1fr);
+
+    grid-template-rows:
+      var(--shell-header-height)
+      minmax(0, 1fr);
+
     height: 100dvh;
     overflow: hidden;
-    background: var(--card);
-    color: var(--foreground);
+
+    background:
+      var(--card);
+
+    color:
+      var(--foreground);
   }
+
   .shell-header {
     display: flex;
+
     align-items: center;
-    justify-content: space-between;
+    justify-content:
+      space-between;
+
     gap: 1rem;
     min-width: 0;
-    padding: 0 0.75rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--card);
+
+    padding:
+      0 0.75rem;
+
+    border-bottom:
+      1px solid
+      var(--border);
+
+    background:
+      var(--card);
   }
-  .shell-brand { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
-  .shell-body { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
-  .shell-navigation, .shell-inspector { display: none; min-height: 0; background: var(--card); }
-  .workspace-canvas { min-width: 0; overflow-y: auto; overscroll-behavior-y: contain; background: var(--background); }
-  .page-preview { width: 100%; max-width: var(--preview-width); min-height: 100%; margin: 0 auto; background: var(--card); }
-  .preview-toolbar {
+
+  .shell-brand {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    min-height: 3rem;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--secondary);
+
+    gap: 0.625rem;
+    min-width: 0;
   }
-  .page-container { --page-padding: 1rem; width: 100%; padding: 1.25rem var(--page-padding); }
-  .page-content { container: page / inline-size; width: 100%; min-width: 0; }
-  .inspector-fields { display: grid; gap: 0.625rem; }
-  .inspector-fields > div { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); align-items: center; gap: 0.75rem; }
-  .inspector-fields dt { font-size: var(--text-ui); line-height: 1.45; color: var(--secondary-foreground); }
-  .inspector-fields dd { min-width: 0; min-height: 2.25rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--secondary); padding: 0.5rem 0.625rem; font-size: 0.875rem; color: var(--foreground); }
-  .inventory-controls { margin-inline: calc(-1 * var(--page-padding)); padding-inline: var(--page-padding); }
-  .inventory-product-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 1rem; }
-  .dashboard-metrics-primary, .dashboard-metrics-secondary, .dashboard-sections { display: grid; gap: 1rem; }
-  .dashboard-metrics-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .dashboard-sections { align-items: start; gap: 1.5rem; }
+
+  .shell-body {
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 1fr);
+
+    min-height: 0;
+  }
+
+  .shell-navigation,
+  .shell-inspector {
+    display: none;
+    min-height: 0;
+
+    background:
+      var(--card);
+  }
+
+  .workspace-canvas {
+    min-width: 0;
+
+    overflow-y: auto;
+    overscroll-behavior-y:
+      contain;
+
+    background:
+      var(--background);
+  }
+
+  .page-preview {
+    width: 100%;
+    max-width:
+      var(--preview-width);
+
+    min-height: 100%;
+
+    margin:
+      0 auto;
+
+    background:
+      var(--card);
+  }
+
+  .preview-toolbar {
+    display: flex;
+
+    align-items: center;
+    justify-content:
+      space-between;
+
+    gap: 0.75rem;
+
+    min-height: 3rem;
+
+    padding:
+      0.5rem 1rem;
+
+    border-bottom:
+      1px solid
+      var(--border);
+
+    background:
+      var(--secondary);
+  }
+
+  .page-container {
+    --page-padding: 1rem;
+
+    width: 100%;
+
+    padding:
+      1.25rem
+      var(--page-padding);
+  }
+
+  .page-content {
+    container:
+      page / inline-size;
+
+    width: 100%;
+    min-width: 0;
+  }
+
+  .inspector-fields {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .inspector-fields > div {
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 0.9fr)
+      minmax(0, 1.2fr);
+
+    align-items: center;
+
+    gap: 0.75rem;
+  }
+
+  .inspector-fields dt {
+    font-size:
+      var(--text-ui);
+
+    line-height: 1.45;
+
+    color:
+      var(
+        --secondary-foreground
+      );
+  }
+
+  .inspector-fields dd {
+    min-width: 0;
+    min-height: 2.25rem;
+
+    border:
+      1px solid
+      var(--border);
+
+    border-radius:
+      0.375rem;
+
+    background:
+      var(--secondary);
+
+    padding:
+      0.5rem 0.625rem;
+
+    font-size:
+      0.875rem;
+
+    color:
+      var(--foreground);
+  }
+
+  .inventory-controls {
+    margin-inline:
+      calc(
+        -1 *
+        var(--page-padding)
+      );
+
+    padding-inline:
+      var(--page-padding);
+  }
+
+  .inventory-product-grid {
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 1fr);
+
+    align-items: start;
+
+    gap: 1rem;
+  }
+
+  .dashboard-metrics-primary,
+  .dashboard-metrics-secondary,
+  .dashboard-sections {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .dashboard-metrics-secondary {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .dashboard-sections {
+    align-items: start;
+    gap: 1.5rem;
+  }
 
   @media (min-width: 768px) {
-    .shell-header { padding: 0 1rem; }
-    .shell-brand { flex: 0 0 calc(var(--navigation-width) - 1rem); }
-    .shell-body { grid-template-columns: var(--navigation-width) minmax(0, 1fr); }
-    .shell-navigation { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
-    .workspace-canvas { padding: 1rem; }
-    .page-preview { min-height: calc(100% - 0.5rem); overflow: clip; border: 1px solid var(--border); border-radius: 0.625rem; box-shadow: var(--surface-shadow); }
-    .preview-toolbar { padding-inline: 1.25rem; }
-    .page-container { --page-padding: 1.5rem; padding-block: 1.5rem; }
+    .shell-header {
+      padding:
+        0 1rem;
+    }
+
+    .shell-brand {
+      flex:
+        0 0
+        calc(
+          var(--navigation-width) -
+          1rem
+        );
+    }
+
+    .shell-body {
+      grid-template-columns:
+        var(--navigation-width)
+        minmax(0, 1fr);
+    }
+
+    .shell-navigation {
+      display: flex;
+
+      flex-direction:
+        column;
+
+      border-right:
+        1px solid
+        var(--border);
+    }
+
+    .workspace-canvas {
+      padding: 1rem;
+    }
+
+    .page-preview {
+      min-height:
+        calc(
+          100% -
+          0.5rem
+        );
+
+      overflow: clip;
+
+      border:
+        1px solid
+        var(--border);
+
+      border-radius:
+        0.625rem;
+
+      box-shadow:
+        var(
+          --surface-shadow
+        );
+    }
+
+    .preview-toolbar {
+      padding-inline:
+        1.25rem;
+    }
+
+    .page-container {
+      --page-padding:
+        1.5rem;
+
+      padding-block:
+        1.5rem;
+    }
   }
+
   @media (min-width: 1024px) {
-    .application-root { padding: 0.75rem; }
-    .app-shell { height: calc(100dvh - 1.5rem); border: 1px solid var(--border); border-radius: 0.75rem; }
-    .workspace-canvas { padding: 1.5rem; }
+    .application-root {
+      padding:
+        0.75rem;
+    }
+
+    .app-shell {
+      height:
+        calc(
+          100dvh -
+          1.5rem
+        );
+
+      border:
+        1px solid
+        var(--border);
+
+      border-radius:
+        0.75rem;
+    }
+
+    .workspace-canvas {
+      padding:
+        1.5rem;
+    }
   }
+
   @media (min-width: 1280px) {
-    .shell-body { grid-template-columns: var(--navigation-width) minmax(0, 1fr) var(--inspector-width); }
-    .shell-inspector { display: flex; flex-direction: column; overflow-y: auto; border-left: 1px solid var(--border); }
+    .shell-body {
+      grid-template-columns:
+        var(--navigation-width)
+        minmax(0, 1fr)
+        var(--inspector-width);
+    }
+
+    .shell-inspector {
+      display: flex;
+
+      flex-direction:
+        column;
+
+      overflow-y: auto;
+
+      border-left:
+        1px solid
+        var(--border);
+    }
   }
+
   @container page (min-width: 24rem) {
-    .dashboard-metrics-primary { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+    .dashboard-metrics-primary {
+      grid-template-columns:
+        minmax(0, 2fr)
+        minmax(0, 1fr);
+    }
   }
+
   @container page (min-width: 30rem) {
-    .dashboard-metrics-secondary[data-role="STAFF"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .dashboard-metrics-secondary[data-role="STAFF"] {
+      grid-template-columns:
+        repeat(
+          3,
+          minmax(0, 1fr)
+        );
+    }
   }
+
   @container page (min-width: 38rem) {
-    .dashboard-metrics-secondary[data-role="OWNER"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .dashboard-metrics-secondary[data-role="OWNER"] {
+      grid-template-columns:
+        repeat(
+          4,
+          minmax(0, 1fr)
+        );
+    }
   }
+
   @container page (min-width: 36rem) {
-    .inventory-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inventory-product-grid {
+      grid-template-columns:
+        repeat(
+          2,
+          minmax(0, 1fr)
+        );
+    }
   }
+
   @container page (min-width: 42rem) {
-    .dashboard-sections { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+    .dashboard-sections {
+      grid-template-columns:
+        minmax(0, 2fr)
+        minmax(0, 1fr);
+    }
+  }
+}
+
+/*
+ * Browser-print support.
+ *
+ * Physical printing and "Save as PDF"
+ * both use the browser's native print
+ * dialog. No PDF dependency is needed.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background:
+      #ffffff !important;
+
+    overflow:
+      visible !important;
+  }
+
+  body * {
+    visibility:
+      hidden !important;
+  }
+
+  /*
+   * Sale receipt.
+   */
+  .print-document,
+  .print-document * {
+    visibility:
+      visible !important;
+  }
+
+  .print-document {
+    position:
+      absolute !important;
+
+    inset:
+      0 auto auto 0 !important;
+
+    width:
+      100% !important;
+
+    max-width:
+      none !important;
+
+    margin:
+      0 !important;
+
+    padding:
+      0 !important;
+
+    border:
+      0 !important;
+
+    border-radius:
+      0 !important;
+
+    background:
+      #ffffff !important;
+
+    box-shadow:
+      none !important;
+
+    color:
+      #000000 !important;
+  }
+
+  .receipt-print-body {
+    max-width: 80mm;
+
+    margin:
+      0 auto;
+  }
+
+  /*
+   * Daily Sales report.
+   */
+  .daily-sales-print-document,
+  .daily-sales-print-document * {
+    visibility:
+      visible !important;
+  }
+
+  .daily-sales-print-document {
+    position:
+      absolute !important;
+
+    inset:
+      0 auto auto 0 !important;
+
+    width:
+      100% !important;
+
+    max-width:
+      none !important;
+
+    margin:
+      0 !important;
+
+    padding:
+      0 !important;
+
+    background:
+      #ffffff !important;
+
+    color:
+      #000000 !important;
+  }
+
+  .daily-sales-print-header {
+    display:
+      block !important;
+
+    margin-bottom:
+      1.5rem;
+
+    text-align:
+      center;
+  }
+
+  .daily-sales-print-header h1 {
+    margin: 0;
+
+    font-size:
+      1.25rem;
+
+    font-weight:
+      600;
+  }
+
+  .daily-sales-print-header p {
+    margin:
+      0.25rem 0 0;
+
+    font-size:
+      0.875rem;
+  }
+
+  .daily-sales-print-date {
+    display:
+      block !important;
+  }
+
+  .daily-sales-print-sale {
+    break-inside:
+      avoid;
+
+    box-shadow:
+      none !important;
+  }
+
+  .no-print {
+    display:
+      none !important;
+  }
+
+  .print-document article,
+  .print-document section,
+  .daily-sales-print-document article,
+  .daily-sales-print-document section {
+    break-inside:
+      avoid;
   }
 }

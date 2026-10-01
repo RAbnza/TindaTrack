@@ -3,9 +3,18 @@ import {
   Prisma,
 } from "../../generated/prisma/client.js";
 
-import { prisma } from "../db/prisma.js";
-import { createAuditLog } from "../repositories/audit-log.repository.js";
-import { getCurrentStockWithClient } from "../repositories/product.repository.js";
+import {
+  prisma,
+} from "../db/prisma.js";
+
+import {
+  createAuditLog,
+} from "../repositories/audit-log.repository.js";
+
+import {
+  getCurrentStockWithClient,
+} from "../repositories/product.repository.js";
+
 import {
   createSale,
   createSaleItem,
@@ -17,6 +26,7 @@ import {
 export type RecordSaleInput = {
   recordedBy: number;
   paymentMethod: PaymentMethod;
+
   items: Array<{
     productId: number;
     quantity: number;
@@ -24,18 +34,26 @@ export type RecordSaleInput = {
 };
 
 export class SaleValidationError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+  ) {
     super(message);
-    this.name = "SaleValidationError";
+
+    this.name =
+      "SaleValidationError";
   }
 }
 
-const MAX_TRANSACTION_ATTEMPTS = 3;
+const MAX_TRANSACTION_ATTEMPTS =
+  3;
 
 function validateItems(
   input: RecordSaleInput,
 ): void {
-  if (input.items.length === 0) {
+  if (
+    input.items.length ===
+    0
+  ) {
     throw new SaleValidationError(
       "A sale must contain at least one item.",
     );
@@ -44,7 +62,9 @@ function validateItems(
   const seenProductIds =
     new Set<number>();
 
-  for (const item of input.items) {
+  for (
+    const item of input.items
+  ) {
     if (
       seenProductIds.has(
         item.productId,
@@ -106,14 +126,18 @@ async function executeSaleTransaction(
       }
 
       /*
-       * Deterministic product ordering helps
-       * concurrent multi-product transactions
-       * acquire/read resources consistently.
+       * Keep product ordering deterministic.
+       *
+       * This helps concurrent multi-product
+       * transactions interact consistently.
        */
       const orderedItems = [
         ...input.items,
       ].sort(
-        (a, b) =>
+        (
+          a,
+          b,
+        ) =>
           a.productId -
           b.productId,
       );
@@ -185,6 +209,12 @@ async function executeSaleTransaction(
           ),
         );
 
+      /*
+       * All money is calculated from
+       * server-side Product prices.
+       *
+       * The client never supplies these.
+       */
       const pricedItems =
         orderedItems.map(
           (item) => {
@@ -199,10 +229,6 @@ async function executeSaleTransaction(
               );
             }
 
-            /*
-             * Price always comes from
-             * the server-side Product.
-             */
             const unitPrice =
               product.sellingPrice;
 
@@ -214,9 +240,15 @@ async function executeSaleTransaction(
             return {
               productId:
                 item.productId,
+
+              productName:
+                product.name,
+
               quantity:
                 item.quantity,
+
               unitPrice,
+
               lineTotal,
             };
           },
@@ -226,7 +258,8 @@ async function executeSaleTransaction(
         new Prisma.Decimal(0);
 
       for (
-        const item of pricedItems
+        const item of
+        pricedItems
       ) {
         totalAmount =
           totalAmount.add(
@@ -235,11 +268,12 @@ async function executeSaleTransaction(
       }
 
       /*
-       * All stock checks happen inside the
+       * Stock checks happen inside the
        * same Serializable transaction.
        */
       for (
-        const item of pricedItems
+        const item of
+        pricedItems
       ) {
         const currentStock =
           await getCurrentStockWithClient(
@@ -272,7 +306,8 @@ async function executeSaleTransaction(
         );
 
       for (
-        const item of pricedItems
+        const item of
+        pricedItems
       ) {
         const saleItem =
           await createSaleItem(
@@ -314,10 +349,11 @@ async function executeSaleTransaction(
       }
 
       /*
-       * One Sale is one audit event.
+       * One Sale creates one audit event.
        *
-       * This remains inside the same transaction
-       * as the Sale, SaleItems, and movements.
+       * This remains inside the same
+       * transaction as the sale, line
+       * items and stock movements.
        */
       await createAuditLog(
         tx,
@@ -347,7 +383,33 @@ async function executeSaleTransaction(
         },
       );
 
-      return sale;
+      /*
+       * Return authoritative receipt data
+       * from values that were used inside
+       * the committed transaction.
+       */
+      return {
+        id:
+          sale.id,
+
+        recordedBy:
+          sale.recordedBy,
+
+        recordedByName:
+          user.name,
+
+        paymentMethod:
+          sale.paymentMethod,
+
+        totalAmount:
+          sale.totalAmount,
+
+        createdAt:
+          sale.createdAt,
+
+        items:
+          pricedItems,
+      };
     },
     {
       isolationLevel:
@@ -361,7 +423,9 @@ async function executeSaleTransaction(
 export async function recordSale(
   input: RecordSaleInput,
 ) {
-  validateItems(input);
+  validateItems(
+    input,
+  );
 
   for (
     let attempt = 1;
@@ -395,8 +459,8 @@ export async function recordSale(
   }
 
   /*
-   * The loop either returns or throws.
-   * This exists only for control-flow completeness.
+   * The loop always returns or throws.
+   * This exists only for completeness.
    */
   throw new Error(
     "Sale transaction retry loop exited unexpectedly.",

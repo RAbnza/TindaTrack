@@ -4,7 +4,8 @@ import {
   StockMovementType,
 } from "../../generated/prisma/client.js";
 
-type DbClient = Prisma.TransactionClient;
+type DbClient =
+  Prisma.TransactionClient;
 
 type CreateSaleInput = {
   recordedBy: number;
@@ -35,8 +36,10 @@ export function findSaleUserById(
     where: {
       id: userId,
     },
+
     select: {
       id: true,
+      name: true,
       active: true,
     },
   });
@@ -52,8 +55,10 @@ export function findSaleProductsByIds(
         in: productIds,
       },
     },
+
     select: {
       id: true,
+      name: true,
       active: true,
       sellingPrice: true,
     },
@@ -66,9 +71,14 @@ export function createSale(
 ) {
   return db.sale.create({
     data: {
-      recordedBy: input.recordedBy,
-      paymentMethod: input.paymentMethod,
-      totalAmount: input.totalAmount,
+      recordedBy:
+        input.recordedBy,
+
+      paymentMethod:
+        input.paymentMethod,
+
+      totalAmount:
+        input.totalAmount,
     },
   });
 }
@@ -79,11 +89,20 @@ export function createSaleItem(
 ) {
   return db.saleItem.create({
     data: {
-      saleId: input.saleId,
-      productId: input.productId,
-      quantity: input.quantity,
-      unitPrice: input.unitPrice,
-      lineTotal: input.lineTotal,
+      saleId:
+        input.saleId,
+
+      productId:
+        input.productId,
+
+      quantity:
+        input.quantity,
+
+      unitPrice:
+        input.unitPrice,
+
+      lineTotal:
+        input.lineTotal,
     },
   });
 }
@@ -94,11 +113,20 @@ export function createSaleStockMovement(
 ) {
   return db.stockMovement.create({
     data: {
-      productId: input.productId,
-      type: StockMovementType.SALE,
-      quantityDelta: input.quantityDelta,
-      saleItemId: input.saleItemId,
-      actorId: input.actorId,
+      productId:
+        input.productId,
+
+      type:
+        StockMovementType.SALE,
+
+      quantityDelta:
+        input.quantityDelta,
+
+      saleItemId:
+        input.saleItemId,
+
+      actorId:
+        input.actorId,
     },
   });
 }

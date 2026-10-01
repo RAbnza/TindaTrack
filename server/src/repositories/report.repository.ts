@@ -1,4 +1,6 @@
-import { prisma } from "../db/prisma.js";
+import {
+  prisma,
+} from "../db/prisma.js";
 
 export async function findSalesInRange(
   start: Date,
@@ -11,6 +13,7 @@ export async function findSalesInRange(
         lt: end,
       },
     },
+
     include: {
       recordedByUser: {
         select: {
@@ -18,20 +21,24 @@ export async function findSalesInRange(
           name: true,
         },
       },
+
       saleItems: {
         orderBy: {
           id: "asc",
         },
+
         include: {
           product: {
             select: {
               id: true,
+              sku: true,
               name: true,
             },
           },
         },
       },
     },
+
     orderBy: [
       {
         createdAt: "asc",

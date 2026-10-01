@@ -84,12 +84,15 @@ export async function getDailySalesReport(
                 productName:
                   item.product.name,
 
+                productSku:
+                  item.product.sku,
+
                 quantity:
                   item.quantity,
 
                 /*
                  * Historical values come
-                 * from SaleItem.
+                 * directly from SaleItem.
                  */
                 unitPrice:
                   item.unitPrice.toString(),

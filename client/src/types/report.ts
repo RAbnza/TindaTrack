@@ -5,6 +5,7 @@ import type {
 export type DailySalesReportItem = {
   productId: number
   productName: string
+  productSku: string
   quantity: number
   unitPrice: string
   lineTotal: string
