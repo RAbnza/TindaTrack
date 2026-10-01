@@ -379,12 +379,6 @@ export function AppShell({
     )
 
   useEffect(() => {
-    setMobileMenuOpen(
-      false,
-    )
-  }, [location.pathname])
-
-  useEffect(() => {
     if (
       !mobileMenuOpen
     ) {
