@@ -9,6 +9,7 @@ import {
 import {
   screen,
   waitFor,
+  within,
 } from '@testing-library/react'
 
 import userEvent
@@ -50,6 +51,7 @@ vi.mock(
       suppliers: [
         {
           id: 7,
+
           name:
             'Test Supplier',
         },
@@ -91,6 +93,32 @@ const product: Product = {
   lowStock: false,
 }
 
+function getProductAddButton(
+  productName: string,
+) {
+  const productCard =
+    screen
+      .getByText(
+        productName,
+      )
+      .closest(
+        'article',
+      )
+
+  expect(
+    productCard,
+  ).not.toBeNull()
+
+  return within(
+    productCard!,
+  ).getByRole(
+    'button',
+    {
+      name: 'Add',
+    },
+  )
+}
+
 beforeEach(() => {
   mocks.createStockReceipt
     .mockReset()
@@ -111,7 +139,9 @@ describe(
         mocks.createStockReceipt
           .mockResolvedValue({
             id: 51,
+
             supplierId: 7,
+
             receivedBy: 1,
 
             referenceNo:
@@ -120,6 +150,12 @@ describe(
             receivedAt:
               '2026-10-02T02:00:00.000Z',
           })
+
+        const reloadProducts =
+          vi.fn()
+            .mockResolvedValue(
+              undefined,
+            )
 
         renderWithRouter(
           <ReceiveStockPage
@@ -133,10 +169,7 @@ describe(
               null
             }
             reloadProducts={
-              vi.fn()
-                .mockResolvedValue(
-                  undefined,
-                )
+              reloadProducts
             }
           />,
         )
@@ -156,11 +189,8 @@ describe(
         )
 
         await user.click(
-          screen.getByRole(
-            'button',
-            {
-              name: 'Add',
-            },
+          getProductAddButton(
+            'Rice 1kg',
           ),
         )
 
@@ -217,6 +247,12 @@ describe(
             )
           },
         )
+
+        expect(
+          reloadProducts,
+        ).toHaveBeenCalledTimes(
+          1,
+        )
       },
     )
 
@@ -254,11 +290,8 @@ describe(
         )
 
         await user.click(
-          screen.getByRole(
-            'button',
-            {
-              name: 'Add',
-            },
+          getProductAddButton(
+            'Rice 1kg',
           ),
         )
 
@@ -270,12 +303,10 @@ describe(
         )
 
         expect(
-          screen.getByRole(
-            'alert',
+          screen.getByText(
+            'Enter a non-negative amount with up to 2 decimal places.',
           ),
-        ).toHaveTextContent(
-          'Enter a non-negative amount with up to 2 decimal places.',
-        )
+        ).toBeInTheDocument()
 
         expect(
           screen.getByRole(

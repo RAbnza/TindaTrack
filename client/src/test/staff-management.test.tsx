@@ -146,13 +146,28 @@ describe(
           ),
         )
 
+        /*
+         * Cancelling the destructive
+         * confirmation must never send
+         * a staff-status update.
+         */
         expect(
           mocks.updateStaff,
         ).not.toHaveBeenCalled()
 
+        /*
+         * The account remains active,
+         * so the edit UI should still
+         * offer Deactivate rather than
+         * Reactivate.
+         */
         expect(
-          screen.getByText(
-            'Active',
+          screen.getByRole(
+            'button',
+            {
+              name:
+                'Deactivate',
+            },
           ),
         ).toBeInTheDocument()
       },
