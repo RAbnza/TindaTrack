@@ -105,11 +105,11 @@ export function DailySalesPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-semibold text-foreground">
           Daily Sales
         </h1>
 
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-secondary-foreground">
           Review recorded sales for
           a selected business day.
         </p>
@@ -118,7 +118,7 @@ export function DailySalesPage() {
       <section className="mt-6">
         <label
           htmlFor="report-date"
-          className="block text-sm font-medium text-slate-800"
+          className="block text-sm font-medium text-secondary-foreground"
         >
           Date
         </label>
@@ -132,13 +132,13 @@ export function DailySalesPage() {
               event.target.value,
             )
           }
-          className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="mt-2 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
       </section>
 
       {isLoading && (
         <div className="py-12 text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-secondary-foreground">
             Loading daily sales...
           </p>
         </div>
@@ -148,9 +148,9 @@ export function DailySalesPage() {
         error && (
           <div
             role="alert"
-            className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4"
+            className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4"
           >
-            <p className="text-sm text-red-800">
+            <p className="text-sm text-secondary-foreground">
               {error}
             </p>
           </div>
@@ -161,31 +161,31 @@ export function DailySalesPage() {
         report && (
           <>
             <section className="mt-7">
-              <h2 className="text-xl font-bold text-slate-950">
+              <h2 className="text-xl font-semibold text-foreground">
                 {formatReportDate(
                   report.date,
                 )}
               </h2>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-sm text-slate-600">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm text-secondary-foreground">
                     Sales count
                   </p>
 
-                  <p className="mt-2 text-3xl font-bold tabular-nums text-slate-950">
+                  <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">
                     {
                       report.saleCount
                     }
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p className="text-sm text-slate-600">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-sm text-secondary-foreground">
                     Total sales
                   </p>
 
-                  <p className="mt-2 text-xl font-bold tabular-nums text-slate-950">
+                  <p className="mt-2 text-xl font-semibold tabular-nums text-foreground">
                     {pesoFormatter.format(
                       Number(
                         report.totalSalesAmount,
@@ -198,19 +198,19 @@ export function DailySalesPage() {
 
             {report.sales.length ===
             0 ? (
-              <section className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-                <p className="font-medium text-slate-800">
+              <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
+                <p className="font-medium text-secondary-foreground">
                   No sales recorded
                 </p>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   There are no sales
                   for this date.
                 </p>
               </section>
             ) : (
-              <section className="mt-8 border-t border-slate-200 pt-6">
-                <h2 className="text-lg font-bold text-slate-950">
+              <section className="mt-8 border-t border-border pt-6">
+                <h2 className="text-lg font-semibold text-foreground">
                   Sales
                 </h2>
 
@@ -221,34 +221,34 @@ export function DailySalesPage() {
                         key={
                           sale.id
                         }
-                        className="rounded-2xl border border-slate-200 bg-white p-4"
+                        className="rounded-lg border border-border bg-card p-4"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <h3 className="font-bold text-slate-950">
+                            <h3 className="font-semibold text-foreground">
                               Sale #
                               {
                                 sale.id
                               }
                             </h3>
 
-                            <p className="mt-1 text-sm text-slate-600">
+                            <p className="mt-1 text-sm text-secondary-foreground">
                               {formatSaleTime(
                                 sale.createdAt,
                               )}
                             </p>
                           </div>
 
-                          <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                          <span className="rounded-lg bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
                             {
                               sale.paymentMethod
                             }
                           </span>
                         </div>
 
-                        <p className="mt-3 text-sm text-slate-600">
+                        <p className="mt-3 text-sm text-secondary-foreground">
                           Recorded by:{' '}
-                          <span className="font-medium text-slate-800">
+                          <span className="font-medium text-secondary-foreground">
                             {
                               sale
                                 .recordedBy
@@ -257,7 +257,7 @@ export function DailySalesPage() {
                           </span>
                         </p>
 
-                        <div className="mt-5 divide-y divide-slate-100 border-y border-slate-200">
+                        <div className="mt-5 divide-y divide-border/60 border-y border-border">
                           {sale.items.map(
                             (
                               item,
@@ -270,13 +270,13 @@ export function DailySalesPage() {
                               >
                                 <div className="flex items-start justify-between gap-4">
                                   <div>
-                                    <p className="font-medium text-slate-950">
+                                    <p className="font-medium text-foreground">
                                       {
                                         item.productName
                                       }
                                     </p>
 
-                                    <p className="mt-1 text-sm text-slate-600">
+                                    <p className="mt-1 text-sm text-secondary-foreground">
                                       {
                                         item.quantity
                                       }{' '}
@@ -289,7 +289,7 @@ export function DailySalesPage() {
                                     </p>
                                   </div>
 
-                                  <p className="shrink-0 font-semibold tabular-nums text-slate-950">
+                                  <p className="shrink-0 font-semibold tabular-nums text-foreground">
                                     {pesoFormatter.format(
                                       Number(
                                         item.lineTotal,
@@ -303,11 +303,11 @@ export function DailySalesPage() {
                         </div>
 
                         <div className="mt-4 flex items-center justify-between gap-4">
-                          <p className="font-semibold text-slate-800">
+                          <p className="font-semibold text-secondary-foreground">
                             Sale total
                           </p>
 
-                          <p className="text-lg font-bold tabular-nums text-slate-950">
+                          <p className="text-lg font-semibold tabular-nums text-foreground">
                             {pesoFormatter.format(
                               Number(
                                 sale.totalAmount,

@@ -16,12 +16,12 @@ export function PageContainer({
   return (
     <main
       className={[
-        'w-full px-4 py-6 md:px-6 lg:px-8',
+        'page-container',
         className,
       ].join(' ')}
       {...props}
     >
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="page-content">
         {children}
       </div>
     </main>

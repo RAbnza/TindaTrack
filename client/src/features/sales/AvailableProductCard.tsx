@@ -28,19 +28,19 @@ export function AvailableProductCard({
     !product.active
 
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white p-4">
+    <article className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-slate-950">
+          <h3 className="truncate text-base font-semibold text-foreground">
             {product.name}
           </h3>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             SKU {product.sku}
           </p>
         </div>
 
-        <p className="shrink-0 text-base font-semibold text-slate-950">
+        <p className="shrink-0 text-base font-semibold text-foreground">
           {pesoFormatter.format(
             Number(product.sellingPrice),
           )}
@@ -52,10 +52,10 @@ export function AvailableProductCard({
           className={[
             'text-sm font-medium',
             isOutOfStock
-              ? 'text-red-700'
+              ? 'text-destructive'
               : product.lowStock
-                ? 'text-amber-700'
-                : 'text-slate-600',
+                ? 'text-warning'
+                : 'text-secondary-foreground',
           ].join(' ')}
         >
           {isOutOfStock
@@ -67,7 +67,7 @@ export function AvailableProductCard({
           type="button"
           disabled={cannotAdd}
           onClick={() => onAdd(product.id)}
-          className="min-h-11 min-w-20 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+          className="min-h-11 min-w-20 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
         >
           {isInCart
             ? 'Added'

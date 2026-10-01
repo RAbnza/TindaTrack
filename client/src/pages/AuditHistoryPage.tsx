@@ -228,11 +228,11 @@ function MetadataRow({
 }: MetadataRowProps) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <dt className="text-sm text-slate-500">
+      <dt className="text-sm text-muted-foreground">
         {label}
       </dt>
 
-      <dd className="text-right text-sm font-medium text-slate-800">
+      <dd className="text-right text-sm font-medium text-secondary-foreground">
         {children}
       </dd>
     </div>
@@ -330,8 +330,8 @@ function AuditMetadataView({
             className={
               log.metadata
                 .quantityDelta > 0
-                ? 'text-emerald-700'
-                : 'text-red-700'
+                ? 'text-success'
+                : 'text-destructive'
             }
           >
             {log.metadata
@@ -372,7 +372,7 @@ function AuditMetadataView({
       entries.length === 0
     ) {
       return (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           No additional metadata.
         </p>
       )
@@ -399,7 +399,7 @@ function AuditMetadataView({
   }
 
   return (
-    <p className="text-sm text-slate-500">
+    <p className="text-sm text-muted-foreground">
       No additional metadata.
     </p>
   )
@@ -437,11 +437,11 @@ export function AuditHistoryPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-semibold text-foreground">
           Audit History
         </h1>
 
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-secondary-foreground">
           Review important business
           actions and who performed
           them.
@@ -474,10 +474,10 @@ export function AuditHistoryPage() {
                     )
                   }
                   className={[
-                    'min-h-11 shrink-0 rounded-xl border px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+                    'min-h-11 shrink-0 rounded-lg border px-4 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
                     isSelected
-                      ? 'border-emerald-700 bg-emerald-700 text-white'
-                      : 'border-slate-300 bg-white text-slate-700',
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input bg-card text-secondary-foreground',
                   ].join(' ')}
                 >
                   {
@@ -492,7 +492,7 @@ export function AuditHistoryPage() {
 
       {isLoading && (
         <div className="py-12 text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-secondary-foreground">
             Loading audit
             history...
           </p>
@@ -501,10 +501,10 @@ export function AuditHistoryPage() {
 
       {!isLoading &&
         error && (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="mt-6 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
             <p
               role="alert"
-              className="text-sm text-red-800"
+              className="text-sm text-secondary-foreground"
             >
               {error}
             </p>
@@ -514,7 +514,7 @@ export function AuditHistoryPage() {
               onClick={() =>
                 void reload()
               }
-              className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
             >
               Try again
             </button>
@@ -524,12 +524,12 @@ export function AuditHistoryPage() {
       {!isLoading &&
         !error &&
         logs.length === 0 && (
-          <section className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-            <p className="font-medium text-slate-800">
+          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
+            <p className="font-medium text-secondary-foreground">
               No audit history
             </p>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               No audited business
               actions have been
               recorded yet.
@@ -542,12 +542,12 @@ export function AuditHistoryPage() {
         logs.length > 0 &&
         filteredLogs.length ===
           0 && (
-          <section className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center">
-            <p className="font-medium text-slate-800">
+          <section className="mt-8 rounded-lg border border-dashed border-input bg-card px-4 py-10 text-center">
+            <p className="font-medium text-secondary-foreground">
               No matching audit events
             </p>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               There are no audit
               events for this filter.
             </p>
@@ -559,7 +559,7 @@ export function AuditHistoryPage() {
         filteredLogs.length >
           0 && (
           <section className="mt-6">
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {
                 filteredLogs.length
               }{' '}
@@ -574,16 +574,16 @@ export function AuditHistoryPage() {
                 (log) => (
                   <article
                     key={log.id}
-                    className="rounded-2xl border border-slate-200 bg-white p-4"
+                    className="rounded-lg border border-border bg-card p-4"
                   >
                     <div>
-                      <h2 className="text-base font-bold text-slate-950">
+                      <h2 className="text-base font-semibold text-foreground">
                         {formatAction(
                           log.action,
                         )}
                       </h2>
 
-                      <p className="mt-3 text-sm font-medium text-slate-800">
+                      <p className="mt-3 text-sm font-medium text-secondary-foreground">
                         {
                           log.actor
                             .name
@@ -596,19 +596,19 @@ export function AuditHistoryPage() {
                           : 'Staff'}
                       </p>
 
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {formatAuditDate(
                           log.createdAt,
                         )}
                       </p>
                     </div>
 
-                    <div className="mt-4 rounded-xl bg-slate-50 p-3">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <div className="mt-4 rounded-lg bg-background p-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-secondary-foreground">
                         Entity
                       </p>
 
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
+                      <p className="mt-1 text-sm font-semibold text-secondary-foreground">
                         {log.entityType
                           ? formatEntityType(
                               log.entityType,
@@ -622,8 +622,8 @@ export function AuditHistoryPage() {
                       </p>
                     </div>
 
-                    <div className="mt-4 border-t border-slate-100 pt-4">
-                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <div className="mt-4 border-t border-border/60 pt-4">
+                      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                         Details
                       </p>
 

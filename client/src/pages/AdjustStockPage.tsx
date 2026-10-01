@@ -321,11 +321,11 @@ export function AdjustStockPage({
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-semibold text-foreground">
           Adjust Stock
         </h1>
 
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-secondary-foreground">
           Record a traceable manual
           inventory correction.
         </p>
@@ -334,20 +334,20 @@ export function AdjustStockPage({
       {completedAdjustment && (
         <section
           role="status"
-          className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4"
         >
-          <p className="font-semibold text-emerald-900">
+          <p className="font-semibold text-secondary-foreground">
             Stock adjustment recorded
           </p>
 
-          <p className="mt-1 text-sm text-emerald-800">
+          <p className="mt-1 text-sm text-secondary-foreground">
             Adjustment #
             {
               completedAdjustment.id
             }
           </p>
 
-          <p className="mt-2 text-sm text-emerald-800">
+          <p className="mt-2 text-sm text-secondary-foreground">
             Inventory change:{' '}
             <span className="font-semibold">
               {completedAdjustment.quantityDelta >
@@ -365,7 +365,7 @@ export function AdjustStockPage({
       {submissionError && (
         <div
           role="alert"
-          className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm text-secondary-foreground"
         >
           {submissionError}
         </div>
@@ -373,7 +373,7 @@ export function AdjustStockPage({
 
       <section className="mt-6">
         <fieldset>
-          <legend className="text-lg font-bold text-slate-950">
+          <legend className="text-lg font-semibold text-foreground">
             Adjustment type
           </legend>
 
@@ -390,11 +390,11 @@ export function AdjustStockPage({
                 )
               }
               className={[
-                'min-h-12 rounded-xl border px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+                'min-h-12 rounded-lg border px-4 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
                 adjustmentType ===
                 'ADD'
-                  ? 'border-emerald-700 bg-emerald-700 text-white'
-                  : 'border-slate-300 bg-white text-slate-700',
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-input bg-card text-secondary-foreground',
               ].join(' ')}
             >
               Add Stock
@@ -412,11 +412,11 @@ export function AdjustStockPage({
                 )
               }
               className={[
-                'min-h-12 rounded-xl border px-4 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-red-600',
+                'min-h-12 rounded-lg border px-4 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-destructive',
                 adjustmentType ===
                 'REMOVE'
-                  ? 'border-red-700 bg-red-700 text-white'
-                  : 'border-slate-300 bg-white text-slate-700',
+                  ? 'border-destructive bg-destructive text-primary-foreground'
+                  : 'border-input bg-card text-secondary-foreground',
               ].join(' ')}
             >
               Remove Stock
@@ -426,7 +426,7 @@ export function AdjustStockPage({
       </section>
 
       <section className="mt-7">
-        <h2 className="text-lg font-bold text-slate-950">
+        <h2 className="text-lg font-semibold text-foreground">
           Product
         </h2>
 
@@ -447,14 +447,14 @@ export function AdjustStockPage({
             )
           }
           placeholder="Search name or SKU"
-          className="mt-3 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="mt-3 min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
 
         {productsError && (
-          <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
             <p
               role="alert"
-              className="text-sm text-red-800"
+              className="text-sm text-secondary-foreground"
             >
               {productsError}
             </p>
@@ -464,7 +464,7 @@ export function AdjustStockPage({
               onClick={() =>
                 void reloadProducts()
               }
-              className="mt-3 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+              className="mt-3 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
             >
               Try again
             </button>
@@ -472,7 +472,7 @@ export function AdjustStockPage({
         )}
 
         {isProductsLoading && (
-          <p className="mt-4 text-sm text-slate-500">
+          <p className="mt-4 text-sm text-muted-foreground">
             Loading products...
           </p>
         )}
@@ -481,7 +481,7 @@ export function AdjustStockPage({
           !isProductsLoading &&
           filteredProducts.length ===
             0 && (
-            <p className="mt-4 text-sm text-slate-600">
+            <p className="mt-4 text-sm text-secondary-foreground">
               No products found.
             </p>
           )}
@@ -508,23 +508,23 @@ export function AdjustStockPage({
                         )
                       }
                       className={[
-                        'w-full rounded-2xl border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+                        'w-full rounded-lg border p-4 text-left transition focus:outline-none focus:ring-2 focus:ring-ring',
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-50'
-                          : 'border-slate-200 bg-white',
+                          ? 'border-primary bg-accent'
+                          : 'border-border bg-card',
                       ].join(
                         ' ',
                       )}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-950">
+                          <p className="truncate font-semibold text-foreground">
                             {
                               product.name
                             }
                           </p>
 
-                          <p className="mt-1 text-sm text-slate-500">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             SKU{' '}
                             {
                               product.sku
@@ -533,11 +533,11 @@ export function AdjustStockPage({
                         </div>
 
                         <div className="shrink-0 text-right">
-                          <p className="text-xs uppercase tracking-wide text-slate-500">
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
                             Stock
                           </p>
 
-                          <p className="text-xl font-bold tabular-nums text-slate-950">
+                          <p className="text-xl font-semibold tabular-nums text-foreground">
                             {
                               product.currentStock
                             }
@@ -553,27 +553,27 @@ export function AdjustStockPage({
       </section>
 
       {selectedProduct && (
-        <section className="mt-8 border-t border-slate-200 pt-6">
+        <section className="mt-8 border-t border-border pt-6">
           <div
             className={[
-              'rounded-2xl border p-4',
+              'rounded-lg border p-4',
               adjustmentType ===
               'REMOVE'
-                ? 'border-red-200 bg-red-50'
-                : 'border-emerald-200 bg-emerald-50',
+                ? 'border-destructive/20 bg-destructive-soft'
+                : 'border-primary/20 bg-accent',
             ].join(' ')}
           >
-            <p className="text-lg font-bold text-slate-950">
+            <p className="text-lg font-semibold text-foreground">
               {
                 selectedProduct.name
               }
             </p>
 
-            <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-secondary-foreground">
               Current stock
             </p>
 
-            <p className="mt-1 text-4xl font-bold tabular-nums text-slate-950">
+            <p className="mt-1 text-4xl font-semibold tabular-nums text-foreground">
               {
                 selectedProduct.currentStock
               }
@@ -581,7 +581,7 @@ export function AdjustStockPage({
           </div>
 
           <div className="mt-6">
-            <p className="text-sm font-medium text-slate-800">
+            <p className="text-sm font-medium text-secondary-foreground">
               {adjustmentType ===
               'ADD'
                 ? 'Add quantity'
@@ -598,12 +598,12 @@ export function AdjustStockPage({
                 onClick={
                   handleDecrease
                 }
-                className="flex min-h-12 min-w-12 items-center justify-center rounded-xl border border-slate-300 bg-white text-xl font-semibold text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 −
               </button>
 
-              <span className="min-w-14 text-center text-2xl font-bold tabular-nums text-slate-950">
+              <span className="min-w-14 text-center text-2xl font-semibold tabular-nums text-foreground">
                 {quantity}
               </span>
 
@@ -619,7 +619,7 @@ export function AdjustStockPage({
                 onClick={
                   handleIncrease
                 }
-                className="flex min-h-12 min-w-12 items-center justify-center rounded-xl border border-slate-300 bg-white text-xl font-semibold text-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex min-h-12 min-w-12 items-center justify-center rounded-lg border border-input bg-card text-xl font-medium text-secondary-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 +
               </button>
@@ -630,7 +630,7 @@ export function AdjustStockPage({
               exceedsDisplayedStock && (
                 <p
                   role="alert"
-                  className="mt-2 text-sm font-medium text-red-700"
+                  className="mt-2 text-sm font-medium text-destructive"
                 >
                   Remove quantity
                   cannot exceed the
@@ -646,7 +646,7 @@ export function AdjustStockPage({
           <div className="mt-6">
             <label
               htmlFor="adjustment-reason"
-              className="block text-sm font-medium text-slate-800"
+              className="block text-sm font-medium text-secondary-foreground"
             >
               Reason
             </label>
@@ -668,22 +668,22 @@ export function AdjustStockPage({
                   ? 'e.g. Damaged bottles'
                   : 'e.g. Inventory count correction'
               }
-              className="mt-2 w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 w-full resize-none rounded-lg border border-input bg-card px-4 py-3 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
             />
           </div>
 
-          <div className="mt-6 rounded-xl bg-slate-100 p-3">
-            <p className="text-sm text-slate-600">
+          <div className="mt-6 rounded-lg bg-secondary p-3">
+            <p className="text-sm text-secondary-foreground">
               Inventory change
             </p>
 
             <p
               className={[
-                'mt-1 text-xl font-bold tabular-nums',
+                'mt-1 text-xl font-semibold tabular-nums',
                 adjustmentType ===
                 'ADD'
-                  ? 'text-emerald-700'
-                  : 'text-red-700',
+                  ? 'text-success'
+                  : 'text-destructive',
               ].join(' ')}
             >
               {adjustmentType ===
@@ -701,11 +701,11 @@ export function AdjustStockPage({
               void handleSubmit()
             }
             className={[
-              'mt-6 min-h-14 w-full rounded-2xl px-5 text-base font-bold text-white transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600',
+              'mt-6 min-h-14 w-full rounded-lg px-5 text-base font-medium text-primary-foreground transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground',
               adjustmentType ===
               'REMOVE'
-                ? 'bg-red-700 hover:bg-red-800 focus:ring-red-600'
-                : 'bg-emerald-700 hover:bg-emerald-800 focus:ring-emerald-600',
+                ? 'bg-destructive hover:bg-destructive/90 focus:ring-destructive'
+                : 'bg-primary hover:bg-primary-hover focus:ring-ring',
             ].join(' ')}
           >
             {isSubmitting

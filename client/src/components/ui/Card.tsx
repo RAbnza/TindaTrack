@@ -16,7 +16,7 @@ export function Card({
   return (
     <div
       className={[
-        'rounded-2xl border border-border bg-card text-card-foreground',
+        'rounded-lg border border-border bg-card text-card-foreground',
         className,
       ].join(' ')}
       {...props}

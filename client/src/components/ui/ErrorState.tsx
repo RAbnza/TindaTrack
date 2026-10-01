@@ -18,20 +18,20 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="rounded-2xl border border-destructive/20 bg-destructive-soft p-5"
+      className="rounded-lg border border-destructive/20 bg-destructive-soft p-5"
     >
-      <h2 className="text-base font-semibold text-destructive">
+      <h2 className="text-section font-semibold text-foreground">
         {title}
       </h2>
 
-      <p className="mt-1 text-sm leading-6 text-destructive">
+      <p className="mt-1 text-sm leading-6 text-secondary-foreground">
         {message}
       </p>
 
       {onRetry && (
         <div className="mt-4">
           <Button
-            variant="danger"
+            variant="secondary"
             onClick={
               onRetry
             }

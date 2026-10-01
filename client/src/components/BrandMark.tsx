@@ -2,7 +2,7 @@ export function BrandMark() {
   return (
     <div
       aria-hidden="true"
-      className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_2px_4px_rgba(53,68,119,0.16)]"
+      className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
     >
       <svg viewBox="0 0 24 24" fill="none" className="size-6">
         <path

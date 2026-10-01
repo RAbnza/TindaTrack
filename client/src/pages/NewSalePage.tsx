@@ -381,11 +381,11 @@ export function NewSalePage({
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-semibold text-foreground">
           New Sale
         </h1>
 
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-secondary-foreground">
           Add products, choose payment,
           then complete the sale.
         </p>
@@ -394,21 +394,21 @@ export function NewSalePage({
       {completedSale && (
         <section
           role="status"
-          className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4"
         >
-          <p className="font-semibold text-emerald-900">
+          <p className="font-semibold text-secondary-foreground">
             Sale completed
           </p>
 
-          <p className="mt-1 text-sm text-emerald-800">
+          <p className="mt-1 text-sm text-secondary-foreground">
             Sale #{completedSale.id}
           </p>
 
-          <p className="mt-3 text-sm text-emerald-800">
+          <p className="mt-3 text-sm text-secondary-foreground">
             Authoritative total
           </p>
 
-          <p className="mt-1 text-2xl font-bold text-emerald-950">
+          <p className="mt-1 text-2xl font-semibold text-secondary-foreground">
             {pesoFormatter.format(
               Number(
                 completedSale.totalAmount,
@@ -416,7 +416,7 @@ export function NewSalePage({
             )}
           </p>
 
-          <p className="mt-1 text-sm text-emerald-800">
+          <p className="mt-1 text-sm text-secondary-foreground">
             Paid with{' '}
             {completedSale.paymentMethod}
           </p>
@@ -426,7 +426,7 @@ export function NewSalePage({
       {submissionError && (
         <div
           role="alert"
-          className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm text-secondary-foreground"
         >
           {submissionError}
         </div>
@@ -450,28 +450,28 @@ export function NewSalePage({
             )
           }
           placeholder="Search products..."
-          className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
       </section>
 
       <section className="mt-6">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-950">
+          <h2 className="text-lg font-semibold text-foreground">
             Available products
           </h2>
 
           {isProductsLoading && (
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-muted-foreground">
               Refreshing...
             </span>
           )}
         </div>
 
         {productsError && (
-          <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
             <p
               role="alert"
-              className="text-sm text-red-800"
+              className="text-sm text-secondary-foreground"
             >
               {productsError}
             </p>
@@ -481,7 +481,7 @@ export function NewSalePage({
               onClick={() =>
                 void reloadProducts()
               }
-              className="mt-3 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+              className="mt-3 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
             >
               Try again
             </button>
@@ -493,7 +493,7 @@ export function NewSalePage({
             0 &&
           !isProductsLoading && (
             <div className="py-8 text-center">
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-secondary-foreground">
                 No products found.
               </p>
             </div>
@@ -521,13 +521,13 @@ export function NewSalePage({
           )}
       </section>
 
-      <section className="mt-8 border-t border-slate-200 pt-6">
+      <section className="mt-8 border-t border-border pt-6">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-950">
+          <h2 className="text-lg font-semibold text-foreground">
             Current sale
           </h2>
 
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted-foreground">
             {cart.length}{' '}
             {cart.length === 1
               ? 'item'
@@ -536,8 +536,8 @@ export function NewSalePage({
         </div>
 
         {cart.length === 0 ? (
-          <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
-            <p className="text-sm text-slate-600">
+          <div className="mt-3 rounded-lg border border-dashed border-input bg-card px-4 py-8 text-center">
+            <p className="text-sm text-secondary-foreground">
               No products added yet.
             </p>
           </div>
@@ -582,9 +582,9 @@ export function NewSalePage({
         )}
       </section>
 
-      <section className="mt-8 border-t border-slate-200 pt-6">
+      <section className="mt-8 border-t border-border pt-6">
         <fieldset>
-          <legend className="text-lg font-bold text-slate-950">
+          <legend className="text-lg font-semibold text-foreground">
             Payment
           </legend>
 
@@ -608,10 +608,10 @@ export function NewSalePage({
                       )
                     }
                     className={[
-                      'min-h-12 rounded-xl border px-2 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600',
+                      'min-h-12 rounded-lg border px-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-ring',
                       isSelected
-                        ? 'border-emerald-700 bg-emerald-700 text-white'
-                        : 'border-slate-300 bg-white text-slate-700',
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-input bg-card text-secondary-foreground',
                     ].join(' ')}
                   >
                     {method}
@@ -623,20 +623,20 @@ export function NewSalePage({
         </fieldset>
       </section>
 
-      <section className="mt-8 border-t border-slate-200 pt-6">
+      <section className="mt-8 border-t border-border pt-6">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-slate-600">
+            <p className="text-sm font-medium text-secondary-foreground">
               Displayed total
             </p>
 
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Final total is calculated
               by the server.
             </p>
           </div>
 
-          <p className="text-3xl font-bold tabular-nums text-slate-950">
+          <p className="text-3xl font-semibold tabular-nums text-foreground">
             {pesoFormatter.format(
               displayedTotal,
             )}
@@ -646,7 +646,7 @@ export function NewSalePage({
         {cartHasInvalidStock && (
           <p
             role="alert"
-            className="mt-4 text-sm font-medium text-red-700"
+            className="mt-4 text-sm font-medium text-destructive"
           >
             Adjust items that exceed
             current stock before
@@ -660,7 +660,7 @@ export function NewSalePage({
           onClick={() =>
             void handleSubmit()
           }
-          className="mt-5 min-h-14 w-full rounded-2xl bg-emerald-700 px-5 text-base font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+          className="mt-5 min-h-14 w-full rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
         >
           {isSubmitting
             ? 'Completing sale...'

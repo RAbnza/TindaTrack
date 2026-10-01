@@ -460,11 +460,11 @@ export function ReceiveStockPage({
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-950">
+        <h1 className="text-2xl font-semibold text-foreground">
           Receive Stock
         </h1>
 
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-secondary-foreground">
           Record products received
           from a supplier.
         </p>
@@ -473,19 +473,19 @@ export function ReceiveStockPage({
       {completedReceipt && (
         <section
           role="status"
-          className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4"
         >
-          <p className="font-semibold text-emerald-900">
+          <p className="font-semibold text-secondary-foreground">
             Stock receipt recorded
           </p>
 
-          <p className="mt-1 text-sm text-emerald-800">
+          <p className="mt-1 text-sm text-secondary-foreground">
             Receipt #
             {completedReceipt.id}
           </p>
 
           {completedReceipt.referenceNo && (
-            <p className="mt-1 text-sm text-emerald-800">
+            <p className="mt-1 text-sm text-secondary-foreground">
               Reference:{' '}
               {
                 completedReceipt.referenceNo
@@ -498,7 +498,7 @@ export function ReceiveStockPage({
       {submissionError && (
         <div
           role="alert"
-          className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4 text-sm text-secondary-foreground"
         >
           {submissionError}
         </div>
@@ -508,7 +508,7 @@ export function ReceiveStockPage({
         <div>
           <label
             htmlFor="supplier"
-            className="mb-2 block text-sm font-medium text-slate-800"
+            className="mb-2 block text-sm font-medium text-secondary-foreground"
           >
             Supplier
           </label>
@@ -533,7 +533,7 @@ export function ReceiveStockPage({
 
               clearFeedback()
             }}
-            className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100"
+            className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20 disabled:bg-secondary"
           >
             <option value="">
               {isSuppliersLoading
@@ -560,8 +560,8 @@ export function ReceiveStockPage({
           </select>
 
           {suppliersError && (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-800">
+            <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-3">
+              <p className="text-sm text-secondary-foreground">
                 {suppliersError}
               </p>
 
@@ -570,7 +570,7 @@ export function ReceiveStockPage({
                 onClick={() =>
                   void reloadSuppliers()
                 }
-                className="mt-2 min-h-10 rounded-lg bg-red-700 px-3 text-sm font-semibold text-white"
+                className="mt-2 min-h-10 rounded-lg bg-destructive px-3 text-sm font-medium text-primary-foreground"
               >
                 Try again
               </button>
@@ -581,7 +581,7 @@ export function ReceiveStockPage({
             !suppliersError &&
             suppliers.length ===
               0 && (
-              <p className="mt-2 text-sm text-amber-700">
+              <p className="mt-2 text-sm text-warning">
                 No active suppliers
                 are available.
               </p>
@@ -591,7 +591,7 @@ export function ReceiveStockPage({
         <div>
           <label
             htmlFor="reference-no"
-            className="mb-2 block text-sm font-medium text-slate-800"
+            className="mb-2 block text-sm font-medium text-secondary-foreground"
           >
             Reference no.
           </label>
@@ -608,7 +608,7 @@ export function ReceiveStockPage({
               clearFeedback()
             }}
             placeholder="Invoice / DR number (optional)"
-            className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+            className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
         </div>
       </section>
@@ -631,28 +631,28 @@ export function ReceiveStockPage({
             )
           }
           placeholder="Search products..."
-          className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
       </section>
 
       <section className="mt-6">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-950">
+          <h2 className="text-lg font-semibold text-foreground">
             Available products
           </h2>
 
           {isProductsLoading && (
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-muted-foreground">
               Refreshing...
             </span>
           )}
         </div>
 
         {productsError && (
-          <div className="mt-3 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
             <p
               role="alert"
-              className="text-sm text-red-800"
+              className="text-sm text-secondary-foreground"
             >
               {productsError}
             </p>
@@ -662,7 +662,7 @@ export function ReceiveStockPage({
               onClick={() =>
                 void reloadProducts()
               }
-              className="mt-3 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+              className="mt-3 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
             >
               Try again
             </button>
@@ -673,7 +673,7 @@ export function ReceiveStockPage({
           !isProductsLoading &&
           filteredProducts.length ===
             0 && (
-            <div className="py-8 text-center text-sm text-slate-600">
+            <div className="py-8 text-center text-sm text-secondary-foreground">
               No products found.
             </div>
           )}
@@ -704,13 +704,13 @@ export function ReceiveStockPage({
           )}
       </section>
 
-      <section className="mt-8 border-t border-slate-200 pt-6">
+      <section className="mt-8 border-t border-border pt-6">
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold text-slate-950">
+          <h2 className="text-lg font-semibold text-foreground">
             Receipt items
           </h2>
 
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-muted-foreground">
             {receiptItems.length}{' '}
             {receiptItems.length ===
             1
@@ -721,8 +721,8 @@ export function ReceiveStockPage({
 
         {receiptItems.length ===
         0 ? (
-          <div className="mt-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
-            <p className="text-sm text-slate-600">
+          <div className="mt-3 rounded-lg border border-dashed border-input bg-card px-4 py-8 text-center">
+            <p className="text-sm text-secondary-foreground">
               No products added yet.
             </p>
           </div>
@@ -787,14 +787,14 @@ export function ReceiveStockPage({
         )}
       </section>
 
-      <section className="mt-8 border-t border-slate-200 pt-6">
+      <section className="mt-8 border-t border-border pt-6">
         <button
           type="button"
           disabled={!canSubmit}
           onClick={() =>
             void handleSubmit()
           }
-          className="min-h-14 w-full rounded-2xl bg-emerald-700 px-5 text-base font-bold text-white transition hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+          className="min-h-14 w-full rounded-lg bg-primary px-5 text-base font-medium text-primary-foreground transition hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
         >
           {isSubmitting
             ? 'Recording receipt...'

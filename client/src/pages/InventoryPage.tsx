@@ -4,6 +4,9 @@ import {
 } from 'react'
 
 import { ProductCard } from '../features/inventory/ProductCard'
+import { useWorkspaceInspector } from '../components/layout/useWorkspaceInspector'
+import { PageContainer } from '../components/layout/PageContainer'
+import { Button, EmptyState, ErrorState, LoadingState, PageHeader } from '../components/ui'
 
 import type { Product } from '../types/product'
 
@@ -20,6 +23,7 @@ export function InventoryPage({
   error,
   reload,
 }: InventoryPageProps) {
+  const { selectedProduct, selectProduct } = useWorkspaceInspector()
   const [search, setSearch] =
     useState('')
 
@@ -63,18 +67,10 @@ export function InventoryPage({
   ])
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-5">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-950">
-          Inventory
-        </h1>
+    <PageContainer>
+      <PageHeader title="Inventory" description="Current product stock levels." />
 
-        <p className="mt-1 text-sm text-slate-600">
-          Current product stock levels.
-        </p>
-      </div>
-
-      <div className="sticky top-0 z-10 -mx-4 mt-5 space-y-3 border-y border-slate-200 bg-slate-50/95 px-4 py-3 backdrop-blur-sm">
+      <div className="inventory-controls sticky top-0 z-10 mt-5 space-y-3 border-y border-border bg-background/95 py-3 backdrop-blur-sm">
         <label
           htmlFor="product-search"
           className="sr-only"
@@ -92,11 +88,11 @@ export function InventoryPage({
             )
           }
           placeholder="Search name or SKU"
-          className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
 
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           aria-pressed={
             showLowStockOnly
           }
@@ -107,42 +103,25 @@ export function InventoryPage({
             )
           }
           className={[
-            'min-h-11 rounded-xl border px-4 text-sm font-semibold',
+            'min-h-11 rounded-lg border px-4 text-sm font-medium',
             showLowStockOnly
-              ? 'border-amber-300 bg-amber-100 text-amber-900'
-              : 'border-slate-300 bg-white text-slate-700',
+              ? 'border-warning/30 bg-warning-soft text-secondary-foreground'
+              : 'border-input bg-card text-secondary-foreground',
           ].join(' ')}
         >
           {showLowStockOnly
             ? 'Showing low stock'
             : 'Low stock only'}
-        </button>
+        </Button>
       </div>
 
       {isLoading && (
-        <div className="py-12 text-center text-sm text-slate-600">
-          Loading inventory...
-        </div>
+        <LoadingState label="Loading inventory..." />
       )}
 
       {!isLoading && error && (
-        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
-          <p
-            role="alert"
-            className="text-sm text-red-800"
-          >
-            {error}
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              void reload()
-            }
-            className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
-          >
-            Try again
-          </button>
+        <div className="mt-5">
+          <ErrorState message={error} onRetry={() => void reload()} />
         </div>
       )}
 
@@ -150,15 +129,8 @@ export function InventoryPage({
         !error &&
         filteredProducts.length ===
           0 && (
-          <div className="py-12 text-center">
-            <p className="text-base font-medium text-slate-800">
-              No products found
-            </p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Try changing your search
-              or filter.
-            </p>
+          <div className="mt-5">
+            <EmptyState title="No products found" description="Try changing your search or filter." />
           </div>
         )}
 
@@ -167,7 +139,7 @@ export function InventoryPage({
         filteredProducts.length >
           0 && (
           <>
-            <p className="mt-5 text-sm text-slate-500">
+            <p className="mt-5 text-sm text-muted-foreground">
               {
                 filteredProducts.length
               }{' '}
@@ -177,10 +149,12 @@ export function InventoryPage({
                 : 'products'}
             </p>
 
-            <div className="mt-3 space-y-3">
+            <div className="inventory-product-grid mt-3">
               {filteredProducts.map(
                 (product) => (
                   <ProductCard
+                    selected={selectedProduct?.id === product.id}
+                    onSelect={() => selectProduct(product)}
                     key={
                       product.id
                     }
@@ -193,6 +167,6 @@ export function InventoryPage({
             </div>
           </>
         )}
-    </main>
+    </PageContainer>
   )
 }

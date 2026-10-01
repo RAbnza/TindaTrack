@@ -382,11 +382,11 @@ export function ProductManagementPage({
     <main className="mx-auto w-full max-w-2xl px-4 py-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-950">
+          <h1 className="text-2xl font-semibold text-foreground">
             Products
           </h1>
 
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-secondary-foreground">
             Manage product master
             data.
           </p>
@@ -397,7 +397,7 @@ export function ProductManagementPage({
           onClick={
             handleCreate
           }
-          className="min-h-11 shrink-0 rounded-xl bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800"
+          className="min-h-11 shrink-0 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
         >
           Add Product
         </button>
@@ -406,24 +406,24 @@ export function ProductManagementPage({
       {successMessage && (
         <div
           role="status"
-          className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          className="mt-5 rounded-lg border border-success/20 bg-success-soft p-4 text-sm text-secondary-foreground"
         >
           {successMessage}
         </div>
       )}
 
       {formMode && (
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4">
+        <section className="mt-6 rounded-lg border border-border bg-card p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-950">
+              <h2 className="text-lg font-semibold text-foreground">
                 {formMode ===
                 'CREATE'
                   ? 'Add Product'
                   : 'Edit Product'}
               </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Inventory quantity
                 is managed separately
                 through stock
@@ -436,7 +436,7 @@ export function ProductManagementPage({
               onClick={
                 resetForm
               }
-              className="min-h-10 rounded-lg px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              className="min-h-10 rounded-lg px-3 text-sm font-medium text-secondary-foreground hover:bg-secondary"
             >
               Cancel
             </button>
@@ -451,7 +451,7 @@ export function ProductManagementPage({
             <div>
               <label
                 htmlFor="product-sku"
-                className="mb-2 block text-sm font-medium text-slate-800"
+                className="mb-2 block text-sm font-medium text-secondary-foreground"
               >
                 SKU
               </label>
@@ -470,14 +470,14 @@ export function ProductManagementPage({
                       .value,
                   )
                 }
-                className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="product-name"
-                className="mb-2 block text-sm font-medium text-slate-800"
+                className="mb-2 block text-sm font-medium text-secondary-foreground"
               >
                 Name
               </label>
@@ -498,14 +498,14 @@ export function ProductManagementPage({
                       .value,
                   )
                 }
-                className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="product-category"
-                className="mb-2 block text-sm font-medium text-slate-800"
+                className="mb-2 block text-sm font-medium text-secondary-foreground"
               >
                 Category
               </label>
@@ -526,20 +526,20 @@ export function ProductManagementPage({
                   )
                 }
                 placeholder="Optional"
-                className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
               />
             </div>
 
             <div>
               <label
                 htmlFor="product-price"
-                className="mb-2 block text-sm font-medium text-slate-800"
+                className="mb-2 block text-sm font-medium text-secondary-foreground"
               >
                 Selling price
               </label>
 
               <div className="relative">
-                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                   ₱
                 </span>
 
@@ -561,7 +561,7 @@ export function ProductManagementPage({
                     )
                   }
                   placeholder="75.00"
-                  className="min-h-12 w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                  className="min-h-12 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
                 />
               </div>
             </div>
@@ -569,7 +569,7 @@ export function ProductManagementPage({
             <div>
               <label
                 htmlFor="product-reorder-level"
-                className="mb-2 block text-sm font-medium text-slate-800"
+                className="mb-2 block text-sm font-medium text-secondary-foreground"
               >
                 Reorder level
               </label>
@@ -593,14 +593,14 @@ export function ProductManagementPage({
                       .value,
                   )
                 }
-                className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+                className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
               />
             </div>
 
             {formError && (
               <div
                 role="alert"
-                className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                className="rounded-lg border border-destructive/20 bg-destructive-soft p-3 text-sm text-secondary-foreground"
               >
                 {formError}
               </div>
@@ -611,7 +611,7 @@ export function ProductManagementPage({
               disabled={
                 isSubmitting
               }
-              className="min-h-12 w-full rounded-xl bg-emerald-700 px-4 text-base font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
+              className="min-h-12 w-full rounded-lg bg-primary px-4 text-base font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-not-allowed disabled:bg-muted disabled:text-disabled-foreground"
             >
               {isSubmitting
                 ? 'Saving product...'
@@ -625,12 +625,12 @@ export function ProductManagementPage({
           {formMode ===
             'EDIT' &&
             editingProduct && (
-              <div className="mt-6 border-t border-slate-200 pt-5">
-                <p className="font-semibold text-slate-900">
+              <div className="mt-6 border-t border-border pt-5">
+                <p className="font-semibold text-foreground">
                   Product status
                 </p>
 
-                <p className="mt-1 text-sm text-slate-600">
+                <p className="mt-1 text-sm text-secondary-foreground">
                   {editingProduct.active
                     ? 'This product is currently active.'
                     : 'This product is currently inactive.'}
@@ -645,10 +645,10 @@ export function ProductManagementPage({
                     void handleStatusChange()
                   }
                   className={[
-                    'mt-4 min-h-11 rounded-xl border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50',
+                    'mt-4 min-h-11 rounded-lg border px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50',
                     editingProduct.active
-                      ? 'border-red-200 text-red-700 hover:bg-red-50'
-                      : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50',
+                      ? 'border-destructive/20 text-secondary-foreground hover:bg-destructive-soft'
+                      : 'border-success/20 text-secondary-foreground hover:bg-accent',
                   ].join(' ')}
                 >
                   {isChangingStatus
@@ -680,22 +680,22 @@ export function ProductManagementPage({
             )
           }
           placeholder="Search name or SKU"
-          className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base text-slate-950 outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
         />
       </section>
 
       {isLoading && (
-        <div className="py-12 text-center text-sm text-slate-600">
+        <div className="py-12 text-center text-sm text-secondary-foreground">
           Loading products...
         </div>
       )}
 
       {!isLoading &&
         error && (
-          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+          <div className="mt-5 rounded-lg border border-destructive/20 bg-destructive-soft p-4">
             <p
               role="alert"
-              className="text-sm text-red-800"
+              className="text-sm text-secondary-foreground"
             >
               {error}
             </p>
@@ -705,7 +705,7 @@ export function ProductManagementPage({
               onClick={() =>
                 void reload()
               }
-              className="mt-4 min-h-11 rounded-xl bg-red-700 px-4 text-sm font-semibold text-white"
+              className="mt-4 min-h-11 rounded-lg bg-destructive px-4 text-sm font-medium text-primary-foreground"
             >
               Try again
             </button>
@@ -717,7 +717,7 @@ export function ProductManagementPage({
         filteredProducts.length ===
           0 && (
           <div className="py-12 text-center">
-            <p className="font-medium text-slate-800">
+            <p className="font-medium text-secondary-foreground">
               No products found
             </p>
           </div>
@@ -735,21 +735,21 @@ export function ProductManagementPage({
                     product.id
                   }
                   className={[
-                    'rounded-2xl border bg-white p-4',
+                    'rounded-lg border bg-card p-4',
                     product.active
-                      ? 'border-slate-200'
-                      : 'border-slate-200 opacity-70',
+                      ? 'border-border'
+                      : 'border-border opacity-70',
                   ].join(' ')}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <h2 className="truncate font-bold text-slate-950">
+                      <h2 className="truncate font-semibold text-foreground">
                         {
                           product.name
                         }
                       </h2>
 
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-sm text-muted-foreground">
                         {
                           product.sku
                         }
@@ -760,8 +760,8 @@ export function ProductManagementPage({
                       className={[
                         'rounded-lg px-2.5 py-1 text-xs font-semibold',
                         product.active
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-200 text-slate-700',
+                          ? 'bg-success-soft text-secondary-foreground'
+                          : 'bg-muted text-secondary-foreground',
                       ].join(' ')}
                     >
                       {product.active
@@ -772,11 +772,11 @@ export function ProductManagementPage({
 
                   <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Selling price
                       </p>
 
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="mt-1 font-semibold text-foreground">
                         {pesoFormatter.format(
                           Number(
                             product.sellingPrice,
@@ -786,11 +786,11 @@ export function ProductManagementPage({
                     </div>
 
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Reorder level
                       </p>
 
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="mt-1 font-semibold text-foreground">
                         {
                           product.reorderLevel
                         }
@@ -798,28 +798,28 @@ export function ProductManagementPage({
                     </div>
 
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Category
                       </p>
 
-                      <p className="mt-1 font-medium text-slate-800">
+                      <p className="mt-1 font-medium text-secondary-foreground">
                         {product.category ??
                           'None'}
                       </p>
                     </div>
 
                     <div>
-                      <p className="text-slate-500">
+                      <p className="text-muted-foreground">
                         Current stock
                       </p>
 
-                      <p className="mt-1 font-semibold text-slate-900">
+                      <p className="mt-1 font-semibold text-foreground">
                         {
                           product.currentStock
                         }
                       </p>
 
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Read-only
                       </p>
                     </div>
@@ -832,7 +832,7 @@ export function ProductManagementPage({
                         product,
                       )
                     }
-                    className="mt-4 min-h-11 rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    className="mt-4 min-h-11 rounded-lg border border-input px-4 text-sm font-medium text-secondary-foreground hover:bg-background"
                   >
                     Edit
                   </button>

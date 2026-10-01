@@ -1,449 +1,85 @@
 # Typography System
 
-## Primary Font
+TindaTrack uses a compact, neutral sans-serif system inspired by the reference workspace interface. Text should support scanning without turning every label into a heading. These rules apply to the shell, inspector, Dashboard, public forms, and existing operational pages.
 
-Use:
+## Font family
 
-Inter
+Use the native sans-serif stack throughout the application:
 
-Fallback stack:
+```css
+ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
+```
 
-font-family:
-  "Inter",
-  ui-sans-serif,
-  system-ui,
-  -apple-system,
-  BlinkMacSystemFont,
-  "Segoe UI",
-  sans-serif;
+This uses the platform’s UI font, including Segoe UI on Windows. The previous implementation declared Inter without loading it. The new system makes the native-font behavior intentional and avoids a remote font dependency. Use a single family for navigation, forms, tables, metrics, and dialogs.
 
-Inter should be used throughout the application for:
+The stack is defined once as `--font-sans` in `client/src/index.css` and consumed by the body. Form controls inherit the family without overriding their size and weight utilities.
 
-- navigation
-- forms
-- tables
-- dashboard metrics
-- buttons
-- dialogs
-- badges
-- labels
-- reports
-- body text
+## Weights
 
-Do not mix multiple font families unless there is a strong design reason.
+- **400:** body text, navigation, metadata, helper text.
+- **500:** controls, active navigation, labels, product names, important table cells.
+- **600:** page and section headings, brand name, dashboard values.
 
----
+Routine UI does not use 700. Existing `font-bold` utilities resolve to 600 through the shared weight token; updated pages explicitly use `font-semibold`. Preserve hierarchy through size, spacing, and semantic text colors.
 
-## Font Personality
+## Type scale
 
-The typography should feel:
+All rem values assume the browser’s normal 16px root size; do not override the user’s root font size.
 
-- clean
-- practical
-- modern
-- readable
-- neutral
-- professional
-- compact without feeling cramped
+| Role | Tailwind utility / token | Size | Line height | Weight |
+| --- | --- | --- | --- | --- |
+| Page title | `text-page` / `--text-page` | 22px | 1.35 | 600 |
+| Section heading | `text-section` / `--text-section` | 16px | 1.5 | 600 |
+| Brand name | `text-brand` / `--text-brand` | 16px | 1.4 | 600 |
+| Body and form label | `text-sm` | 14px | 1.5 | 400 / 500 |
+| Navigation and compact chrome | `text-ui` / `--text-ui` | 13px | 1.45 | 400 / 500 |
+| Caption, SKU, helper text | `text-caption` / `--text-caption` | 12px | 1.5 | 400 |
+| Standard dashboard value | `text-metric` / `--text-metric` | 24px | 1.25 | 600 |
+| Primary dashboard value | `text-metric-primary` / `--text-metric-primary` | 30px | 1.25 | 600 |
+| Mobile input | Base input style / `text-base` | 16px | 1.5 | 400 |
 
-Avoid fonts that feel:
+The semantic utilities are defined in Tailwind’s inline theme. Prefer them when modifying shared chrome or Dashboard. Existing utilities remain available: `text-lg` is 17px, `text-xl` is 20px, `text-2xl` is 22px, `text-3xl` is 30px, and `text-4xl` is 32px. These aliases keep older pages within the same restrained scale.
 
-- overly futuristic
-- playful
-- handwritten
-- strongly geometric
-- editorial
-- decorative
+Use 12px only for short metadata. Instructions, errors, body copy, and form labels should normally stay at 14px. Do not shrink text to fit a crowded layout; allow wrapping or collapse secondary panels.
 
-This is an operational business application, not a marketing website.
+## Forms and controls
 
----
+Labels and buttons use 14px / 500. The shell may use 13px for short navigation or compact action labels. Targets remain at least 44px tall; compact typography does not mean tiny hit areas.
 
-## Font Weights
+Inputs, textareas, and selects default to 16px on mobile and 14px at widths of 768px and above. An explicit `text-base` utility may keep a form at 16px on desktop, including Login and Setup. Base control rules live in `@layer base` so they do not silently override utility font sizes or weights.
 
-Use a restrained weight scale.
+Errors remain near the relevant form and use the existing destructive text token. Helper text uses 12px or 14px and comfortable line height.
 
-Regular:
-- 400
+## Tables, records, and numeric values
 
-Medium:
-- 500
+Use 12px / 500 for short table headers and 14px / 400 for table bodies. Product titles use 14px or 16px / 500–600. Use `tabular-nums` for prices, quantities, totals, and dashboard values.
 
-Semibold:
-- 600
+Keep identifiers readable: allow SKUs and long record names to wrap rather than widening the workspace. Numeric emphasis should come from size and weight; warning and danger accents communicate stock state.
 
-Bold:
-- 700
+## Tracking and colors
 
-Avoid excessive use of bold.
+Headings may use slightly tight tracking. Body text and controls use normal tracking. Avoid decorative uppercase and wide tracking for everyday navigation or metadata.
 
-Default body text:
-- 400
+Use the semantic colors defined by [UI Color Theme: Storefront Slate](ui-color-theme.md):
 
-Labels and buttons:
-- 500
+- Headings and important values: `text-foreground`.
+- Body text and labels: `text-secondary-foreground` or `text-foreground`.
+- Short supporting metadata: `text-muted-foreground`.
+- Disabled text and placeholders: `text-disabled-foreground`.
+- Selected navigation: `text-accent-foreground` with `bg-accent`.
 
-Section headings:
-- 600
+The documented color palette is unchanged. Typography changes do not introduce a new brand color.
 
-Important dashboard numbers:
-- 600 or 700
+Small text on soft semantic backgrounds uses the existing secondary foreground for readable contrast. Status badges retain their semantic background and colored dot, along with an explicit status label. Muted text remains suitable on white surfaces; use secondary foreground for helpers on the application background.
 
----
+## Implementation examples
 
-## Type Scale
+```tsx
+<h1 className="text-page font-semibold tracking-tight">Dashboard</h1>
+<h2 className="text-section font-semibold">Needs attention</h2>
+<p className="text-sm leading-6 text-secondary-foreground">Store overview</p>
+<span className="text-caption text-muted-foreground">SKU: COKE-1L</span>
+<p className="text-metric-primary font-semibold tabular-nums">₱4,820.50</p>
+```
 
-### Page Title
-
-Examples:
-- Products
-- Inventory
-- Sales
-- Dashboard
-
-Size:
-- 24px–28px
-
-Weight:
-- 600
-
-Line height:
-- 1.2
-
-Example:
-
-text-2xl font-semibold tracking-tight
-
----
-
-### Section Heading
-
-Examples:
-- Product Details
-- Recent Sales
-- Low Stock
-- Stock Movements
-
-Size:
-- 18px–20px
-
-Weight:
-- 600
-
-Example:
-
-text-lg font-semibold
-
-or
-
-text-xl font-semibold
-
----
-
-### Card Title
-
-Size:
-- 14px–16px
-
-Weight:
-- 500 or 600
-
-Color:
-- primary foreground
-
-Example:
-
-text-sm font-medium
-
-or
-
-text-base font-semibold
-
----
-
-### Body Text
-
-Size:
-- 14px–16px
-
-Weight:
-- 400
-
-Line height:
-- 1.5–1.6
-
-Recommended default:
-
-text-sm
-
-for dense application UI.
-
-Use:
-
-text-base
-
-for longer explanatory content.
-
----
-
-### Labels
-
-Size:
-- 13px–14px
-
-Weight:
-- 500
-
-Example:
-
-text-sm font-medium
-
-Labels should be clear but visually quieter than headings.
-
----
-
-### Muted / Helper Text
-
-Size:
-- 12px–14px
-
-Weight:
-- 400
-
-Color:
-- muted foreground
-
-Example:
-
-text-xs text-muted-foreground
-
-or
-
-text-sm text-muted-foreground
-
-Use for:
-
-- timestamps
-- helper text
-- SKU
-- metadata
-- descriptions
-- secondary information
-
----
-
-## Dashboard Numbers
-
-Important numeric values should receive stronger hierarchy without becoming oversized.
-
-Examples:
-
-₱8,420.00
-127
-14 items
-
-Recommended:
-
-text-2xl font-semibold tracking-tight
-
-Large dashboard value:
-
-text-3xl font-semibold tracking-tight
-
-Avoid giant 48px+ dashboard numbers unless the screen specifically needs them.
-
----
-
-## Tables
-
-Table header:
-
-text-xs font-medium
-text-muted-foreground
-
-Optional:
-
-uppercase tracking-wide
-
-Use uppercase sparingly.
-
-Table body:
-
-text-sm font-normal
-
-Important cells:
-
-text-sm font-medium
-
-Numeric values should be easy to scan.
-
-Where supported, use tabular numbers:
-
-font-variant-numeric: tabular-nums;
-
-This is especially useful for:
-
-- prices
-- quantities
-- totals
-- transaction values
-- dates
-
----
-
-## Buttons
-
-Button text:
-
-14px
-
-Weight:
-500
-
-Example:
-
-text-sm font-medium
-
-Do not use bold button text by default.
-
-Button labels should be short and action-oriented.
-
-Examples:
-
-Add Product
-Complete Sale
-Save Changes
-Receive Stock
-
----
-
-## Inputs
-
-Input text:
-
-14px–16px
-
-Mobile inputs should preferably use at least:
-
-16px
-
-when necessary to avoid mobile browser zoom behavior.
-
-Labels:
-
-14px / 500
-
-Helper text:
-
-12px–14px / 400
-
-Error text:
-
-12px–14px / 400 or 500
-
----
-
-## Letter Spacing
-
-Use normal or slightly tighter tracking for large headings.
-
-Headings:
-
-tracking-tight
-
-Body:
-
-tracking-normal
-
-Small uppercase labels:
-
-tracking-wide
-
-Do not use exaggerated letter spacing throughout the application.
-
----
-
-## Line Height
-
-Heading:
-1.2–1.3
-
-Body:
-1.5–1.6
-
-Compact UI:
-1.4
-
-Avoid extremely tight line-height on mobile.
-
----
-
-## Recommended Tailwind Defaults
-
-Application:
-
-className="font-sans text-sm text-foreground"
-
-Page title:
-
-className="text-2xl font-semibold tracking-tight"
-
-Section heading:
-
-className="text-lg font-semibold tracking-tight"
-
-Body:
-
-className="text-sm leading-6"
-
-Muted:
-
-className="text-sm text-muted-foreground"
-
-Label:
-
-className="text-sm font-medium"
-
-Button:
-
-className="text-sm font-medium"
-
-Dashboard number:
-
-className="text-2xl font-semibold tracking-tight tabular-nums"
-
-Table header:
-
-className="text-xs font-medium text-muted-foreground"
-
-Table cell:
-
-className="text-sm"
-
-Numeric table cell:
-
-className="text-sm tabular-nums"
-
----
-
-## Overall Typography Rule
-
-The typography should support scanning, not compete for attention.
-
-Use hierarchy through:
-
-1. size
-2. weight
-3. color
-4. spacing
-
-Do not rely on bold text everywhere.
-
-When unsure:
-
-- use Inter
-- use `text-sm`
-- use `font-normal`
-- use `font-medium` for controls
-- use `font-semibold` for headings
-- use `text-muted-foreground` for secondary information
+Dashboard layout responds to the actual width of its page container, rather than the browser width alone. This preserves readable text when the left navigation and inspector reduce the central workspace.

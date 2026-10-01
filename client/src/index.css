@@ -43,6 +43,11 @@
   --disabled-foreground: #9a99a2;
 
   --radius: 0.75rem;
+  --navigation-width: 14rem;
+  --inspector-width: 17.5rem;
+  --preview-width: 52rem;
+  --shell-header-height: 3.5rem;
+  --surface-shadow: 0 4px 18px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 @theme inline {
@@ -88,29 +93,6 @@
   --color-disabled-foreground: var(--disabled-foreground);
 
   --font-sans:
-    "Inter",
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-}
-
-html {
-  background: var(--background);
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100dvh;
-
-  background: var(--background);
-  color: var(--foreground);
-
-  font-family:
-    "Inter",
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -118,17 +100,152 @@ body {
     "Segoe UI",
     sans-serif;
 
-  font-size: 0.875rem;
-  line-height: 1.5;
+  --font-weight-bold: 600;
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.45;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.5;
+  --text-brand: 1rem;
+  --text-brand--line-height: 1.4;
+  --text-page: 1.375rem;
+  --text-page--line-height: 1.35;
+  --text-section: 1rem;
+  --text-section--line-height: 1.5;
+  --text-metric: 1.5rem;
+  --text-metric--line-height: 1.25;
+  --text-metric-primary: 1.875rem;
+  --text-metric-primary--line-height: 1.25;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.4;
+  --text-2xl: 1.375rem;
+  --text-2xl--line-height: 1.35;
+  --text-4xl: 2rem;
+  --text-4xl--line-height: 1.25;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
+@layer base {
+  html {
+    background: var(--background);
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100dvh;
+
+    background: var(--background);
+    color: var(--foreground);
+
+    font-family: var(--font-sans);
+
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+  }
+
+  button { font-size: inherit; }
+
+  input,
+  textarea,
+  select {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  @media (min-width: 768px) {
+    input, textarea, select { font-size: 0.875rem; }
+  }
+
+  ::placeholder {
+    color: var(--disabled-foreground);
+  }
 }
 
-::placeholder {
-  color: var(--disabled-foreground);
+@layer components {
+  .application-root { min-height: 100dvh; background: var(--background); }
+  .app-shell {
+    display: grid;
+    grid-template-rows: var(--shell-header-height) minmax(0, 1fr);
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--card);
+    color: var(--foreground);
+  }
+  .shell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    padding: 0 0.75rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+  .shell-brand { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+  .shell-body { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .shell-navigation, .shell-inspector { display: none; min-height: 0; background: var(--card); }
+  .workspace-canvas { min-width: 0; overflow-y: auto; overscroll-behavior-y: contain; background: var(--background); }
+  .page-preview { width: 100%; max-width: var(--preview-width); min-height: 100%; margin: 0 auto; background: var(--card); }
+  .preview-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-height: 3rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--secondary);
+  }
+  .page-container { --page-padding: 1rem; width: 100%; padding: 1.25rem var(--page-padding); }
+  .page-content { container: page / inline-size; width: 100%; min-width: 0; }
+  .inspector-fields { display: grid; gap: 0.625rem; }
+  .inspector-fields > div { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.2fr); align-items: center; gap: 0.75rem; }
+  .inspector-fields dt { font-size: var(--text-ui); line-height: 1.45; color: var(--secondary-foreground); }
+  .inspector-fields dd { min-width: 0; min-height: 2.25rem; border: 1px solid var(--border); border-radius: 0.375rem; background: var(--secondary); padding: 0.5rem 0.625rem; font-size: 0.875rem; color: var(--foreground); }
+  .inventory-controls { margin-inline: calc(-1 * var(--page-padding)); padding-inline: var(--page-padding); }
+  .inventory-product-grid { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 1rem; }
+  .dashboard-metrics-primary, .dashboard-metrics-secondary, .dashboard-sections { display: grid; gap: 1rem; }
+  .dashboard-metrics-secondary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-sections { align-items: start; gap: 1.5rem; }
+
+  @media (min-width: 768px) {
+    .shell-header { padding: 0 1rem; }
+    .shell-brand { flex: 0 0 calc(var(--navigation-width) - 1rem); }
+    .shell-body { grid-template-columns: var(--navigation-width) minmax(0, 1fr); }
+    .shell-navigation { display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .workspace-canvas { padding: 1rem; }
+    .page-preview { min-height: calc(100% - 0.5rem); overflow: clip; border: 1px solid var(--border); border-radius: 0.625rem; box-shadow: var(--surface-shadow); }
+    .preview-toolbar { padding-inline: 1.25rem; }
+    .page-container { --page-padding: 1.5rem; padding-block: 1.5rem; }
+  }
+  @media (min-width: 1024px) {
+    .application-root { padding: 0.75rem; }
+    .app-shell { height: calc(100dvh - 1.5rem); border: 1px solid var(--border); border-radius: 0.75rem; }
+    .workspace-canvas { padding: 1.5rem; }
+  }
+  @media (min-width: 1280px) {
+    .shell-body { grid-template-columns: var(--navigation-width) minmax(0, 1fr) var(--inspector-width); }
+    .shell-inspector { display: flex; flex-direction: column; overflow-y: auto; border-left: 1px solid var(--border); }
+  }
+  @container page (min-width: 24rem) {
+    .dashboard-metrics-primary { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  }
+  @container page (min-width: 30rem) {
+    .dashboard-metrics-secondary[data-role="STAFF"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @container page (min-width: 38rem) {
+    .dashboard-metrics-secondary[data-role="OWNER"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+  @container page (min-width: 36rem) {
+    .inventory-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @container page (min-width: 42rem) {
+    .dashboard-sections { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  }
 }
