@@ -29,6 +29,23 @@ Database
 
 ---
 
+## Demo Login Credentials
+
+The [live demo](https://tindatrack.pages.dev/) demonstrates a single-store inventory and sales management setup. These application accounts are intentionally shared for public demo access. Choose either account depending on the role you want to explore.
+
+| Role | Email | Password |
+|------|-------|----------|
+| Owner | `abainzarendel11@gmail.com` | `qwerty12345` |
+| Staff | `staff01@gmail.com` | `staff012345` |
+
+> **Application demo accounts only:** The Owner email is a real email address of mine, but the password above is **not** its email or Google account password. These passwords apply only to the corresponding TindaTrack demo accounts.
+
+The Owner role includes store management, stock adjustments, reports, and audit history. The Staff role focuses on inventory viewing, sales, and stock receiving. See [Roles](#roles) for more detail.
+
+> **Shared demo:** Both roles can record sales and stock receipts, which change demo inventory. The Owner can also manage or deactivate products, suppliers, and staff accounts and adjust stock. Use sample data only; do not enter personal, confidential, or real business information.
+
+---
+
 ## Engineering Guarantees
 
 TindaTrack is intentionally designed around a few important invariants.

@@ -261,11 +261,26 @@ export function LandingPage() {
       </main>
       <footer className="border-t border-border bg-card/70">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-7 text-caption text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <span className="flex items-center gap-2 font-semibold text-foreground">
-            <AppIcon name="inventory" />
-            TindaTrack
-          </span>
-          <p>Inventory and order management for small retail operations.</p>
+          <div className="min-w-0 space-y-2">
+            <span className="flex items-center gap-2 font-semibold text-foreground">
+              <AppIcon name="inventory" />
+              TindaTrack
+            </span>
+            <p>Inventory and order management for small retail operations.</p>
+          </div>
+          <a
+            href="https://github.com/RAbnza"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 self-start rounded-lg px-3 py-2 transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none sm:self-center"
+          >
+            <AppIcon name="github" className="size-4" />
+            <span>
+              Built by{' '}
+              <span className="font-medium text-secondary-foreground">RAbnza</span>
+            </span>
+            <span className="sr-only">on GitHub (opens in a new tab)</span>
+          </a>
         </div>
       </footer>
     </div>

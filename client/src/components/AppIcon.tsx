@@ -1,7 +1,7 @@
 import type { NavigationIcon as NavigationIconName } from '../config/navigation'
 export type AppIconName = NavigationIconName | 'search' | 'filter' | 'warning' | 'check'
   | 'arrow-right' | 'arrow-left' | 'chevron-down' | 'mail' | 'lock' | 'user'
-  | 'shield' | 'plus' | 'minus' | 'close' | 'info' | 'empty' | 'calendar'
+  | 'shield' | 'plus' | 'minus' | 'close' | 'info' | 'empty' | 'calendar' | 'github'
 
 export function AppIcon({
   name,
@@ -30,6 +30,12 @@ export function AppIcon({
   }
 
   switch (name) {
+    case 'github':
+      return (
+        <svg {...commonProps}>
+          <path d="M9 19c-4 1-4-2-6-3M9 22v-3.5c0-1 .2-1.8 1-2.5-3.5-.4-6-1.5-6-6a5 5 0 0 1 1.5-3.5C5 5 5.1 3.5 5.5 2c2 0 3.4.9 4.5 1.5a13 13 0 0 1 4 0c1.1-.6 2.5-1.5 4.5-1.5.4 1.5.5 3 0 4.5A5 5 0 0 1 20 10c0 4.5-2.5 5.6-6 6 .8.7 1 1.5 1 2.5V22" />
+        </svg>
+      )
     case 'search':
       return <svg {...commonProps}><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4 4" /></svg>
     case 'filter':
