@@ -186,16 +186,18 @@ function ShellLayout({
       ],
     )
 
-  useEffect(() => {
-    document
-      .getElementById(
-        'workspace-content',
-      )
-      ?.focus({
-        preventScroll:
-          true,
-      })
-  }, [])
+    useEffect(() => {
+      document
+        .getElementById(
+          'workspace-content',
+        )
+        ?.focus({
+          preventScroll:
+            true,
+        })
+    }, [
+      location.pathname,
+    ])
 
   if (!user) {
     return null
