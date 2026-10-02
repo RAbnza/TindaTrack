@@ -1,7 +1,13 @@
-import { useContext, useState, useSyncExternalStore, type ReactNode } from 'react'
+import {
+  useContext,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { WorkspaceContext } from '../layout/workspace-context'
 import { Button, Card } from '../ui'
+import { AppIcon } from '../AppIcon'
 
 function subscribe(callback: () => void) {
   const media = window.matchMedia('(min-width: 1280px)')
@@ -33,11 +39,16 @@ export function TransactionWorkspace({
   const target = desktop ? workspace?.summaryTarget : null
   return (
     <div className="transaction-workspace mt-5 space-y-4">
-      <fieldset className="min-w-0" disabled={busy}>
-        {setup}
-      </fieldset>
+      {setup && (
+        <fieldset className="min-w-0" disabled={busy}>
+          {setup}
+        </fieldset>
+      )}
       {target ? (
-        createPortal(<div className="transaction-summary p-5">{summary}</div>, target)
+        createPortal(
+          <div className="transaction-summary p-5">{summary}</div>,
+          target,
+        )
       ) : (
         <Card
           surface="tint"
@@ -48,12 +59,16 @@ export function TransactionWorkspace({
       )}
       <fieldset className="min-w-0" disabled={busy}>
         <Card className="overflow-hidden">
-          <div className="workspace-switcher" aria-label="Transaction workspace views">
+          <div
+            className="workspace-switcher"
+            aria-label="Transaction workspace views"
+          >
             <Button
               variant={view === 'browse' ? 'primary' : 'ghost'}
               aria-pressed={view === 'browse'}
               onClick={() => setView('browse')}
             >
+              <AppIcon name="search" />
               Browse products
             </Button>
             <Button
@@ -61,6 +76,7 @@ export function TransactionWorkspace({
               aria-pressed={view === 'items'}
               onClick={() => setView('items')}
             >
+              <AppIcon name="sale" />
               Selected items ({count})
             </Button>
             <span className="ml-auto hidden text-caption text-secondary-foreground sm:block">

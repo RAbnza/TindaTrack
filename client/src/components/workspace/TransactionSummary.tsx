@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
+import { AppIcon } from '../AppIcon'
 export function TransactionSummary({
   title,
   count,
@@ -23,7 +24,7 @@ export function TransactionSummary({
   return (
     <section aria-label="Transaction summary">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-section font-semibold">{title}</h2>
+        <h2 className="flex items-center gap-2 text-section font-semibold"><AppIcon name="audit" />{title}</h2>
         <button
           type="button"
           className="summary-toggle min-h-11 text-ui font-medium text-primary"
@@ -32,6 +33,7 @@ export function TransactionSummary({
           onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? 'Hide details' : 'Details'}
+          <AppIcon name="chevron-down" />
         </button>
       </div>
       <p className="text-ui text-secondary-foreground">

@@ -17,6 +17,7 @@ import { createStockAdjustment } from '../api/stock-adjustments.api'
 import { PageContainer } from '../components/layout/PageContainer'
 
 import { Button, Card, ConfirmationDialog, PageHeader, useToast } from '../components/ui'
+import { AppIcon } from '../components/AppIcon'
 
 import type { AdjustmentType } from '../types/stock-adjustment'
 
@@ -216,6 +217,7 @@ export function AdjustStockPage(supplied: TransactionProductsProps) {
   return (
     <PageContainer>
       <PageHeader
+        icon="adjustment"
         title="Adjust Stock"
         description="Record a traceable correction for one product. Use receiving or sales for normal transactions."
       />
@@ -352,6 +354,7 @@ export function AdjustStockPage(supplied: TransactionProductsProps) {
                 loading={isSubmitting}
                 onClick={handleRecordClick}
               >
+                {!isSubmitting && <AppIcon name="adjustment" />}
                 {isSubmitting ? 'Recording adjustment...' : 'Record Adjustment'}
               </Button>
             }

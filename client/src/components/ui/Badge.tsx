@@ -28,16 +28,16 @@ const variantClasses: Record<
     'bg-accent text-accent-foreground',
 
   success:
-    'bg-success-soft text-secondary-foreground',
+    'bg-success-soft text-success',
 
   warning:
-    'bg-warning-soft text-secondary-foreground',
+    'bg-warning-soft text-warning',
 
   danger:
-    'bg-destructive-soft text-secondary-foreground',
+    'bg-destructive-soft text-destructive',
 
   info:
-    'bg-info-soft text-secondary-foreground',
+    'bg-info-soft text-info',
 }
 
 const statusDotClasses: Partial<Record<BadgeVariant, string>> = {
@@ -56,7 +56,7 @@ export function Badge({
   return (
     <span
       className={[
-        'inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1',
+        'ui-badge inline-flex items-center gap-1.5 rounded-full px-2.5 py-1',
         'text-xs font-medium',
         variantClasses[
           variant

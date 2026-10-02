@@ -1,6 +1,7 @@
 import {
   Button,
 } from './Button'
+import { AppIcon } from '../AppIcon'
 
 type ErrorStateProps = {
   title?: string
@@ -18,9 +19,10 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="rounded-lg border border-destructive/20 bg-destructive-soft p-5"
+      className="ui-alert rounded-xl border border-destructive/20 bg-destructive-soft p-5"
     >
-      <h2 className="text-section font-semibold text-foreground">
+      <h2 className="flex items-center gap-2 text-section font-semibold text-destructive">
+        <AppIcon name="warning" />
         {title}
       </h2>
 

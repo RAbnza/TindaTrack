@@ -161,6 +161,7 @@ export function DailySalesPage() {
     <PageContainer>
       <div className="no-print">
         <PageHeader
+          icon="reports"
           title="Daily Sales"
           description="Review the selected Manila business day, with totals across every transaction."
           actions={

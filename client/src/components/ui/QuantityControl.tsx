@@ -16,7 +16,7 @@ export function QuantityControl({
   max?: number
 }) {
   return (
-    <div className="inline-flex items-center gap-1">
+    <div className="quantity-control inline-flex items-center gap-1">
       <Button
         variant="secondary"
         className="min-w-11 px-2"

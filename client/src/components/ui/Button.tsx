@@ -84,9 +84,9 @@ export const Button =
             undefined
           }
           className={[
-            'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2',
+            'ui-button min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2',
             'text-sm font-medium',
-            'transition-colors',
+            `ui-button-${variant}`,
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
             'focus-visible:ring-offset-background',
             'disabled:pointer-events-none disabled:opacity-50',

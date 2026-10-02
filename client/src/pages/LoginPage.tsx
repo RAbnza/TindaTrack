@@ -22,6 +22,9 @@ import {
 import {
   Button,
 } from '../components/ui'
+import { Input } from '../components/ui/Field'
+import { AppIcon } from '../components/AppIcon'
+import { IconTile } from '../components/ui/IconTile'
 
 export function LoginPage() {
   const {
@@ -111,6 +114,7 @@ export function LoginPage() {
 
           Back to TindaTrack
         </Link>
+        <IconTile icon="lock" className="mt-4" />
 
         <p className="mt-4 text-xs font-medium text-primary">
           Welcome back
@@ -123,7 +127,7 @@ export function LoginPage() {
         </h1>
 
         <p className="mt-3 text-sm text-muted-foreground">
-          Sign in to continue.
+          Welcome back. Continue to your TindaTrack workspace.
         </p>
       </div>
 
@@ -141,7 +145,8 @@ export function LoginPage() {
             Email
           </label>
 
-          <input
+          <Input
+            icon="mail"
             id="email"
             name="email"
             type="email"
@@ -156,7 +161,6 @@ export function LoginPage() {
                   .value,
               )
             }
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors placeholder:text-disabled-foreground focus:border-primary focus:ring-2 focus:ring-ring/20"
             placeholder="you@example.com"
           />
         </div>
@@ -169,7 +173,8 @@ export function LoginPage() {
             Password
           </label>
 
-          <input
+          <Input
+            icon="lock"
             id="password"
             name="password"
             type="password"
@@ -186,7 +191,6 @@ export function LoginPage() {
                   .value,
               )
             }
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
         </div>
 
@@ -206,11 +210,13 @@ export function LoginPage() {
           }
           className="min-h-12 w-full rounded-lg"
         >
+          {!isSubmitting && <AppIcon name="arrow-right" />}
           {isSubmitting
             ? 'Signing in...'
             : 'Sign in'}
         </Button>
       </form>
+      <p className="auth-assurance"><AppIcon name="shield" />Your account determines access to store operations.</p>
 
       <div className="mt-6 border-t border-border pt-5 text-center">
         <p className="text-sm text-muted-foreground">

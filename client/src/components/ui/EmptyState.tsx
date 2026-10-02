@@ -5,6 +5,7 @@ import type {
 import {
   Card,
 } from './Card'
+import { IconTile } from './IconTile'
 
 type EmptyStateProps = {
   title: string
@@ -18,7 +19,8 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <Card className="border-dashed px-6 py-10 text-center">
+    <Card className="empty-state border-dashed px-6 py-10 text-center">
+      <IconTile icon="empty" tone="neutral" className="mx-auto mb-4" />
       <h2 className="text-base font-semibold text-foreground">
         {title}
       </h2>

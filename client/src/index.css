@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./workspace.css";
+@import "./design-system.css";
 
 :root {
   --background: #edf1f6;

@@ -324,6 +324,7 @@ export function StaffManagementPage() {
   return (
     <PageContainer>
       <PageHeader
+        icon="staff"
         title="Staff"
         description="Manage employee accounts and access to TindaTrack."
         actions={

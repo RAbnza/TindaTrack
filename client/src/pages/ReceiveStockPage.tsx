@@ -16,6 +16,7 @@ import { createStockReceipt } from '../api/stock-receipts.api'
 import { PageContainer } from '../components/layout/PageContainer'
 
 import { Button, Card, ErrorState, PageHeader, useToast } from '../components/ui'
+import { AppIcon } from '../components/AppIcon'
 
 import { ReceiptItemCard } from '../features/receiving/ReceiptItemCard'
 
@@ -271,6 +272,7 @@ export function ReceiveStockPage(supplied: TransactionProductsProps) {
   return (
     <PageContainer>
       <PageHeader
+        icon="receiving"
         title="Receive Stock"
         description="Choose a supplier, add received products, and review delivery costs."
       />
@@ -415,6 +417,7 @@ export function ReceiveStockPage(supplied: TransactionProductsProps) {
                 loading={isSubmitting}
                 onClick={() => void handleSubmit()}
               >
+                {!isSubmitting && <AppIcon name="receiving" />}
                 {isSubmitting ? 'Recording receipt...' : 'Record Receipt'}
               </Button>
             }

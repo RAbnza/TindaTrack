@@ -416,6 +416,7 @@ export function ProductManagementPage({
   return (
     <PageContainer>
       <PageHeader
+        icon="products"
         title="Products"
         description="Manage product details, selling prices, reorder levels, and availability."
         actions={

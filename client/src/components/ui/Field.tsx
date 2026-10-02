@@ -1,9 +1,29 @@
-import type { InputHTMLAttributes, SelectHTMLAttributes, ReactNode } from 'react'
+import type {
+  InputHTMLAttributes,
+  SelectHTMLAttributes,
+  ReactNode,
+} from 'react'
+import { AppIcon, type AppIconName } from '../AppIcon'
 export function Input({
   className = '',
+  icon,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`field-control ${className}`} {...props} />
+}: InputHTMLAttributes<HTMLInputElement> & { icon?: AppIconName }) {
+  const fieldIcon = icon ?? (props.type === 'search' ? 'search' : undefined)
+  const control = (
+    <input
+      className={`field-control ${fieldIcon ? 'field-with-icon' : ''} ${className}`}
+      {...props}
+    />
+  )
+  return fieldIcon ? (
+    <div className="input-frame">
+      <AppIcon name={fieldIcon} />
+      {control}
+    </div>
+  ) : (
+    control
+  )
 }
 export function Select({
   className = '',
@@ -33,7 +53,9 @@ export function FormField({
         {label}
       </label>
       {children}
-      {hint && <p className="mt-1 text-caption text-muted-foreground">{hint}</p>}
+      {hint && (
+        <p className="mt-1 text-caption text-muted-foreground">{hint}</p>
+      )}
     </div>
   )
 }

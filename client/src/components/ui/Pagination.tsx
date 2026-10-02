@@ -1,4 +1,5 @@
 import { Button } from './Button'
+import { AppIcon } from '../AppIcon'
 import type { PaginationMeta } from '../../types/pagination'
 
 export function Pagination({
@@ -49,7 +50,7 @@ export function Pagination({
           disabled={disabled || page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          Previous
+          <AppIcon name="arrow-left" /> Previous
         </Button>
         <span className="text-caption px-2 sm:hidden">
           {page} / {totalPages}
@@ -77,7 +78,7 @@ export function Pagination({
           disabled={disabled || page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          Next
+          Next <AppIcon name="arrow-right" />
         </Button>
       </div>
     </nav>

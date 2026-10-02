@@ -312,6 +312,7 @@ export function SupplierManagementPage() {
   return (
     <PageContainer>
       <PageHeader
+        icon="suppliers"
         title="Suppliers"
         description="Manage the suppliers available for stock receiving."
         actions={

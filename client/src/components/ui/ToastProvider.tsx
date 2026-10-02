@@ -11,6 +11,7 @@ import {
   type ToastInput,
   type ToastVariant,
 } from './toast-context'
+import { AppIcon } from '../AppIcon'
 
 type ToastProviderProps = {
   children: ReactNode
@@ -171,12 +172,13 @@ export function ToastProvider({
                   : 'status'
               }
               className={[
-                'pointer-events-auto flex w-full items-start justify-between gap-3 rounded-xl border p-4 shadow-lg',
+                'ui-toast pointer-events-auto flex w-full items-start justify-between gap-3 rounded-xl border p-4',
                 variantClasses[
                   toast.variant
                 ],
               ].join(' ')}
             >
+              <AppIcon name={toast.variant === 'error' ? 'warning' : toast.variant === 'success' ? 'check' : 'info'} className="mt-0.5" />
               <p className="min-w-0 text-sm leading-5">
                 {
                   toast.message

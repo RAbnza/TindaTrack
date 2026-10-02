@@ -7,6 +7,8 @@ import { ProductCard } from '../features/inventory/ProductCard'
 import { useWorkspaceInspector } from '../components/layout/useWorkspaceInspector'
 import { PageContainer } from '../components/layout/PageContainer'
 import { Button, EmptyState, ErrorState, LoadingState, PageHeader } from '../components/ui'
+import { AppIcon } from '../components/AppIcon'
+import { Input } from '../components/ui/Field'
 
 import type { Product } from '../types/product'
 
@@ -68,9 +70,9 @@ export function InventoryPage({
 
   return (
     <PageContainer>
-      <PageHeader title="Inventory" description="Current product stock levels." />
+      <PageHeader icon="inventory" title="Inventory" description="Current product stock levels." />
 
-      <div className="inventory-controls sticky top-0 z-10 mt-5 space-y-3 border-y border-border bg-background/95 py-3 backdrop-blur-sm">
+      <div className="inventory-controls inventory-toolbar sticky top-0 z-10 mt-5">
         <label
           htmlFor="product-search"
           className="sr-only"
@@ -78,7 +80,7 @@ export function InventoryPage({
           Search inventory
         </label>
 
-        <input
+        <Input
           id="product-search"
           type="search"
           value={search}
@@ -88,7 +90,7 @@ export function InventoryPage({
             )
           }
           placeholder="Search name or SKU"
-          className="min-h-12 w-full rounded-lg border border-input bg-card px-4 text-base text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-ring/20"
+          className="min-h-12"
         />
 
         <Button
@@ -103,12 +105,13 @@ export function InventoryPage({
             )
           }
           className={[
-            'min-h-11 rounded-lg border px-4 text-sm font-medium',
+            'min-h-12 rounded-lg border px-4 text-sm font-medium',
             showLowStockOnly
               ? 'border-warning/30 bg-warning-soft text-secondary-foreground'
               : 'border-input bg-card text-secondary-foreground',
           ].join(' ')}
         >
+          <AppIcon name="filter" />
           {showLowStockOnly
             ? 'Showing low stock'
             : 'Low stock only'}
@@ -139,7 +142,8 @@ export function InventoryPage({
         filteredProducts.length >
           0 && (
           <>
-            <p className="mt-5 text-sm text-muted-foreground">
+            <p className="inventory-result-count mt-5 text-ui text-muted-foreground">
+              <AppIcon name="products" />
               {
                 filteredProducts.length
               }{' '}

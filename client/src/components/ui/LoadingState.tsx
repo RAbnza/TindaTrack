@@ -8,7 +8,7 @@ export function LoadingState({
   return (
     <div
       role="status"
-      className="flex min-h-40 items-center justify-center"
+      className="loading-state flex min-h-40 items-center justify-center rounded-xl bg-surface-tint/50"
     >
       <div className="flex items-center gap-3 text-muted-foreground">
         <span

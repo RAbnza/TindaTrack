@@ -35,6 +35,7 @@ export function StockMovementsPage() {
   return (
     <PageContainer>
       <PageHeader
+        icon="movements"
         title="Stock Movements"
         description="Review the inventory ledger: receipts, sales, and count corrections."
       />

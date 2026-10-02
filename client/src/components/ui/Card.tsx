@@ -18,7 +18,7 @@ export function Card({
   return (
     <div
       className={[
-        'rounded-lg border border-border text-card-foreground',
+        'ui-card rounded-xl border border-border text-card-foreground',
         surface === 'accent' ? 'bg-accent' : surface === 'tint' ? 'bg-surface-tint' : 'bg-card',
         className,
       ].join(' ')}

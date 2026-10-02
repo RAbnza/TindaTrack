@@ -50,3 +50,4 @@ export type {
   ToastInput,
   ToastVariant,
 } from './toast-context'
+export { IconTile } from './IconTile'

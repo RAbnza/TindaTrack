@@ -15,6 +15,7 @@ import { createSale } from '../api/sales.api'
 import { PageContainer } from '../components/layout/PageContainer'
 
 import { Button, PageHeader, useToast } from '../components/ui'
+import { AppIcon } from '../components/AppIcon'
 
 import { SaleCartItem } from '../features/sales/SaleCartItem'
 
@@ -259,41 +260,19 @@ export function NewSalePage(supplied: TransactionProductsProps) {
   return (
     <PageContainer>
       <PageHeader
+        icon="sale"
         title="New Sale"
         description="Build the order, review quantities, and record payment."
       />
       {completedSale && (
-        <SaleReceipt sale={completedSale} onDismiss={() => setCompletedSale(null)} />
+        <SaleReceipt
+          sale={completedSale}
+          onDismiss={() => setCompletedSale(null)}
+        />
       )}
       <TransactionWorkspace
         busy={isSubmitting}
         count={cart.length}
-        setup={
-          <fieldset
-            className="workflow-setup rounded-lg border border-border"
-            disabled={isSubmitting}
-          >
-            <legend className="px-2 font-semibold">Payment method</legend>
-            <div className="flex flex-wrap gap-2">
-              {paymentMethods.map((method) => (
-                <Button
-                  key={method}
-                  variant={paymentMethod === method ? 'primary' : 'secondary'}
-                  aria-pressed={paymentMethod === method}
-                  onClick={() => {
-                    setPaymentMethod(method)
-                    clearError()
-                  }}
-                >
-                  {method}
-                </Button>
-              ))}
-            </div>
-            <p className="text-ui text-secondary-foreground">
-              Choose how the customer will pay. The receipt uses the final server total.
-            </p>
-          </fieldset>
-        }
         browser={
           <ProductBrowser
             catalog={catalog}
@@ -358,7 +337,8 @@ export function NewSalePage(supplied: TransactionProductsProps) {
                 )}
                 {cartHasInvalidStock ? (
                   <p role="alert" className="text-destructive">
-                    Review quantities in Selected items. Stock must be available.
+                    Review quantities in Selected items. Stock must be
+                    available.
                   </p>
                 ) : !paymentMethod ? (
                   'Choose a payment method to continue.'
@@ -370,14 +350,44 @@ export function NewSalePage(supplied: TransactionProductsProps) {
               </>
             }
             action={
-              <Button
-                className="w-full"
-                disabled={!canSubmit}
-                loading={isSubmitting}
-                onClick={() => void handleSubmit()}
-              >
-                {isSubmitting ? 'Recording sale...' : 'Record Sale'}
-              </Button>
+              <>
+                <fieldset className="mb-3 min-w-0" disabled={isSubmitting}>
+                  <legend className="mb-2 text-ui font-medium text-secondary-foreground">
+                    Payment method
+                  </legend>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {paymentMethods.map((method) => (
+                      <Button
+                        key={method}
+                        variant={
+                          paymentMethod === method ? 'primary' : 'secondary'
+                        }
+                        aria-pressed={paymentMethod === method}
+                        className="min-w-0 px-2"
+                        onClick={() => {
+                          setPaymentMethod(method)
+                          clearError()
+                        }}
+                      >
+                        {method}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-caption text-muted-foreground">
+                    Choose how the customer will pay. The receipt uses the final
+                    server total.
+                  </p>
+                </fieldset>
+                <Button
+                  className="w-full"
+                  disabled={!canSubmit}
+                  loading={isSubmitting}
+                  onClick={() => void handleSubmit()}
+                >
+                  {!isSubmitting && <AppIcon name="sale" />}
+                  {isSubmitting ? 'Recording sale...' : 'Record Sale'}
+                </Button>
+              </>
             }
           >
             <dl className="summary-facts">
@@ -387,8 +397,8 @@ export function NewSalePage(supplied: TransactionProductsProps) {
               </div>
             </dl>
             <p className="summary-help">
-              Cart prices are estimates. The completed receipt preserves the server
-              response.
+              Cart prices are estimates. The completed receipt preserves the
+              server response.
             </p>
           </TransactionSummary>
         }

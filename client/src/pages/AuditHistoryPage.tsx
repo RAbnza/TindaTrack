@@ -28,6 +28,7 @@ export function AuditHistoryPage() {
   return (
     <PageContainer>
       <PageHeader
+        icon="audit"
         title="Audit History"
         description="Trace business actions to the people and evidence behind them."
       />

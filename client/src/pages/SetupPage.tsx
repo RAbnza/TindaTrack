@@ -17,6 +17,9 @@ import {
 
 import { AuthPageLayout } from '../components/layout/AuthPageLayout'
 import { Badge, Button } from '../components/ui'
+import { Input } from '../components/ui/Field'
+import { AppIcon } from '../components/AppIcon'
+import { IconTile } from '../components/ui/IconTile'
 
 export function SetupPage() {
   const navigate =
@@ -133,7 +136,7 @@ export function SetupPage() {
   return (
     <AuthPageLayout>
       <div className="mb-6">
-        <Badge variant="primary">Initial setup</Badge>
+        <div className="mb-4 flex items-center justify-between gap-3"><IconTile icon="shield" /><Badge variant="primary">Initial setup</Badge></div>
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">Set up your store</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
           Create the first owner account. You'll use this account to manage
@@ -146,7 +149,8 @@ export function SetupPage() {
           <label htmlFor="owner-name" className="mb-2 block text-sm font-medium text-secondary-foreground">
             Owner name
           </label>
-          <input
+          <Input
+            icon="user"
             id="owner-name"
             name="name"
             type="text"
@@ -154,14 +158,14 @@ export function SetupPage() {
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
         </div>
         <div>
           <label htmlFor="setup-email" className="mb-2 block text-sm font-medium text-secondary-foreground">
             Email
           </label>
-          <input
+          <Input
+            icon="mail"
             id="setup-email"
             name="email"
             type="email"
@@ -169,7 +173,6 @@ export function SetupPage() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors placeholder:text-disabled-foreground focus:border-primary focus:ring-2 focus:ring-ring/20"
             placeholder="owner@example.com"
           />
         </div>
@@ -177,7 +180,8 @@ export function SetupPage() {
           <label htmlFor="setup-password" className="mb-2 block text-sm font-medium text-secondary-foreground">
             Password
           </label>
-          <input
+          <Input
+            icon="lock"
             id="setup-password"
             name="password"
             type="password"
@@ -187,7 +191,6 @@ export function SetupPage() {
             aria-describedby="password-hint"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
           <p id="password-hint" className="mt-2 text-xs text-muted-foreground">Use at least 8 characters.</p>
         </div>
@@ -195,7 +198,8 @@ export function SetupPage() {
           <label htmlFor="confirm-password" className="mb-2 block text-sm font-medium text-secondary-foreground">
             Confirm password
           </label>
-          <input
+          <Input
+            icon="lock"
             id="confirm-password"
             name="confirmPassword"
             type="password"
@@ -204,7 +208,6 @@ export function SetupPage() {
             minLength={8}
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
-            className="min-h-12 w-full rounded-lg border border-input bg-card px-3 text-base text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-ring/20"
           />
         </div>
         {error && (
@@ -213,9 +216,11 @@ export function SetupPage() {
           </div>
         )}
         <Button type="submit" loading={isSubmitting} className="min-h-12 w-full rounded-lg">
+          {!isSubmitting && <AppIcon name="user" />}
           {isSubmitting ? 'Creating owner...' : 'Create Owner Account'}
         </Button>
       </form>
+      <p className="auth-assurance"><AppIcon name="shield" />Once created, sign in with your owner account.</p>
     </AuthPageLayout>
   )
 }

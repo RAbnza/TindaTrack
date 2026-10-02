@@ -8,6 +8,7 @@ import {
 import {
   Button,
 } from './Button'
+import { IconTile } from './IconTile'
 
 type ConfirmationDialogVariant =
   | 'primary'
@@ -123,9 +124,10 @@ export function ConfirmationDialog({
           onCancel()
         }
       }}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-lg border border-border bg-card p-0 text-card-foreground shadow-xl backdrop:bg-foreground/30"
+      className="ui-dialog m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-0 text-card-foreground backdrop:bg-foreground/30"
     >
       <div className="p-5 sm:p-6">
+        <IconTile icon={variant === 'danger' ? 'warning' : 'info'} tone={variant === 'danger' ? 'danger' : 'primary'} className="mb-4" />
         <h2
           id={titleId}
           className="text-lg font-semibold tracking-tight text-foreground"
